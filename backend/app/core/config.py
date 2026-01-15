@@ -1,0 +1,69 @@
+"""
+Core Configuration Module
+配置管理模块 - 使用 pydantic-settings
+"""
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional, List
+
+
+class Settings(BaseSettings):
+    """应用配置类"""
+
+    # ==================== 应用基础配置 ====================
+    APP_NAME: str = "PANDA - 围产期抑郁管理智能培训系统"
+    APP_VERSION: str = "0.1.0"
+    DEBUG: bool = True
+    APP_DESCRIPTION: str = "基于THP的围产期抑郁管理智能培训系统"
+
+    # ==================== 数据库配置 ====================
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 3306
+    DB_USER: str = "root"
+    DB_PASSWORD: str = ""
+    DB_NAME: str = "panda"
+    DB_CHARSET: str = "utf8mb4"
+
+    @property
+    def DATABASE_URL(self) -> str:
+        """获取数据库连接URL"""
+        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}?charset={self.DB_CHARSET}"
+
+    # ==================== JWT认证配置 ====================
+    SECRET_KEY: str = "your-secret-key-change-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7天
+
+    # ==================== AI模型配置 ====================
+    AI_TEXT_URL: Optional[str] = None
+    AI_TEXT_KEY: Optional[str] = None
+    AI_TEXT_MODEL: str = "qwen-max"
+    AI_TIMEOUT: int = 30
+
+    # ==================== 搜索工具配置 ====================
+    GOOGLE_CSE_ID: Optional[str] = None
+    GOOGLE_API_KEY: Optional[str] = None
+    GOOGLE_SEARCH_RESULTS: int = 10
+
+    # ==================== 代理配置 ====================
+    HTTP_PROXY: Optional[str] = None
+    HTTPS_PROXY: Optional[str] = None
+
+    # ==================== CORS配置 ====================
+    CORS_ORIGINS_STR: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
+
+    @property
+    def CORS_ORIGINS(self) -> List[str]:
+        """将CORS_ORIGINS_STR解析为列表"""
+        return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",")]
+
+    # ==================== Pydantic配置 ====================
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore"
+    )
+
+
+# 创建全局配置实例
+settings = Settings()

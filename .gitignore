@@ -1,0 +1,89 @@
+# ================================================
+# PANDA 项目 .gitignore
+# ================================================
+
+# Python 相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv
+envs/
+
+# 环境变量文件 - 重要！不要提交敏感信息
+.env
+.env.local
+.env.*.local
+app/.env
+
+# IDE 相关
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 数据库
+*.sql
+*.sqlite
+*.db
+*.sqlite3
+
+# 日志文件
+*.log
+logs/
+
+# Next.js 前端
+node_modules/
+.next/
+out/
+.vercel/
+
+# 测试覆盖率
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 测试文件
+test_*.py
+*_test.py
+
+# 临时文件
+*.tmp
+*.bak
+*.cache
+
+# OS 相关
+Thumbs.db
+.DS_Store
+
+# 代理相关（可选）
+# 如果需要在本地保存代理配置文件，取消下面的注释
+# .proxy_config
+
+# Claude Code 相关
+.claude/
+
