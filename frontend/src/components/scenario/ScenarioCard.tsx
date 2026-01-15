@@ -24,6 +24,11 @@ const difficultyStars = {
 export const ScenarioCard = ({ scenario, onStartPractice, isLoading }: ScenarioCardProps) => {
   const stars = difficultyStars[scenario.difficulty as keyof typeof difficultyStars] || '⭐';
 
+  // 将knowledge_tags从字符串转换为数组（如果是字符串）
+  const knowledgeTags = Array.isArray(scenario.knowledge_tags)
+    ? scenario.knowledge_tags
+    : (scenario.knowledge_tags ? scenario.knowledge_tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []);
+
   return (
     <Card
       hoverable
@@ -96,17 +101,17 @@ export const ScenarioCard = ({ scenario, onStartPractice, isLoading }: ScenarioC
       )}
 
       {/* Knowledge Tags */}
-      {scenario.knowledge_tags && scenario.knowledge_tags.length > 0 && (
+      {knowledgeTags.length > 0 && (
         <div style={{ marginBottom: '12px' }}>
           <Space wrap size="small">
-            {scenario.knowledge_tags.slice(0, 3).map((tag, index) => (
+            {knowledgeTags.slice(0, 3).map((tag, index) => (
               <Tag key={index} color="blue" style={{ fontSize: '12px' }}>
                 {tag}
               </Tag>
             ))}
-            {scenario.knowledge_tags.length > 3 && (
+            {knowledgeTags.length > 3 && (
               <Tag color="default" style={{ fontSize: '12px' }}>
-                +{scenario.knowledge_tags.length - 3}
+                +{knowledgeTags.length - 3}
               </Tag>
             )}
           </Space>
