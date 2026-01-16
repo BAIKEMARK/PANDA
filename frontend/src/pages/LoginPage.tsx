@@ -3,7 +3,7 @@
  */
 import { useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, Checkbox } from 'antd';
+import { Form, Input, Button, Card, Checkbox, Typography, Space } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/auth.store';
 import type { FormProps } from 'antd';
@@ -29,11 +29,21 @@ export const LoginPage = () => {
   const { login, isLoading } = useAuthStore();
   const [form] = Form.useForm<LoginFormValues>();
 
-  // 获取登录前想访问的页面
   const from = (location.state as { from?: string })?.from || '/courses';
+  const registeredEmail = (location.state as { registeredEmail?: string })?.registeredEmail;
+  const registeredPassword = (location.state as { registeredPassword?: string })?.registeredPassword;
 
-  // 初始化：读取保存的登录信息
   useEffect(() => {
+    if (registeredEmail && registeredPassword) {
+      form.setFieldsValue({
+        email: registeredEmail,
+        password: registeredPassword,
+        remember: false,
+        autoLogin: false,
+      });
+      return;
+    }
+
     const remember = localStorage.getItem(REMEMBER_KEY) === 'true';
     const autoLogin = localStorage.getItem(AUTO_LOGIN_KEY) === 'true';
     
@@ -48,20 +58,17 @@ export const LoginPage = () => {
         autoLogin: autoLogin,
       });
 
-      // 自动登录
       if (autoLogin && savedEmail && savedPassword) {
         handleAutoLogin(savedEmail, savedPassword);
       }
     }
   }, []);
 
-  // 自动登录处理
   const handleAutoLogin = async (email: string, password: string) => {
     try {
       await login(email, password);
       navigate(from, { replace: true });
     } catch {
-      // 自动登录失败，清除自动登录设置
       localStorage.setItem(AUTO_LOGIN_KEY, 'false');
     }
   };
@@ -70,14 +77,12 @@ export const LoginPage = () => {
     try {
       await login(values.email, values.password);
       
-      // 保存登录选项
       if (values.remember) {
         localStorage.setItem(REMEMBER_KEY, 'true');
         localStorage.setItem(SAVED_EMAIL_KEY, values.email);
         localStorage.setItem(SAVED_PASSWORD_KEY, values.password);
         localStorage.setItem(AUTO_LOGIN_KEY, values.autoLogin ? 'true' : 'false');
       } else {
-        // 清除保存的信息
         localStorage.removeItem(REMEMBER_KEY);
         localStorage.removeItem(SAVED_EMAIL_KEY);
         localStorage.removeItem(SAVED_PASSWORD_KEY);
@@ -95,10 +100,8 @@ export const LoginPage = () => {
     }
   };
 
-  // 记住密码变化时的处理
   const onRememberChange = (e: any) => {
     if (!e.target.checked) {
-      // 取消记住密码时，同时取消自动登录
       form.setFieldValue('autoLogin', false);
     }
   };
@@ -108,113 +111,114 @@ export const LoginPage = () => {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '20px'
+      padding: '24px 16px',
     }}>
-      <div style={{ maxWidth: '400px', width: '100%' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <Title level={2} style={{ color: '#fff', marginBottom: '8px' }}>
-            PANDA
-          </Title>
-          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: '16px' }}>
-            围产期抑郁管理智能培训系统
-          </Text>
-        </div>
+      {/* Logo */}
+      <Space direction="vertical" align="center" size={4} style={{ marginBottom: 24 }}>
+        <Title level={2} style={{ color: '#fff', margin: 0, letterSpacing: 2 }}>
+          PANDA
+        </Title>
+        <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14 }}>
+          围产期抑郁管理智能培训系统
+        </Text>
+      </Space>
 
-        {/* Login Card */}
-        <Card
-          bordered={false}
-          style={{
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            borderRadius: '16px'
-          }}
+      {/* Login Card */}
+      <Card
+        bordered={false}
+        style={{
+          width: '100%',
+          maxWidth: 380,
+          borderRadius: 12,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        }}
+        styles={{ body: { padding: '32px 28px 24px' } }}
+      >
+        <Title level={4} style={{ textAlign: 'center', marginBottom: 24 }}>
+          登录
+        </Title>
+
+        <Form
+          form={form}
+          name="login"
+          onFinish={onFinish}
+          autoComplete="off"
+          initialValues={{ remember: false, autoLogin: false }}
+          size="large"
         >
-          <Title level={3} style={{ marginBottom: '24px', textAlign: 'center' }}>
-            登录
-          </Title>
-
-          <Form
-            form={form}
-            name="login"
-            onFinish={onFinish}
-            layout="vertical"
-            size="large"
-            autoComplete="off"
-            initialValues={{ remember: false, autoLogin: false }}
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: '请输入邮箱' },
+              { type: 'email', message: '请输入有效的邮箱地址' }
+            ]}
           >
-            <Form.Item
-              name="email"
-              rules={[
-                { required: true, message: '请输入邮箱' },
-                { type: 'email', message: '请输入有效的邮箱地址' }
-              ]}
-            >
-              <Input
-                prefix={<UserOutlined />}
-                placeholder="邮箱地址"
-                disabled={isLoading}
-              />
-            </Form.Item>
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="邮箱地址"
+              disabled={isLoading}
+            />
+          </Form.Item>
 
-            <Form.Item
-              name="password"
-              rules={[{ required: true, message: '请输入密码' }]}
-            >
-              <Input.Password
-                prefix={<LockOutlined />}
-                placeholder="密码"
-                disabled={isLoading}
-              />
-            </Form.Item>
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="密码"
+              disabled={isLoading}
+            />
+          </Form.Item>
 
-            <Form.Item style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Form.Item name="remember" valuePropName="checked" noStyle>
-                  <Checkbox onChange={onRememberChange} disabled={isLoading}>
-                    记住密码
-                  </Checkbox>
-                </Form.Item>
-                <Form.Item
-                  noStyle
-                  shouldUpdate={(prev, cur) => prev.remember !== cur.remember}
-                >
-                  {({ getFieldValue }) => (
-                    <Form.Item name="autoLogin" valuePropName="checked" noStyle>
-                      <Checkbox disabled={!getFieldValue('remember') || isLoading}>
-                        自动登录
-                      </Checkbox>
-                    </Form.Item>
-                  )}
-                </Form.Item>
-              </div>
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={isLoading}
-                block
-                style={{ height: '44px' }}
+          <Form.Item style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Form.Item name="remember" valuePropName="checked" noStyle>
+                <Checkbox onChange={onRememberChange} disabled={isLoading}>
+                  记住密码
+                </Checkbox>
+              </Form.Item>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, cur) => prev.remember !== cur.remember}
               >
-                登录
-              </Button>
-            </Form.Item>
-          </Form>
+                {({ getFieldValue }) => (
+                  <Form.Item name="autoLogin" valuePropName="checked" noStyle>
+                    <Checkbox disabled={!getFieldValue('remember') || isLoading}>
+                      自动登录
+                    </Checkbox>
+                  </Form.Item>
+                )}
+              </Form.Item>
+            </div>
+          </Form.Item>
 
-          {/* Register Link */}
-          <div style={{ textAlign: 'center', marginTop: '16px' }}>
-            <Text>
-              还没有账号？{' '}
-              <Link to="/register" style={{ color: '#1890ff', fontWeight: 500 }}>
-                立即注册
-              </Link>
-            </Text>
+          <Form.Item style={{ marginBottom: 16 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isLoading}
+              block
+              style={{ height: 44 }}
+            >
+              登 录
+            </Button>
+          </Form.Item>
+
+          <div style={{ textAlign: 'center' }}>
+            <Text type="secondary">还没有账号？</Text>
+            <Link to="/register" style={{ marginLeft: 4 }}>立即注册</Link>
           </div>
-        </Card>
-      </div>
+        </Form>
+      </Card>
+
+      {/* Footer */}
+      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 24 }}>
+        © 2025 PANDA Training System
+      </Text>
     </div>
   );
 };

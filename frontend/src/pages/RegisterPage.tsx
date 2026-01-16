@@ -2,7 +2,7 @@
  * 注册页面
  */
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, message } from 'antd';
+import { Form, Input, Button, Card, Typography, Space, message } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/auth.store';
 import type { FormProps } from 'antd';
@@ -20,7 +20,12 @@ export const RegisterPage = () => {
       await register(values.email, values.name, values.password);
       messageApi.success('注册成功！请登录');
       setTimeout(() => {
-        navigate('/login');
+        navigate('/login', { 
+          state: { 
+            registeredEmail: values.email,
+            registeredPassword: values.password 
+          } 
+        });
       }, 1000);
     } catch (error: any) {
       form.setFields([
@@ -39,30 +44,33 @@ export const RegisterPage = () => {
         minHeight: '100vh',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px'
+        padding: '24px 16px',
       }}>
-      <div style={{ maxWidth: '400px', width: '100%' }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <Title level={2} style={{ color: '#fff', marginBottom: '8px' }}>
+        <Space direction="vertical" align="center" size={4} style={{ marginBottom: 24 }}>
+          <Title level={2} style={{ color: '#fff', margin: 0, letterSpacing: 2 }}>
             PANDA
           </Title>
-          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: '16px' }}>
+          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14 }}>
             围产期抑郁管理智能培训系统
           </Text>
-        </div>
+        </Space>
 
         {/* Register Card */}
         <Card
           bordered={false}
           style={{
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            borderRadius: '16px'
+            width: '100%',
+            maxWidth: 380,
+            borderRadius: 12,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           }}
+          styles={{ body: { padding: '32px 28px 24px' } }}
         >
-          <Title level={3} style={{ marginBottom: '24px', textAlign: 'center' }}>
+          <Title level={4} style={{ textAlign: 'center', marginBottom: 24 }}>
             注册
           </Title>
 
@@ -70,25 +78,25 @@ export const RegisterPage = () => {
             form={form}
             name="register"
             onFinish={onFinish}
-            layout="vertical"
-            size="large"
             autoComplete="off"
+            size="large"
           >
             <Form.Item
               name="name"
-              label="姓名"
-              rules={[{ required: true, message: '请输入姓名' }]}
+              rules={[
+                { required: true, message: '请输入姓名' },
+                { min: 2, message: '姓名至少2个字符' }
+              ]}
             >
               <Input
                 prefix={<UserOutlined />}
-                placeholder="请输入姓名"
+                placeholder="姓名"
                 disabled={isLoading}
               />
             </Form.Item>
 
             <Form.Item
               name="email"
-              label="邮箱"
               rules={[
                 { required: true, message: '请输入邮箱' },
                 { type: 'email', message: '请输入有效的邮箱地址' }
@@ -103,22 +111,20 @@ export const RegisterPage = () => {
 
             <Form.Item
               name="password"
-              label="密码"
               rules={[
                 { required: true, message: '请输入密码' },
-                { min: 6, message: '密码长度至少为6位' }
+                { min: 6, message: '密码至少6位' }
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="至少6位"
+                placeholder="密码（至少6位）"
                 disabled={isLoading}
               />
             </Form.Item>
 
             <Form.Item
               name="confirm"
-              label="确认密码"
               dependencies={['password']}
               rules={[
                 { required: true, message: '请确认密码' },
@@ -134,36 +140,35 @@ export const RegisterPage = () => {
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="再次输入密码"
+                placeholder="确认密码"
                 disabled={isLoading}
               />
             </Form.Item>
 
-            <Form.Item>
+            <Form.Item style={{ marginBottom: 16 }}>
               <Button
                 type="primary"
                 htmlType="submit"
                 loading={isLoading}
                 block
-                style={{ height: '44px' }}
+                style={{ height: 44 }}
               >
-                注册
+                注 册
               </Button>
             </Form.Item>
-          </Form>
 
-          {/* Login Link */}
-          <div style={{ textAlign: 'center', marginTop: '16px' }}>
-            <Text>
-              已有账号？{' '}
-              <Link to="/login" style={{ color: '#1890ff', fontWeight: 500 }}>
-                立即登录
-              </Link>
-            </Text>
-          </div>
+            <div style={{ textAlign: 'center' }}>
+              <Text type="secondary">已有账号？</Text>
+              <Link to="/login" style={{ marginLeft: 4 }}>立即登录</Link>
+            </div>
+          </Form>
         </Card>
+
+        {/* Footer */}
+        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 24 }}>
+          © 2025 PANDA Training System
+        </Text>
       </div>
-    </div>
     </>
   );
 };

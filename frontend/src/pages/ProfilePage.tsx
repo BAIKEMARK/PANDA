@@ -1,20 +1,29 @@
 /**
  * 个人中心页面
  */
-import { Avatar, Card, Typography, Row, Col, Descriptions, Tag, Alert } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Avatar, Card, Typography, Row, Col, Descriptions, Tag, Alert, Button, Modal, Form, Input, message } from 'antd';
+import { UserOutlined, EditOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/auth.store';
+import api from '@/services/api';
 
 const { Title, Text } = Typography;
 
-const roleNames = {
+const roleNames: Record<string, string> = {
   student: '学员',
   instructor: '讲师',
   admin: '管理员',
 };
 
 export const ProfilePage = () => {
-  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const { user, updateUser, logout } = useAuthStore();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
+  const [passwordForm] = Form.useForm();
 
   if (!user) {
     return (
@@ -26,6 +35,57 @@ export const ProfilePage = () => {
       />
     );
   }
+
+  // 打开编辑弹窗
+  const handleEditClick = () => {
+    form.setFieldsValue({ name: user.name });
+    setIsEditModalOpen(true);
+  };
+
+  // 保存个人信息
+  const handleSaveProfile = async () => {
+    try {
+      const values = await form.validateFields();
+      setLoading(true);
+      const response = await api.put(`/users/${user.id}`, { name: values.name });
+      updateUser({ ...user, name: response.data.name });
+      message.success('个人信息更新成功');
+      setIsEditModalOpen(false);
+    } catch (error: any) {
+      message.error(error.response?.data?.detail || '更新失败，请稍后重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 修改密码
+  const handleChangePassword = async () => {
+    try {
+      const values = await passwordForm.validateFields();
+      setLoading(true);
+      await api.put(`/users/${user.id}/password`, {
+        old_password: values.oldPassword,
+        new_password: values.newPassword,
+      });
+      message.success('密码修改成功，请重新登录');
+      setIsPasswordModalOpen(false);
+      passwordForm.resetFields();
+      
+      // 清除记住的密码
+      localStorage.removeItem('login_remember');
+      localStorage.removeItem('login_email');
+      localStorage.removeItem('login_password');
+      localStorage.removeItem('login_auto');
+      
+      // 登出并跳转到登录页
+      logout();
+      navigate('/login', { replace: true });
+    } catch (error: any) {
+      message.error(error.response?.data?.detail || '密码修改失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -58,9 +118,17 @@ export const ProfilePage = () => {
               {user.email}
             </Text>
             <div style={{ marginTop: '12px' }}>
-              <Tag color="blue">{roleNames[user.role]}</Tag>
-              <Tag style={{ marginLeft: '8px' }}>ID: {user.id}</Tag>
+              <Tag color="blue">{roleNames[user.role] || user.role}</Tag>
             </div>
+          </Col>
+          <Col>
+            <Button 
+              type="primary" 
+              icon={<EditOutlined />}
+              onClick={handleEditClick}
+            >
+              编辑资料
+            </Button>
           </Col>
         </Row>
       </Card>
@@ -69,11 +137,13 @@ export const ProfilePage = () => {
       <Card
         title="账户详情"
         style={{ marginBottom: '24px', borderRadius: '12px' }}
+        extra={
+          <Button type="link" onClick={() => setIsPasswordModalOpen(true)}>
+            修改密码
+          </Button>
+        }
       >
         <Descriptions column={1} bordered>
-          <Descriptions.Item label="用户ID">
-            {user.id}
-          </Descriptions.Item>
           <Descriptions.Item label="姓名">
             {user.name}
           </Descriptions.Item>
@@ -81,10 +151,14 @@ export const ProfilePage = () => {
             {user.email}
           </Descriptions.Item>
           <Descriptions.Item label="角色">
-            <Tag color="blue">{roleNames[user.role]}</Tag>
+            <Tag color="blue">{roleNames[user.role] || user.role}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="注册时间">
-            {new Date(user.created_at).toLocaleDateString('zh-CN')}
+            {new Date(user.created_at).toLocaleDateString('zh-CN', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
           </Descriptions.Item>
         </Descriptions>
       </Card>
@@ -157,6 +231,88 @@ export const ProfilePage = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* 编辑资料弹窗 */}
+      <Modal
+        title="编辑个人资料"
+        open={isEditModalOpen}
+        onOk={handleSaveProfile}
+        onCancel={() => setIsEditModalOpen(false)}
+        confirmLoading={loading}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: '16px' }}>
+          <Form.Item
+            name="name"
+            label="姓名"
+            rules={[
+              { required: true, message: '请输入姓名' },
+              { min: 2, message: '姓名至少2个字符' }
+            ]}
+          >
+            <Input placeholder="请输入姓名" />
+          </Form.Item>
+          <Form.Item label="邮箱">
+            <Input value={user.email} disabled />
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              邮箱不可修改
+            </Text>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 修改密码弹窗 */}
+      <Modal
+        title="修改密码"
+        open={isPasswordModalOpen}
+        onOk={handleChangePassword}
+        onCancel={() => {
+          setIsPasswordModalOpen(false);
+          passwordForm.resetFields();
+        }}
+        confirmLoading={loading}
+        okText="确认修改"
+        cancelText="取消"
+      >
+        <Form form={passwordForm} layout="vertical" style={{ marginTop: '16px' }}>
+          <Form.Item
+            name="oldPassword"
+            label="当前密码"
+            rules={[{ required: true, message: '请输入当前密码' }]}
+          >
+            <Input.Password placeholder="请输入当前密码" />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="新密码"
+            rules={[
+              { required: true, message: '请输入新密码' },
+              { min: 6, message: '密码至少6位' }
+            ]}
+          >
+            <Input.Password placeholder="请输入新密码（至少6位）" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认新密码"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: '请确认新密码' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="请再次输入新密码" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
