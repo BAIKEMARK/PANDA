@@ -39,11 +39,15 @@ api.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // Token过期或未授权
+          // Token过期或未授权 - 清除所有认证相关存储
           console.error('未授权,请重新登录');
           localStorage.removeItem('access_token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          localStorage.removeItem('auth-storage'); // 清除 Zustand persist 存储
+          // 不要在这里跳转，让路由守卫处理
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+            window.location.href = '/login';
+          }
           break;
         case 403:
           console.error('没有权限访问此资源');

@@ -6,11 +6,15 @@ from .user import User
 from .course import Course
 from .scenario import Scenario
 from .chat import ChatSession, ChatMessage
+from .progress import UserProgress
+from .evaluation import EvaluationReport
 
 __all__ = [
     "User",
     "Course",
+    "UserProgress",
     "Scenario",
     "ChatSession",
     "ChatMessage",
+    "EvaluationReport",
 ]
