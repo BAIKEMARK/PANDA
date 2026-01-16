@@ -5,19 +5,19 @@ FastAPI 主应用程序入口 - 标准MVC架构
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.config import settings
-from core.proxy import setup_proxy
-from db.database import init_database
+from backend.app.core.config import settings
+from backend.app.core.proxy import setup_proxy
+from backend.app.db.database import init_database
 
 # 导入所有API路由（Controller层）
-from api import (
+from backend.app.api import (
     health_router,
     user_router,
     course_router,
     scenario_router,
     chat_router
 )
-from api.auth import router as auth_router
+from backend.app.api.auth import router as auth_router
 
 
 # 创建 FastAPI 应用实例

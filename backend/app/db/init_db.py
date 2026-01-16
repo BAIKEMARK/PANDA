@@ -2,10 +2,10 @@
 Database Initialization Script
 数据库初始化脚本 - 根据ORM模型创建所有表
 """
-from db.database import engine, Base
+from backend.app.db.database import engine, Base
 
 # 导入所有模型以确保它们被注册到 Base.metadata
-from models import (
+from backend.app.models import (
     User,
     Course,
     UserProgress,

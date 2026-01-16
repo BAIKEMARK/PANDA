@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import uuid
 
-from models.scenario import Scenario
-from schemas.scenario import ScenarioCreate, ScenarioUpdate
+from backend.app.models.scenario import Scenario
+from backend.app.schemas.scenario import ScenarioCreate, ScenarioUpdate
 
 
 def get_scenario(db: Session, scenario_id: str) -> Optional[Scenario]:

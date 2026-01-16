@@ -5,10 +5,10 @@ Course Service
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-import crud.crud_course as crud_course
-from schemas.course import CourseCreate, CourseUpdate
-from models.course import Course
-from common.exceptions import NotFoundException
+import backend.app.crud.crud_course as crud_course
+from backend.app.schemas.course import CourseCreate, CourseUpdate
+from backend.app.models.course import Course
+from backend.app.common.exceptions import NotFoundException
 
 
 class CourseService:
