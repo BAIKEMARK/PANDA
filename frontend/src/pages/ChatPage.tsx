@@ -22,9 +22,9 @@ export const ChatPage = () => {
 
     const fetchMessages = async () => {
       try {
-        await loadMessages(Number(sessionId));
+        await loadMessages(sessionId); // sessionId是字符串UUID，不需要转数字
       } catch (err) {
-        // Handle error
+        console.error('加载消息失败:', err);
       }
     };
 
@@ -36,7 +36,7 @@ export const ChatPage = () => {
 
     try {
       setTyping(true);
-      await sendMessage(Number(sessionId), content);
+      await sendMessage(sessionId, content); // sessionId是字符串UUID，不需要转数字
     } catch (err) {
       // Handle error
     } finally {
@@ -55,10 +55,10 @@ export const ChatPage = () => {
       onOk: async () => {
         try {
           setIsEnding(true);
-          await endSession(Number(sessionId));
+          await endSession(sessionId); // sessionId是字符串UUID，不需要转数字
           navigate(`/evaluation/${sessionId}`);
         } catch (err) {
-          // Handle error
+          console.error('结束会话失败:', err);
         } finally {
           setIsEnding(false);
         }
@@ -92,7 +92,7 @@ export const ChatPage = () => {
         <Space size="middle">
           {currentSession && (
             <Space>
-              <Tag color="blue">开始: {new Date(currentSession.created_at).toLocaleString('zh-CN')}</Tag>
+              <Tag color="blue">开始: {new Date(currentSession.start_time).toLocaleString('zh-CN')}</Tag>
               <Tag>消息: {messages.length}</Tag>
             </Space>
           )}

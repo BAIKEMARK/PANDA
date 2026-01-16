@@ -18,9 +18,12 @@ export const ChatInput = ({ onSend, disabled = false, isLoading = false }: ChatI
   const textAreaRef = useRef<any>(null);
 
   useEffect(() => {
-    if (textAreaRef.current) {
-      textAreaRef.current.style.height = 'auto';
-      textAreaRef.current.style.height = `${Math.min(textAreaRef.current.scrollHeight, 200)}px`;
+    if (textAreaRef.current && textAreaRef.current.resizableTextArea) {
+      const textArea = textAreaRef.current.resizableTextArea.textArea;
+      if (textArea) {
+        textArea.style.height = 'auto';
+        textArea.style.height = `${Math.min(textArea.scrollHeight, 200)}px`;
+      }
     }
   }, [content]);
 
@@ -31,8 +34,12 @@ export const ChatInput = ({ onSend, disabled = false, isLoading = false }: ChatI
     onSend(trimmed);
     setContent('');
 
-    if (textAreaRef.current) {
-      textAreaRef.current.style.height = 'auto';
+    // 重置textarea高度
+    if (textAreaRef.current && textAreaRef.current.resizableTextArea) {
+      const textArea = textAreaRef.current.resizableTextArea.textArea;
+      if (textArea) {
+        textArea.style.height = 'auto';
+      }
     }
   };
 

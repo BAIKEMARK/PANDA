@@ -1,8 +1,13 @@
-"""
-Google 搜索工具模块
-使用代理访问 Google Custom Search API
-"""
-import requests
+import sys
+from pathlib import Path
+
+# 确保 app 目录在路径中，以便能导入 core 模块
+# 这必须在导入 core 之前执行
+app_dir = Path(__file__).parent.parent
+if str(app_dir) not in sys.path:
+    sys.path.insert(0, str(app_dir))
+
+import httpx
 from typing import List, Dict, Optional
 from core.config import settings
 from core.proxy import get_proxies
@@ -52,12 +57,11 @@ class GoogleSearchTool:
         try:
             # 使用代理发送请求
             proxies = get_proxies()
-            response = requests.get(
-                self.base_url,
-                params=params,
-                proxies=proxies,
-                timeout=10
-            )
+            with httpx.Client(proxies=proxies, timeout=10.0) as client:
+                response = client.get(
+                    self.base_url,
+                    params=params
+                )
 
             if response.status_code == 200:
                 data = response.json()
@@ -68,10 +72,10 @@ class GoogleSearchTool:
                 print(f"   响应: {response.text[:200]}")
                 return None
 
-        except requests.exceptions.ProxyError:
+        except httpx.ProxyError:
             print("❌ 代理错误: 请检查代理配置")
             return None
-        except requests.exceptions.Timeout:
+        except httpx.TimeoutException:
             print("❌ 请求超时: 网络连接较慢")
             return None
         except Exception as e:
@@ -125,6 +129,111 @@ def search_pnd_medical(query: str) -> List[Dict]:
     results = tool.extract_results(search_data)
 
     return results
+
+
+def search_with_ai(prompt: str) -> str:
+    """
+    调用阿里百炼AI生成回复（阻塞式）
+
+    Args:
+        prompt: 用户输入的提示文本
+
+    Returns:
+        AI生成的回复文本
+    """
+    # 动态导入以避免模块路径问题
+    # core 模块已在文件顶部导入
+
+    if not settings.AI_TEXT_KEY:
+        return "抱歉，AI服务未配置。请联系管理员配置AI_TEXT_KEY。"
+
+    url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+
+    headers = {
+        "Authorization": f"Bearer {settings.AI_TEXT_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "model": settings.AI_TEXT_MODEL,
+        "input": {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        },
+        "parameters": {
+            "max_tokens": 2000,
+            "temperature": 0.7
+        }
+    }
+
+    try:
+        # 阿里百炼AI是国内服务，不需要代理
+        print(f"📡 正在调用 AI API...")
+        print(f"   URL: {url}")
+        print(f"   模型: {settings.AI_TEXT_MODEL}")
+
+        # 不使用代理，直接连接
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                url,
+                headers=headers,
+                json=body
+            )
+
+        print(f"📊 HTTP 状态码: {response.status_code}")
+
+        if response.status_code == 200:
+            data = response.json()
+
+            # 尝试多种可能的响应格式
+            # 格式1: 阿里百炼新格式 (output.choices[0].message.content)
+            if "output" in data and "choices" in data["output"] and len(data["output"]["choices"]) > 0:
+                result = data["output"]["choices"][0]["message"]["content"].strip()
+                print(f"✅ AI 回复成功: {result[:50]}...")
+                return result
+
+            # 格式2: 阿里百炼标准格式 (output.text)
+            elif "output" in data and "text" in data["output"]:
+                result = data["output"]["text"].strip()
+                print(f"✅ AI 回复成功: {result[:50]}...")
+                return result
+
+            # 格式3: OpenAI 兼容格式 (choices.message.content)
+            elif "choices" in data and len(data["choices"]) > 0:
+                result = data["choices"][0]["message"]["content"].strip()
+                print(f"✅ AI 回复成功: {result[:50]}...")
+                return result
+
+            # 格式4: 直接返回内容
+            elif "content" in data:
+                result = data["content"].strip()
+                print(f"✅ AI 回复成功: {result[:50]}...")
+                return result
+
+            # 格式5: 直接返回 text
+            elif "text" in data:
+                result = data["text"].strip()
+                print(f"✅ AI 回复成功: {result[:50]}...")
+                return result
+
+            else:
+                print(f"⚠️  无法识别的响应格式")
+                print(f"   响应键: {list(data.keys())}")
+                return f"AI生成回复格式错误。响应数据: {str(data)[:200]}"
+        else:
+            print(f"❌ AI调用失败: HTTP {response.status_code}")
+            print(f"   响应: {response.text[:500]}")
+            return f"AI调用失败: HTTP {response.status_code}"
+
+    except Exception as e:
+        import traceback
+        print(f"❌ AI调用异常: {type(e).__name__} - {str(e)}")
+        print(f"   详细错误:\n{traceback.format_exc()}")
+        return f"AI调用异常: {str(e)}"
 
 
 # 示例使用

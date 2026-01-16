@@ -9,7 +9,7 @@ const { Text, Title, Paragraph } = Typography;
 
 interface ScenarioCardProps {
   scenario: Scenario;
-  onStartPractice: (scenarioId: number) => void;
+  onStartPractice: (scenarioId: string) => void;
   isLoading?: boolean;
 }
 

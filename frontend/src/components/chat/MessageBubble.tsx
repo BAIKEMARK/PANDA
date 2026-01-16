@@ -5,6 +5,7 @@ import { Avatar, Typography } from 'antd';
 import { UserOutlined, RobotOutlined } from '@ant-design/icons';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '@/types/chat.types';
 
 const { Text } = Typography;
@@ -68,7 +69,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
     );
   }
 
-  // AI消息
+  // AI消息（支持Markdown渲染）
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px' }}>
       <div style={{ maxWidth: '70%' }}>
@@ -82,7 +83,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
           <Text style={{ fontSize: '13px', color: '#595959' }}>PANDA助手</Text>
         </div>
 
-        {/* Message */}
+        {/* Message with Markdown */}
         <div
           style={{
             background: '#fff',
@@ -90,11 +91,60 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
             padding: '12px 16px',
             borderRadius: '12px 12px 12px 0',
             wordBreak: 'break-word',
-            whiteSpace: 'pre-wrap',
             boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
           }}
         >
-          {message.content}
+          <div
+            className="markdown-content"
+            style={{
+              color: '#262626',
+              lineHeight: '1.6'
+            }}
+          >
+            <ReactMarkdown
+              components={{
+                p: ({ children }: { children: React.ReactNode }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
+                ul: ({ children }: { children: React.ReactNode }) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }}>{children}</ul>,
+                ol: ({ children }: { children: React.ReactNode }) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }}>{children}</ol>,
+                li: ({ children }: { children: React.ReactNode }) => <li style={{ marginBottom: '4px' }}>{children}</li>,
+                strong: ({ children }: { children: React.ReactNode }) => <strong style={{ fontWeight: 600, color: '#262626' }}>{children}</strong>,
+                code: ({ inline, children }: { inline?: boolean; children: React.ReactNode }) =>
+                  inline ? (
+                    <code style={{
+                      background: '#f5f5f5',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      color: '#eb2f96'
+                    }}>{children}</code>
+                  ) : (
+                    <code style={{
+                      display: 'block',
+                      background: '#f5f5f5',
+                      padding: '12px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      overflow: 'auto',
+                      margin: '8px 0'
+                    }}>{children}</code>
+                  ),
+                h1: ({ children }: { children: React.ReactNode }) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h1>,
+                h2: ({ children }: { children: React.ReactNode }) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h2>,
+                h3: ({ children }: { children: React.ReactNode }) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h3>,
+                blockquote: ({ children }: { children: React.ReactNode }) => (
+                  <blockquote style={{
+                    borderLeft: '3px solid #d9d9d9',
+                    paddingLeft: '12px',
+                    margin: '8px 0',
+                    color: '#595959',
+                    fontStyle: 'italic'
+                  }}>{children}</blockquote>
+                )
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
         </div>
 
         {message.created_at && (

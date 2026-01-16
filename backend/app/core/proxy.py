@@ -3,7 +3,7 @@ Proxy Configuration
 代理配置工具模块
 """
 import os
-from core.config import settings
+from .config import settings
 
 
 def setup_proxy():
@@ -26,9 +26,9 @@ def get_proxies() -> dict:
     """获取代理配置字典"""
     proxies = {}
     if settings.HTTP_PROXY:
-        proxies["http"] = settings.HTTP_PROXY
+        proxies["http://"] = settings.HTTP_PROXY
     if settings.HTTPS_PROXY:
-        proxies["https"] = settings.HTTPS_PROXY
+        proxies["https://"] = settings.HTTPS_PROXY
     return proxies
 
 

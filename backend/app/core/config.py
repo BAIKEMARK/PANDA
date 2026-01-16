@@ -4,6 +4,8 @@ Core Configuration Module
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional, List
+from pathlib import Path
+import os
 
 
 class Settings(BaseSettings):
@@ -57,13 +59,36 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",")]
 
     # ==================== Pydantic配置 ====================
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore"
-    )
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
+        extra = "ignore"
+
+
+def _find_env_file() -> str:
+    """
+    查找 .env 文件，支持多个位置
+    优先级: backend/.env > backend/app/.env > .env
+    """
+    # 获取当前文件的目录 (backend/app/core/)
+    current_dir = Path(__file__).parent.absolute()
+
+    # 可能的 .env 文件位置
+    possible_locations = [
+        current_dir.parent.parent / ".env",  # backend/.env
+        current_dir.parent / ".env",         # backend/app/.env
+        Path(".env"),                         # 当前工作目录
+    ]
+
+    for location in possible_locations:
+        if location.exists():
+            print(f"✅ 找到 .env 文件: {location}")
+            return str(location)
+
+    print("⚠️  未找到 .env 文件，使用默认配置")
+    return ".env"
 
 
 # 创建全局配置实例
-settings = Settings()
+settings = Settings(_env_file=_find_env_file())
