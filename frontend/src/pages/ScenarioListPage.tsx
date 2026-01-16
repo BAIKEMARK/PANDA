@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Typography, Empty, Spin, Alert } from 'antd';
+import { Row, Col, Typography, Empty, Spin, Alert, message } from 'antd';
 import { BulbOutlined } from '@ant-design/icons';
 import type { Scenario } from '@/types/scenario.types';
 import scenarioService from '@/services/scenario.service';
@@ -36,12 +36,17 @@ export const ScenarioListPage = () => {
     fetchScenarios();
   }, []);
 
-  const handleStartPractice = async (scenarioId: number) => {
+  const handleStartPractice = async (scenarioId: string) => {
     try {
       const session = await createSession(scenarioId);
+      if (!session || !session.id) {
+        message.error('创建会话失败：未返回会话ID');
+        return;
+      }
       navigate(`/chat/${session.id}`);
-    } catch (err) {
-      // Handle error
+    } catch (err: any) {
+      console.error('创建会话失败:', err);
+      message.error(err.response?.data?.detail || err.message || '创建会话失败，请稍后重试');
     }
   };
 

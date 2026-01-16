@@ -7,7 +7,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 
-from core.config import settings
+from .config import settings
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

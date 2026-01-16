@@ -24,11 +24,10 @@ export interface ChatSession {
   scenario_id: string;
   scenario_title?: string;  // 场景标题，由后端join查询返回
   status: SessionStatus;
-  start_time: string;
-  end_time: string | null;
+  start_time: string;  // 开始时间
+  end_time: string | null;  // 结束时间
   final_score: number | null;
   meta_data: Record<string, any> | null;
-  created_at: string;  // 创建时间
 }
 
 // 会话创建DTO
