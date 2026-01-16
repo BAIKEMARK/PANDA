@@ -22,8 +22,8 @@ class ChatService:
         """创建新会话"""
         return crud_chat.create_chat_session(self.db, session_data, user_id)
 
-    def get_session(self, session_id: str) -> Optional[ChatSession]:
-        """获取会话"""
+    def get_session(self, session_id: str) -> Optional[dict]:
+        """获取会话（包含场景信息）"""
         return crud_chat.get_chat_session(self.db, session_id)
 
     def get_user_sessions(self, user_id: str) -> List[ChatSession]:

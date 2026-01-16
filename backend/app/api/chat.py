@@ -85,7 +85,7 @@ async def create_chat_message(
 
     # 2. 获取场景配置以获取系统提示词
     from crud.crud_scenario import get_scenario
-    scenario = get_scenario(db, session.scenario_id)
+    scenario = get_scenario(db, session["scenario_id"])
 
     # 3. 构建AI对话历史
     messages_history = service.get_session_messages(message_data.session_id)

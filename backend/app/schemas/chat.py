@@ -19,6 +19,8 @@ class ChatSessionResponse(BaseModel):
     id: str
     user_id: str
     scenario_id: str
+    scenario_title: Optional[str] = None
+    patient_background: Optional[str] = None
     status: SessionStatus
     start_time: datetime
     end_time: Optional[datetime] = None

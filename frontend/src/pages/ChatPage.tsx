@@ -113,7 +113,11 @@ export const ChatPage = () => {
 
       {/* Chat Window - 可滚动区域 */}
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <ChatWindow messages={messages} isTyping={isTyping} />
+        <ChatWindow 
+          messages={messages} 
+          isTyping={isTyping} 
+          patientBackground={currentSession?.patient_background}
+        />
       </div>
 
       {/* Chat Input */}
