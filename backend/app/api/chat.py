@@ -84,7 +84,7 @@ async def create_chat_message(
     user_message = service.create_message(message_data)
 
     # 2. 获取场景配置以获取系统提示词
-    from crud.crud_scenario import get_scenario
+    from backend.app.crud.crud_scenario import get_scenario
     scenario = get_scenario(db, session["scenario_id"])
 
     # 3. 构建AI对话历史
@@ -92,7 +92,7 @@ async def create_chat_message(
 
     # 4. 调用AI生成回复
     try:
-        from utils.google_search import search_with_ai
+        from backend.app.utils.google_search import search_with_ai
         system_prompt = scenario.system_prompt if scenario else "你是一位围产期抑郁管理专家。"
 
         # 构建对话上下文
