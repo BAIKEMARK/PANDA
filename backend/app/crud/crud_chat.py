@@ -14,7 +14,7 @@ from backend.app.common.constants import SessionStatus
 
 def get_chat_session(db: Session, session_id: str) -> Optional[dict]:
     """获取对话会话（包含场景信息）"""
-    from models.scenario import Scenario
+    from backend.app.models.scenario import Scenario
     
     result = db.query(ChatSession, Scenario.title, Scenario.patient_background)\
         .outerjoin(Scenario, ChatSession.scenario_id == Scenario.id)\
