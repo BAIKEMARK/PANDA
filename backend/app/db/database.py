@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker, declarative_base
 
-from core.config import settings
+from backend.app.core.config import settings
 
 # 创建ORM基类
 Base = declarative_base()

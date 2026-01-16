@@ -9,8 +9,8 @@ if str(app_dir) not in sys.path:
 
 import httpx
 from typing import List, Dict, Optional
-from core.config import settings
-from core.proxy import get_proxies
+from backend.app.core.config import settings
+from backend.app.core.proxy import get_proxies
 
 
 class GoogleSearchTool:

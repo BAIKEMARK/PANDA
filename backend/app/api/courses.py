@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from db.database import get_db
-from schemas.course import CourseCreate, CourseResponse, CourseUpdate
-from services.course_service import CourseService
-from common.exceptions import NotFoundException
+from backend.app.db.database import get_db
+from backend.app.schemas.course import CourseCreate, CourseResponse, CourseUpdate
+from backend.app.services.course_service import CourseService
+from backend.app.common.exceptions import NotFoundException
 
 router = APIRouter(prefix="/courses", tags=["课程"])
 

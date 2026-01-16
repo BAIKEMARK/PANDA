@@ -5,7 +5,7 @@ Course ORM Model
 from sqlalchemy import Column, String, Text, Integer, DateTime, Enum as SQLEnum
 from sqlalchemy.dialects.mysql import CHAR
 from datetime import datetime
-from db.database import Base
+from backend.app.db.database import Base
 
 
 class Course(Base):

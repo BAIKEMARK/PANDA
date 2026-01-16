@@ -5,10 +5,10 @@ Scenario Service
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-import crud.crud_scenario as crud_scenario
-from schemas.scenario import ScenarioCreate, ScenarioUpdate
-from models.scenario import Scenario
-from common.exceptions import NotFoundException
+import backend.app.crud.crud_scenario as crud_scenario
+from backend.app.schemas.scenario import ScenarioCreate, ScenarioUpdate
+from backend.app.models.scenario import Scenario
+from backend.app.common.exceptions import NotFoundException
 
 
 class ScenarioService:

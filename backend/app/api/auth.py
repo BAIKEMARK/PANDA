@@ -8,11 +8,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 
-from db.database import get_db
-from schemas.user import UserResponse
-from services.user_service import UserService
-from core.security import verify_password, create_access_token, decode_access_token
-from core.config import settings
+from backend.app.db.database import get_db
+from backend.app.schemas.user import UserResponse
+from backend.app.services.user_service import UserService
+from backend.app.core.security import verify_password, create_access_token, decode_access_token
+from backend.app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 

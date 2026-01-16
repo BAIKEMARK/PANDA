@@ -5,10 +5,10 @@ User Service
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-import crud.crud_user as crud_user
-from schemas.user import UserCreate, UserUpdate
-from models.user import User
-from common.exceptions import ConflictException
+import backend.app.crud.crud_user as crud_user
+from backend.app.schemas.user import UserCreate, UserUpdate
+from backend.app.models.user import User
+from backend.app.common.exceptions import ConflictException
 
 
 class UserService:
