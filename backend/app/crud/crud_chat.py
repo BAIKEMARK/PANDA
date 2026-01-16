@@ -7,9 +7,9 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 
-from models.chat import ChatSession, ChatMessage
-from schemas.chat import ChatSessionCreate, ChatMessageCreate
-from common.constants import SessionStatus
+from backend.app.models.chat import ChatSession, ChatMessage
+from backend.app.schemas.chat import ChatSessionCreate, ChatMessageCreate
+from backend.app.common.constants import SessionStatus
 
 
 def get_chat_session(db: Session, session_id: str) -> Optional[dict]:

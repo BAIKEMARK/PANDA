@@ -5,11 +5,11 @@ Chat Service
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-import crud.crud_chat as crud_chat
-from schemas.chat import ChatSessionCreate, ChatMessageCreate
-from models.chat import ChatSession, ChatMessage
-from common.constants import SessionStatus
-from common.exceptions import NotFoundException
+import backend.app.crud.crud_chat as crud_chat
+from backend.app.schemas.chat import ChatSessionCreate, ChatMessageCreate
+from backend.app.models.chat import ChatSession, ChatMessage
+from backend.app.common.constants import SessionStatus
+from backend.app.common.exceptions import NotFoundException
 
 
 class ChatService:

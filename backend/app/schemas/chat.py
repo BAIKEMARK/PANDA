@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
-from common.constants import SessionStatus, MessageRole
+from backend.app.common.constants import SessionStatus, MessageRole
 
 
 class ChatSessionCreate(BaseModel):

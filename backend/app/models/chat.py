@@ -5,7 +5,7 @@ Chat ORM Models
 from sqlalchemy import Column, String, Text, Integer, DateTime, Enum as SQLEnum, JSON
 from sqlalchemy.dialects.mysql import CHAR
 from datetime import datetime
-from db.database import Base
+from backend.app.db.database import Base
 
 
 class ChatSession(Base):

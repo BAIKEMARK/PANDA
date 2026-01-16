@@ -7,8 +7,8 @@ from sqlalchemy import select
 from typing import Optional, List
 import uuid
 
-from models.user import User
-from schemas.user import UserCreate, UserUpdate
+from backend.app.models.user import User
+from backend.app.schemas.user import UserCreate, UserUpdate
 
 
 def get_user(db: Session, user_id: str) -> Optional[User]:
@@ -28,7 +28,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
 
 def create_user(db: Session, user: UserCreate) -> User:
     """创建新用户"""
-    from core.security import get_password_hash
+    from backend.app.core.security import get_password_hash
 
     hashed_password = get_password_hash(user.password)
     db_user = User(

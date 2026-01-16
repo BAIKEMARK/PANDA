@@ -5,7 +5,7 @@ User Progress ORM Model
 from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.mysql import CHAR
 from datetime import datetime
-from db.database import Base
+from backend.app.db.database import Base
 
 
 class UserProgress(Base):

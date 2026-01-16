@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from db.database import get_db
-from schemas.scenario import ScenarioCreate, ScenarioResponse, ScenarioUpdate
-from services.scenario_service import ScenarioService
-from common.exceptions import NotFoundException
+from backend.app.db.database import get_db
+from backend.app.schemas.scenario import ScenarioCreate, ScenarioResponse, ScenarioUpdate
+from backend.app.services.scenario_service import ScenarioService
+from backend.app.common.exceptions import NotFoundException
 
 router = APIRouter(prefix="/scenarios", tags=["场景"])
 

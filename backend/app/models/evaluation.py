@@ -5,7 +5,7 @@ Evaluation Report ORM Model
 from sqlalchemy import Column, String, Text, Integer, DateTime, JSON
 from sqlalchemy.dialects.mysql import CHAR
 from datetime import datetime
-from db.database import Base
+from backend.app.db.database import Base
 
 
 class EvaluationReport(Base):

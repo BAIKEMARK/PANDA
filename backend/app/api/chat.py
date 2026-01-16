@@ -6,11 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from db.database import get_db
-from schemas.chat import ChatSessionCreate, ChatSessionResponse, ChatMessageCreate, ChatMessageResponse
-from services.chat_service import ChatService
-from common.exceptions import NotFoundException
-from common.constants import MessageRole
+from backend.app.db.database import get_db
+from backend.app.schemas.chat import ChatSessionCreate, ChatSessionResponse, ChatMessageCreate, ChatMessageResponse
+from backend.app.services.chat_service import ChatService
+from backend.app.common.exceptions import NotFoundException
+from backend.app.common.constants import MessageRole
 
 router = APIRouter(prefix="/chat", tags=["对话"])
 

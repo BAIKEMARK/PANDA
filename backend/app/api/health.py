@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from db.database import get_db
-from core.config import settings
+from backend.app.db.database import get_db
+from backend.app.core.config import settings
 
 router = APIRouter(tags=["系统"])
 

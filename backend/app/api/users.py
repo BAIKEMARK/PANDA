@@ -7,12 +7,12 @@ from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 
-from db.database import get_db
-from schemas.user import UserCreate, UserResponse, UserUpdate
-from services.user_service import UserService
-from models.user import User
-from common.exceptions import NotFoundException
-from core.security import verify_password, get_password_hash
+from backend.app.db.database import get_db
+from backend.app.schemas.user import UserCreate, UserResponse, UserUpdate
+from backend.app.services.user_service import UserService
+from backend.app.models.user import User
+from backend.app.common.exceptions import NotFoundException
+from backend.app.core.security import verify_password, get_password_hash
 
 router = APIRouter(prefix="/users", tags=["用户"])
 
