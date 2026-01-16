@@ -4,17 +4,20 @@ Auth API Router
 处理用户登录、登出等认证操作
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 
 from db.database import get_db
 from schemas.user import UserResponse
 from services.user_service import UserService
-from core.security import verify_password, create_access_token
+from core.security import verify_password, create_access_token, decode_access_token
 from core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["认证"])
+
+# OAuth2 密码模式
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 class LoginRequest(BaseModel):
@@ -28,6 +31,33 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    """获取当前登录用户"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="无效的认证凭据",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    payload = decode_access_token(token)
+    if payload is None:
+        raise credentials_exception
+
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        raise credentials_exception
+
+    service = UserService(db)
+    user = service.get_user(user_id)
+    if user is None:
+        raise credentials_exception
+
+    return user
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -65,8 +95,18 @@ async def login(
 
     return TokenResponse(
         access_token=access_token,
-        user=UserResponse.from_orm(user)
+        user=UserResponse.model_validate(user)
     )
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user = Depends(get_current_user)):
+    """
+    获取当前登录用户信息
+
+    需要在请求头中携带有效的JWT Token
+    """
+    return current_user
 
 
 @router.post("/logout")

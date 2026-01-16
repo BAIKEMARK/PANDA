@@ -15,13 +15,17 @@ import { ChatPage } from '../pages/ChatPage';
 import { EvaluationReportPage } from '../pages/EvaluationReportPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
-import { PrivateRoute } from './privateRoutes';
+import { PrivateRoute, PublicRoute } from './privateRoutes';
 
 // 路由配置
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <PrivateRoute>
+        <AppLayout />
+      </PrivateRoute>
+    ),
     errorElement: <NotFoundPage />,
     children: [
       {
@@ -38,44 +42,36 @@ export const router = createBrowserRouter([
       },
       {
         path: 'scenarios',
-        element: (
-          <PrivateRoute>
-            <ScenarioListPage />
-          </PrivateRoute>
-        ),
+        element: <ScenarioListPage />,
       },
       {
         path: 'chat/:sessionId',
-        element: (
-          <PrivateRoute>
-            <ChatPage />
-          </PrivateRoute>
-        ),
+        element: <ChatPage />,
       },
       {
         path: 'evaluation/:sessionId',
-        element: (
-          <PrivateRoute>
-            <EvaluationReportPage />
-          </PrivateRoute>
-        ),
+        element: <EvaluationReportPage />,
       },
       {
         path: 'profile',
-        element: (
-          <PrivateRoute>
-            <ProfilePage />
-          </PrivateRoute>
-        ),
+        element: <ProfilePage />,
       },
     ],
   },
   {
     path: '/login',
-    element: <LoginPage />,
+    element: (
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    ),
   },
   {
     path: '/register',
-    element: <RegisterPage />,
+    element: (
+      <PublicRoute>
+        <RegisterPage />
+      </PublicRoute>
+    ),
   },
 ]);

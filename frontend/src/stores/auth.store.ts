@@ -64,6 +64,8 @@ export const useAuthStore = create<AuthStore>()(
       // Logout action
       logout: () => {
         authService.clearAuth();
+        // 清除自动登录设置（保留记住密码的邮箱和密码）
+        localStorage.setItem('login_auto', 'false');
         set({
           user: null,
           token: null,
