@@ -12,9 +12,31 @@ from backend.app.schemas.chat import ChatSessionCreate, ChatMessageCreate
 from backend.app.common.constants import SessionStatus
 
 
-def get_chat_session(db: Session, session_id: str) -> Optional[ChatSession]:
-    """获取对话会话"""
-    return db.query(ChatSession).filter(ChatSession.id == session_id).first()
+def get_chat_session(db: Session, session_id: str) -> Optional[dict]:
+    """获取对话会话（包含场景信息）"""
+    from models.scenario import Scenario
+    
+    result = db.query(ChatSession, Scenario.title, Scenario.patient_background)\
+        .outerjoin(Scenario, ChatSession.scenario_id == Scenario.id)\
+        .filter(ChatSession.id == session_id)\
+        .first()
+    
+    if not result:
+        return None
+    
+    session, scenario_title, patient_background = result
+    # 返回包含场景信息的字典
+    return {
+        "id": session.id,
+        "user_id": session.user_id,
+        "scenario_id": session.scenario_id,
+        "scenario_title": scenario_title,
+        "patient_background": patient_background,
+        "status": session.status,
+        "start_time": session.start_time,
+        "end_time": session.end_time,
+        "final_score": session.final_score,
+    }
 
 
 def get_user_sessions(db: Session, user_id: str) -> List[ChatSession]:

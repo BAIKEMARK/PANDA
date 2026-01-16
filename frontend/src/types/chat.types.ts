@@ -23,6 +23,7 @@ export interface ChatSession {
   user_id: string;
   scenario_id: string;
   scenario_title?: string;  // 场景标题，由后端join查询返回
+  patient_background?: string;  // 患者背景信息
   status: SessionStatus;
   start_time: string;  // 开始时间
   end_time: string | null;  // 结束时间

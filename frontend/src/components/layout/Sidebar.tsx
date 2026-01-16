@@ -1,7 +1,7 @@
 /**
  * 侧边栏导航组件
  */
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Layout, Menu, Avatar, Typography } from 'antd';
 import {
   BookOutlined,
@@ -15,6 +15,7 @@ const { Text } = Typography;
 
 export const Sidebar = () => {
   const user = useAuthStore((state) => state.user);
+  const location = useLocation();
 
   const navItems = [
     {
@@ -36,7 +37,7 @@ export const Sidebar = () => {
 
   return (
     <Sider
-      width={256}
+      width={240}
       style={{
         overflow: 'auto',
         height: '100vh',
@@ -44,29 +45,29 @@ export const Sidebar = () => {
         left: 0,
         top: 0,
         bottom: 0,
-        background: '#001529',
+        background: 'linear-gradient(180deg, #1a365d 0%, #2d3748 100%)',
       }}
     >
       {/* Logo */}
       <div
         style={{
-          padding: '24px',
+          padding: '20px 16px',
           textAlign: 'center',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
         <div
           style={{
-            fontSize: '24px',
-            fontWeight: 'bold',
+            fontSize: '22px',
+            fontWeight: 700,
             color: '#fff',
-            marginBottom: '4px',
+            letterSpacing: '2px',
           }}
         >
-          PANDA
+          🐼 PANDA
         </div>
-        <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: '12px' }}>
-          围产期抑郁培训系统
+        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
+          围产期抑郁管理培训系统
         </Text>
       </div>
 
@@ -74,9 +75,13 @@ export const Sidebar = () => {
       <Menu
         theme="dark"
         mode="inline"
-        defaultSelectedKeys={['/courses']}
+        selectedKeys={[location.pathname]}
         items={navItems}
-        style={{ borderRight: 0 }}
+        style={{ 
+          background: 'transparent', 
+          borderRight: 0,
+          marginTop: '8px',
+        }}
       />
 
       {/* User Info */}
@@ -86,45 +91,25 @@ export const Sidebar = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          padding: '16px',
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          background: 'rgba(0,0,0,0.2)',
+          padding: '12px 16px',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(0,0,0,0.15)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Avatar
-            size={40}
-            style={{
-              backgroundColor: '#1890ff',
-              flexShrink: 0,
-            }}
+            size={36}
+            style={{ backgroundColor: '#667eea', flexShrink: 0 }}
             icon={<UserOutlined />}
           >
             {user?.name?.[0] || 'U'}
           </Avatar>
-          <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-            <div
-              style={{
-                color: '#fff',
-                fontSize: '14px',
-                fontWeight: 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#fff', fontSize: '13px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user?.name || '未登录'}
             </div>
-            <div
-              style={{
-                color: 'rgba(255,255,255,0.45)',
-                fontSize: '12px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {user?.email || ''}
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.role === 'student' ? '学员' : user?.role === 'instructor' ? '讲师' : '管理员'}
             </div>
           </div>
         </div>

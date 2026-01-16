@@ -6,30 +6,42 @@ import { Empty, Typography } from 'antd';
 import { MessageOutlined } from '@ant-design/icons';
 import type { ChatMessage } from '@/types/chat.types';
 import { MessageBubble } from './MessageBubble';
+import { MessageRole } from '@/types/chat.types';
 
 const { Text } = Typography;
 
 interface ChatWindowProps {
   messages: ChatMessage[];
   isTyping?: boolean;
+  patientBackground?: string;
 }
 
-export const ChatWindow = ({ messages, isTyping = false }: ChatWindowProps) => {
+export const ChatWindow = ({ messages, isTyping = false, patientBackground }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  // 构造患者背景消息
+  const backgroundMessage: ChatMessage | null = patientBackground ? {
+    id: 'patient-background',
+    session_id: '',
+    role: MessageRole.ASSISTANT,
+    content: `【患者背景】\n${patientBackground}`,
+    meta_data: null,
+    created_at: new Date().toISOString(),
+  } : null;
+
   return (
     <div style={{
-      flex: 1,
+      height: '100%',
       overflowY: 'auto',
-      padding: '24px',
+      padding: '16px 24px',
       background: '#fafafa'
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        {messages.length === 0 ? (
+        {messages.length === 0 && !patientBackground ? (
           <Empty
             description={
               <div>
@@ -42,6 +54,8 @@ export const ChatWindow = ({ messages, isTyping = false }: ChatWindowProps) => {
           />
         ) : (
           <div>
+            {/* 患者背景作为第一条气泡 */}
+            {backgroundMessage && <MessageBubble key={backgroundMessage.id} message={backgroundMessage} />}
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
