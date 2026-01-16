@@ -2,4 +2,4 @@
  * 路由统一导出
  */
 export { router } from './index.tsx';
-export { PrivateRoute } from './privateRoutes';
+export { PrivateRoute, PublicRoute } from './privateRoutes';

@@ -6,6 +6,8 @@ from .user import UserBase, UserCreate, UserLogin, UserUpdate, UserResponse, Tok
 from .course import CourseBase, CourseCreate, CourseUpdate, CourseResponse
 from .scenario import ScenarioBase, ScenarioCreate, ScenarioUpdate, ScenarioResponse
 from .chat import ChatSessionCreate, ChatSessionResponse, ChatMessageCreate, ChatMessageResponse
+from .progress import UserProgressBase, UserProgressCreate, UserProgressUpdate, UserProgressResponse
+from .evaluation import EvaluationScores, EvaluationReportBase, EvaluationReportCreate, EvaluationReportResponse
 
 __all__ = [
     # 用户相关
@@ -20,6 +22,11 @@ __all__ = [
     "CourseCreate",
     "CourseUpdate",
     "CourseResponse",
+    # 学习进度相关
+    "UserProgressBase",
+    "UserProgressCreate",
+    "UserProgressUpdate",
+    "UserProgressResponse",
     # 场景相关
     "ScenarioBase",
     "ScenarioCreate",
@@ -30,4 +37,9 @@ __all__ = [
     "ChatSessionResponse",
     "ChatMessageCreate",
     "ChatMessageResponse",
+    # 评估报告相关
+    "EvaluationScores",
+    "EvaluationReportBase",
+    "EvaluationReportCreate",
+    "EvaluationReportResponse",
 ]
