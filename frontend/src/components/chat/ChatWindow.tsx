@@ -23,9 +23,9 @@ export const ChatWindow = ({ messages, isTyping = false }: ChatWindowProps) => {
 
   return (
     <div style={{
-      flex: 1,
+      height: '100%',
       overflowY: 'auto',
-      padding: '24px',
+      padding: '16px 24px',
       background: '#fafafa'
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>

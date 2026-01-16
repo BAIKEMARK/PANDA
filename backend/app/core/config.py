@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7天
 
     # ==================== AI模型配置 ====================
-    AI_TEXT_URL: Optional[str] = None
-    AI_TEXT_KEY: Optional[str] = None
+    AI_TEXT_URL: Optional[str] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    AI_TEXT_KEY: Optional[str] = "sk-9c70d2d653e040f8a8901eb179863453"
     AI_TEXT_MODEL: str = "qwen-max"
     AI_TIMEOUT: int = 30
 
