@@ -61,7 +61,8 @@ def create_chat_session(db: Session, session_data: ChatSessionCreate, user_id: s
 
 def update_session_status(db: Session, session_id: str, status: SessionStatus, final_score: int = None) -> Optional[ChatSession]:
     """更新会话状态"""
-    db_session = get_chat_session(db, session_id)
+    # 直接查询 ChatSession 对象，而不是使用 get_chat_session（它返回字典）
+    db_session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
     if db_session:
         db_session.status = status.value
         if status == SessionStatus.COMPLETED:

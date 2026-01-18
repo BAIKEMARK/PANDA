@@ -7,7 +7,7 @@ import axios from 'axios';
 // 创建Axios实例
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
-  timeout: 30000,
+  timeout: 420000, // 7分钟（评估生成需要较长时间，后端设置为6分钟，前端给1分钟缓冲）
   headers: {
     'Content-Type': 'application/json',
   },

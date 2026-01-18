@@ -87,6 +87,10 @@ async def create_chat_message(
     from backend.app.crud.crud_scenario import get_scenario
     scenario = get_scenario(db, session["scenario_id"])
 
+    # 2.5 获取全局技能配置
+    from backend.app.core.skill import skill_manager
+    global_skill_prompt = skill_manager.get_skill_prompt()
+
     # 3. 构建AI对话历史
     messages_history = service.get_session_messages(message_data.session_id)
 
@@ -96,16 +100,21 @@ async def create_chat_message(
         system_prompt = scenario.system_prompt if scenario else "你是一位围产期抑郁管理专家。"
 
         # 构建对话上下文
-        conversation_context = f"系统提示：{system_prompt}\n\n"
-        conversation_context += f"患者背景：{scenario.patient_background if scenario else '暂无'}\n\n"
-        conversation_context += "对话历史：\n"
+        conversation_context = f"【系统提示】\n{system_prompt}\n\n"
+
+        # 如果启用了全局技能，添加技能提示
+        if global_skill_prompt:
+            conversation_context += f"【全局技能指导】\n{global_skill_prompt}\n\n"
+
+        conversation_context += f"【患者背景】\n{scenario.patient_background if scenario else '暂无'}\n\n"
+        conversation_context += "【对话历史】\n"
 
         for msg in messages_history:
             role_name = "用户" if msg.role == "user" else "专家"
             conversation_context += f"{role_name}: {msg.content}\n"
 
-        conversation_context += f"\n用户最新消息: {message_data.content}\n"
-        conversation_context += "请以专家的身份回复："
+        conversation_context += f"\n【用户最新消息】\n{message_data.content}\n"
+        conversation_context += "\n请基于以上系统提示、全局技能指导、患者背景和对话历史，以专家的身份回复："
 
         # 调用AI生成回复（阻塞式）
         ai_response = search_with_ai(conversation_context)
@@ -134,9 +143,25 @@ async def end_chat_session(
     final_score: int = None,
     db: Session = Depends(get_db)
 ):
-    """结束对话会话"""
+    """
+    结束对话会话并生成评估报告
+
+    结束会话后会自动触发Mentor-Agent生成THP五维评估报告。
+    """
     service = ChatService(db)
     session = service.end_session(session_id, final_score)
     if not session:
         raise NotFoundException("会话不存在")
+
+    # 异步触发评估报告生成（不阻塞响应）
+    try:
+        from backend.app.services.mentor_agent import MentorAgent
+        mentor_agent = MentorAgent(db)
+        mentor_agent.generate_evaluation(session_id)
+        print(f"✅ 会话 {session_id} 评估报告生成成功")
+    except Exception as e:
+        # 评估失败不影响会话结束，但记录日志
+        print(f"⚠️  会话 {session_id} 评估报告生成失败: {e}")
+        print(f"   会话已正常结束，但未生成评估报告")
+
     return session
