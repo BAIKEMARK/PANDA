@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Button, Space, Tag, Modal } from 'antd';
+import { Typography, Button, Space, Tag, Modal, message } from 'antd';
 import { StopOutlined, CommentOutlined } from '@ant-design/icons';
 import { useChatStore } from '@/stores/chat.store';
 import { ChatWindow } from '@/components/chat/ChatWindow';
@@ -55,10 +55,25 @@ export const ChatPage = () => {
       onOk: async () => {
         try {
           setIsEnding(true);
+
+          // 显示加载提示
+          const hide = message.loading({
+            content: '正在生成评估报告，请稍候（可能需要1-6分钟）...',
+            duration: 0, // 不自动关闭
+          });
+
           await endSession(sessionId); // sessionId是字符串UUID，不需要转数字
-          navigate(`/evaluation/${sessionId}`);
+
+          hide(); // 关闭加载提示
+          message.success('评估报告生成成功！');
+
+          // 延迟跳转，让用户看到成功提示
+          setTimeout(() => {
+            navigate(`/evaluation/${sessionId}`);
+          }, 500);
         } catch (err) {
           console.error('结束会话失败:', err);
+          message.error('评估报告生成失败，请稍后重试');
         } finally {
           setIsEnding(false);
         }
@@ -67,9 +82,9 @@ export const ChatPage = () => {
   };
 
   return (
-    <div style={{ 
-      height: 'calc(100vh - 64px - 40px)', 
-      display: 'flex', 
+    <div style={{
+      height: 'calc(100vh - 64px - 40px)',
+      display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
       margin: '-20px',
@@ -113,9 +128,9 @@ export const ChatPage = () => {
 
       {/* Chat Window - 可滚动区域 */}
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <ChatWindow 
-          messages={messages} 
-          isTyping={isTyping} 
+        <ChatWindow
+          messages={messages}
+          isTyping={isTyping}
           patientBackground={currentSession?.patient_background}
         />
       </div>

@@ -18,6 +18,7 @@ from backend.app.api import (
     chat_router
 )
 from backend.app.api.auth import router as auth_router
+from backend.app.api.evaluation import router as evaluation_router
 
 
 # 创建 FastAPI 应用实例
@@ -46,6 +47,7 @@ app.include_router(user_router, prefix="/api")
 app.include_router(course_router, prefix="/api")
 app.include_router(scenario_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(evaluation_router, prefix="/api")
 
 
 # ================================================

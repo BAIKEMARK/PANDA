@@ -8,12 +8,25 @@ import type { EvaluationReport, EPDSScale } from '../types/evaluation.types';
 class EvaluationService {
   /**
    * 获取会话的评估报告
-   * TODO: 后端需要实现此接口
    */
   async getReport(sessionId: string): Promise<EvaluationReport> {
-    const response = await api.get<EvaluationReport>(
+    const response = await api.get<any>(
       `/evaluation/sessions/${sessionId}/report`
     );
+
+    // 手动检查状态码，404 应该抛出异常
+    if (response.status === 404) {
+      const error = new Error('评估报告不存在');
+      console.error('获取评估报告失败:', error);
+      throw error;
+    }
+
+    if (response.status !== 200) {
+      const error = new Error(`获取评估报告失败: HTTP ${response.status}`);
+      console.error('获取评估报告失败:', error);
+      throw error;
+    }
+
     return response.data;
   }
 

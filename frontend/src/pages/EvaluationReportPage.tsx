@@ -3,13 +3,13 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Typography, Button, Card, Row, Col, Statistic, Space, Divider, Spin, Alert } from 'antd';
+import { Typography, Button, Card, Row, Col, Space, Spin, Alert, Tag } from 'antd';
 import { TrophyOutlined } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
 import type { EvaluationReport } from '@/types/evaluation.types';
 import evaluationService from '@/services/evaluation.service';
 import { EvaluationRadarChart } from '@/components/evaluation/RadarChart';
 import { ScoreCards } from '@/components/evaluation/ScoreCard';
-import { FeedbackSection } from '@/components/evaluation/FeedbackSection';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -27,21 +27,56 @@ export const EvaluationReportPage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await evaluationService.getReport(Number(sessionId));
-        setReport(data);
+        const data = await evaluationService.getReport(sessionId);
+
+        // 数据转换：处理旧格式的数据
+        const normalizedReport: EvaluationReport = {
+          ...data,
+          // 如果没有 radar_chart 数据，使用默认值
+          radar_chart: data.radar_chart || {
+            A_risk_identification: 0,
+            B_communication: 0,
+            C_skill_application: 0,
+            D_safety_management: 0,
+            E_self_efficacy: 0,
+          }
+        };
+
+        setReport(normalizedReport);
       } catch (err) {
         // 使用模拟数据
         const mockReport: EvaluationReport = {
-          session_id: Number(sessionId),
-          dimension_scores: {
-            knowledge: 75,
-            assessment: 82,
-            communication: 68,
-            intervention: 71,
-          },
+          id: 'mock-report-id',
+          session_id: sessionId || '',
           total_score: 74,
-          feedback: '## 表现分析\n\n✅ **做得好的地方**\n- 能够主动询问患者的情绪状态\n- 对围产期抑郁症的基本症状有一定了解\n- 沟通态度较为友好和耐心\n\n⚠️ **需要改进的地方**\n- 评估深度不够，需要更详细地了解患者的睡眠、食欲等情况\n- 缺乏对EPDS量表等专业评估工具的使用\n- 干预措施较为笼统，需要更具体的建议\n\n💡 **改进建议**\n- 系统学习围产期抑郁症的诊断标准\n- 熟练掌握EPDS等评估量表的使用\n- 加强对不同程度抑郁症干预措施的学习\n- 多进行模拟练习，提升沟通技巧',
+          level_assessment: '良好',
+          radar_chart: {
+            A_risk_identification: 75,
+            B_communication: 68,
+            C_skill_application: 71,
+            D_safety_management: 82,
+            E_self_efficacy: 70,
+          },
+          state_analysis: {
+            mood_change: 5,
+            rapport_change: 10,
+            depression_change: -5,
+            overall_performance: '表现良好，展现了基本的沟通技巧和共情能力',
+          },
+          detailed_feedback: [
+            {
+              dimension: 'B1 积极倾听',
+              status: 'pass',
+              dialogue_ref_id: 2,
+              user_input: '你最近感觉怎么样？',
+              patient_state_snapshot: '患者情绪低落',
+              critique: '良好',
+              expert_suggestion: '继续保持倾听态度',
+            },
+          ],
+          technical_guidance: '建议加强EPDS量表的使用',
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
         setReport(mockReport);
       } finally {
@@ -62,11 +97,14 @@ export const EvaluationReportPage = () => {
 
   if (error || !report) {
     return (
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
         <Alert
-          message="加载失败"
-          description={error || '报告加载失败'}
-          type="error"
+          message="评估报告不存在"
+          description={
+            error ||
+            '该会话的评估报告尚未生成。请确保已结束会话并且评估生成成功。如果问题持续存在，请联系管理员。'
+          }
+          type="warning"
           showIcon
           style={{ marginBottom: '24px' }}
         />
@@ -130,22 +168,143 @@ export const EvaluationReportPage = () => {
 
       {/* Score Cards */}
       <div style={{ marginBottom: '24px' }}>
-        <ScoreCards scores={report.dimension_scores} />
+        {report.radar_chart ? (
+          <ScoreCards scores={report.radar_chart} />
+        ) : (
+          <Alert
+            message="数据不完整"
+            description="评估报告缺少雷达图数据。请重新生成评估报告。"
+            type="warning"
+            showIcon
+          />
+        )}
       </div>
 
       {/* Radar Chart */}
-      <Card
-        title="能力雷达图"
-        bordered={false}
-        style={{ marginBottom: '24px', borderRadius: '12px' }}
-      >
-        <EvaluationRadarChart scores={report.dimension_scores} />
-      </Card>
+      {report.radar_chart && (
+        <Card
+          title="能力雷达图"
+          bordered={false}
+          style={{ marginBottom: '24px', borderRadius: '12px' }}
+        >
+          <EvaluationRadarChart scores={report.radar_chart} />
+        </Card>
+      )}
 
-      {/* AI Feedback */}
-      <div style={{ marginBottom: '24px' }}>
-        <FeedbackSection feedback={report.feedback} />
-      </div>
+      {/* Detailed Feedback */}
+      {report.detailed_feedback && report.detailed_feedback.length > 0 && (
+        <Card
+          title="详细反馈"
+          bordered={false}
+          style={{ marginBottom: '24px', borderRadius: '12px' }}
+        >
+          {report.detailed_feedback.map((item, index) => {
+            const feedbackLength = report.detailed_feedback?.length ?? 0;
+            return (
+              <div
+                key={index}
+                style={{
+                  marginBottom: index < feedbackLength - 1 ? '16px' : 0,
+                  padding: '16px',
+                  background: '#fafafa',
+                  borderRadius: '8px',
+                }}
+              >
+                <div style={{ marginBottom: '8px' }}>
+                  <Tag color={item.status === 'pass' ? 'green' : 'red'}>
+                    {item.status === 'pass' ? '通过' : '失败'}
+                  </Tag>
+                  <Text strong>{item.dimension}</Text>
+                </div>
+                {item.user_input && (
+                  <Paragraph style={{ marginBottom: '8px' }}>
+                    <Text type="secondary">用户输入：</Text>
+                    <Text>{item.user_input}</Text>
+                  </Paragraph>
+                )}
+                <Paragraph style={{ marginBottom: '8px' }}>
+                  <Text type="secondary">评价：</Text>
+                  <Text>{item.critique}</Text>
+                </Paragraph>
+                <Paragraph>
+                  <Text type="secondary">建议：</Text>
+                  <Text>{item.expert_suggestion}</Text>
+                </Paragraph>
+              </div>
+            );
+          })}
+        </Card>
+      )}
+
+      {/* Technical Guidance */}
+      {report.technical_guidance && (
+        <Card
+          title="技术指导"
+          bordered={false}
+          style={{ marginBottom: '24px', borderRadius: '12px' }}
+        >
+          <div
+            className="markdown-content"
+            style={{
+              color: '#262626',
+              lineHeight: '1.6'
+            }}
+          >
+            <ReactMarkdown
+              components={{
+                p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
+                ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
+                ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
+                li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
+                strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
+                code: ({ inline, children, ...props }: any) =>
+                  inline ? (
+                    <code
+                      style={{
+                        background: '#f5f5f5',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        color: '#eb2f96'
+                      }}
+                      {...props}
+                    >{children}</code>
+                  ) : (
+                    <code
+                      style={{
+                        display: 'block',
+                        background: '#f5f5f5',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        overflow: 'auto',
+                        margin: '8px 0'
+                      }}
+                      {...props}
+                    >{children}</code>
+                  ),
+                h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
+                h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
+                h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
+                blockquote: ({ children, ...props }: any) => (
+                  <blockquote
+                    style={{
+                      borderLeft: '3px solid #d9d9d9',
+                      paddingLeft: '12px',
+                      margin: '8px 0',
+                      color: '#595959',
+                      fontStyle: 'italic'
+                    }}
+                    {...props}
+                  >{children}</blockquote>
+                )
+              }}
+            >
+              {report.technical_guidance}
+            </ReactMarkdown>
+          </div>
+        </Card>
+      )}
 
       {/* Action Buttons */}
       <div style={{ textAlign: 'center', marginTop: '32px' }}>

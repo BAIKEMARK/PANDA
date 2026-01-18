@@ -7,7 +7,7 @@ from .course import CourseBase, CourseCreate, CourseUpdate, CourseResponse
 from .scenario import ScenarioBase, ScenarioCreate, ScenarioUpdate, ScenarioResponse
 from .chat import ChatSessionCreate, ChatSessionResponse, ChatMessageCreate, ChatMessageResponse
 from .progress import UserProgressBase, UserProgressCreate, UserProgressUpdate, UserProgressResponse
-from .evaluation import EvaluationScores, EvaluationReportBase, EvaluationReportCreate, EvaluationReportResponse
+from .evaluation import RadarChart, StateAnalysis, FeedbackItem, EvaluationReportBase, EvaluationReportCreate, EvaluationReportResponse
 
 __all__ = [
     # 用户相关
@@ -38,7 +38,9 @@ __all__ = [
     "ChatMessageCreate",
     "ChatMessageResponse",
     # 评估报告相关
-    "EvaluationScores",
+    "RadarChart",
+    "StateAnalysis",
+    "FeedbackItem",
     "EvaluationReportBase",
     "EvaluationReportCreate",
     "EvaluationReportResponse",

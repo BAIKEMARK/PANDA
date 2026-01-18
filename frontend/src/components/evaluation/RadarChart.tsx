@@ -1,11 +1,12 @@
 /**
- * 能力雷达图组件
+ * 能力雷达图组件 - THP五维评分系统
  */
 import { useMemo } from 'react';
-import type { DimensionScores } from '@/types/evaluation.types';
+import { Alert } from 'antd';
+import type { RadarChart as RadarChartType } from '@/types/evaluation.types';
 import {
   Radar,
-  RadarChart,
+  RadarChart as RechartsRadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
@@ -13,24 +14,57 @@ import {
 } from 'recharts';
 
 interface RadarChartProps {
-  scores: DimensionScores;
+  scores: RadarChartType;
 }
 
 export const EvaluationRadarChart = ({ scores }: RadarChartProps) => {
+  // 防御性检查:如果 scores 未定义或为 null,显示警告信息
+  if (!scores) {
+    return (
+      <Alert
+        message="雷达图数据不可用"
+        description="评估报告缺少必要的雷达图数据。请重新生成评估报告或联系管理员。"
+        type="warning"
+        showIcon
+      />
+    );
+  }
+
   const data = useMemo(
     () => [
-      { dimension: '知识理解', score: scores.knowledge, fullMark: 100 },
-      { dimension: '评估技能', score: scores.assessment, fullMark: 100 },
-      { dimension: '沟通技能', score: scores.communication, fullMark: 100 },
-      { dimension: '干预决策', score: scores.intervention, fullMark: 100 },
+      {
+        dimension: 'A类-风险识别',
+        score: scores.A_risk_identification ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'B类-沟通支持',
+        score: scores.B_communication ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'C类-技能应用',
+        score: scores.C_skill_application ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'D类-安全管理',
+        score: scores.D_safety_management ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'E类-自我效能',
+        score: scores.E_self_efficacy ?? 0,
+        fullMark: 100
+      },
     ],
     [scores]
   );
 
   return (
-    <div className="w-full h-[400px]">
+    <div style={{ width: '100%', height: '400px', minHeight: '400px' }}>
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data}>
+        <RechartsRadarChart data={data}>
           <PolarGrid />
           <PolarAngleAxis
             dataKey="dimension"
@@ -49,7 +83,7 @@ export const EvaluationRadarChart = ({ scores }: RadarChartProps) => {
             fillOpacity={0.5}
             strokeWidth={2}
           />
-        </RadarChart>
+        </RechartsRadarChart>
       </ResponsiveContainer>
     </div>
   );

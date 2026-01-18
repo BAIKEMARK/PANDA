@@ -54,32 +54,70 @@ class GoogleSearchTool:
             "lr": language
         }
 
+        # 打印调用日志
+        print("=" * 60)
+        print("🔍 Google 搜索工具调用")
+        print("=" * 60)
+        print(f"📌 搜索关键词: {query}")
+        print(f"📊 返回结果数: {min(num_results, 10)}")
+        print(f"📍 起始索引: {start_index}")
+        print(f"🌐 语言限制: {language}")
+        print(f"🔗 API URL: {self.base_url}")
+
         try:
             # 使用代理发送请求
             proxies = get_proxies()
+            if proxies:
+                print(f"🔧 使用代理: {proxies.get('http://', '直接连接')}")
+            else:
+                print("🔧 代理配置: 直接连接（无代理）")
+
+            print("⏳ 正在发送请求...")
             with httpx.Client(proxies=proxies, timeout=10.0) as client:
                 response = client.get(
                     self.base_url,
                     params=params
                 )
 
+            print(f"📡 HTTP 状态码: {response.status_code}")
+
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ 搜索成功: 找到约 {data.get('searchInformation', {}).get('totalResults', 'N/A')} 条结果")
+                total_results = data.get('searchInformation', {}).get('totalResults', 'N/A')
+                search_time = data.get('searchInformation', {}).get('searchTime', 'N/A')
+
+                print(f"✅ 搜索成功")
+                print(f"   📈 找到约 {total_results} 条结果")
+                print(f"   ⏱️  搜索耗时: {search_time} 秒")
+
+                # 打印前3个结果的标题
+                items = data.get("items", [])
+                if items:
+                    print(f"   📋 前 {min(3, len(items))} 个结果:")
+                    for i, item in enumerate(items[:3], 1):
+                        print(f"      {i}. {item.get('title', 'N/A')}")
+
+                print("=" * 60)
                 return data
             else:
-                print(f"❌ 搜索失败: HTTP {response.status_code}")
-                print(f"   响应: {response.text[:200]}")
+                print(f"❌ 搜索失败")
+                print(f"   HTTP 状态码: {response.status_code}")
+                print(f"   响应内容: {response.text[:200]}")
+                print("=" * 60)
                 return None
 
         except httpx.ProxyError:
             print("❌ 代理错误: 请检查代理配置")
+            print("=" * 60)
             return None
         except httpx.TimeoutException:
             print("❌ 请求超时: 网络连接较慢")
+            print("=" * 60)
             return None
         except Exception as e:
-            print(f"❌ 搜索异常: {type(e).__name__} - {str(e)}")
+            print(f"❌ 搜索异常: {type(e).__name__}")
+            print(f"   错误信息: {str(e)}")
+            print("=" * 60)
             return None
 
     def extract_results(self, search_data: Dict) -> List[Dict]:
@@ -131,12 +169,13 @@ def search_pnd_medical(query: str) -> List[Dict]:
     return results
 
 
-def search_with_ai(prompt: str) -> str:
+def search_with_ai(prompt: str, max_retries: int = 2) -> str:
     """
     调用阿里百炼AI生成回复（阻塞式）
 
     Args:
         prompt: 用户输入的提示文本
+        max_retries: 最大重试次数，默认为2次
 
     Returns:
         AI生成的回复文本
@@ -170,70 +209,99 @@ def search_with_ai(prompt: str) -> str:
         }
     }
 
-    try:
-        # 阿里百炼AI是国内服务，不需要代理
-        print(f"📡 正在调用 AI API...")
-        print(f"   URL: {url}")
-        print(f"   模型: {settings.AI_TEXT_MODEL}")
+    # 重试逻辑
+    for attempt in range(max_retries + 1):
+        try:
+            # 阿里百炼AI是国内服务，不需要代理
+            if attempt > 0:
+                print(f"📡 正在重试第 {attempt} 次...")
+            else:
+                print(f"📡 正在调用 AI API...")
+            print(f"   URL: {url}")
+            print(f"   模型: {settings.AI_TEXT_MODEL}")
 
-        # 不使用代理，直接连接
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                url,
-                headers=headers,
-                json=body
+            # 不使用代理，直接连接
+            # 增加超时时间到 360 秒（6分钟），因为评估 prompt 可能很长
+            timeout_config = httpx.Timeout(
+                connect=10.0,      # 连接超时 10 秒
+                read=360.0,        # 读取超时 360 秒（6分钟）
+                write=30.0,        # 写入超时 30 秒
+                pool=30.0          # 连接池超时 30 秒
             )
 
-        print(f"📊 HTTP 状态码: {response.status_code}")
+            with httpx.Client(timeout=timeout_config) as client:
+                response = client.post(
+                    url,
+                    headers=headers,
+                    json=body
+                )
 
-        if response.status_code == 200:
-            data = response.json()
+            print(f"📊 HTTP 状态码: {response.status_code}")
 
-            # 尝试多种可能的响应格式
-            # 格式1: 阿里百炼新格式 (output.choices[0].message.content)
-            if "output" in data and "choices" in data["output"] and len(data["output"]["choices"]) > 0:
-                result = data["output"]["choices"][0]["message"]["content"].strip()
-                print(f"✅ AI 回复成功: {result[:50]}...")
-                return result
+            if response.status_code == 200:
+                data = response.json()
 
-            # 格式2: 阿里百炼标准格式 (output.text)
-            elif "output" in data and "text" in data["output"]:
-                result = data["output"]["text"].strip()
-                print(f"✅ AI 回复成功: {result[:50]}...")
-                return result
+                # 尝试多种可能的响应格式
+                # 格式1: 阿里百炼新格式 (output.choices[0].message.content)
+                if "output" in data and "choices" in data["output"] and len(data["output"]["choices"]) > 0:
+                    result = data["output"]["choices"][0]["message"]["content"].strip()
+                    print(f"✅ AI 回复成功: {result[:50]}...")
+                    return result
 
-            # 格式3: OpenAI 兼容格式 (choices.message.content)
-            elif "choices" in data and len(data["choices"]) > 0:
-                result = data["choices"][0]["message"]["content"].strip()
-                print(f"✅ AI 回复成功: {result[:50]}...")
-                return result
+                # 格式2: 阿里百炼标准格式 (output.text)
+                elif "output" in data and "text" in data["output"]:
+                    result = data["output"]["text"].strip()
+                    print(f"✅ AI 回复成功: {result[:50]}...")
+                    return result
 
-            # 格式4: 直接返回内容
-            elif "content" in data:
-                result = data["content"].strip()
-                print(f"✅ AI 回复成功: {result[:50]}...")
-                return result
+                # 格式3: OpenAI 兼容格式 (choices.message.content)
+                elif "choices" in data and len(data["choices"]) > 0:
+                    result = data["choices"][0]["message"]["content"].strip()
+                    print(f"✅ AI 回复成功: {result[:50]}...")
+                    return result
 
-            # 格式5: 直接返回 text
-            elif "text" in data:
-                result = data["text"].strip()
-                print(f"✅ AI 回复成功: {result[:50]}...")
-                return result
+                # 格式4: 直接返回内容
+                elif "content" in data:
+                    result = data["content"].strip()
+                    print(f"✅ AI 回复成功: {result[:50]}...")
+                    return result
 
+                # 格式5: 直接返回 text
+                elif "text" in data:
+                    result = data["text"].strip()
+                    print(f"✅ AI 回复成功: {result[:50]}...")
+                    return result
+
+                else:
+                    print(f"⚠️  无法识别的响应格式")
+                    print(f"   响应键: {list(data.keys())}")
+                    return f"AI生成回复格式错误。响应数据: {str(data)[:200]}"
             else:
-                print(f"⚠️  无法识别的响应格式")
-                print(f"   响应键: {list(data.keys())}")
-                return f"AI生成回复格式错误。响应数据: {str(data)[:200]}"
-        else:
-            print(f"❌ AI调用失败: HTTP {response.status_code}")
-            print(f"   响应: {response.text[:500]}")
-            return f"AI调用失败: HTTP {response.status_code}"
+                print(f"❌ AI调用失败: HTTP {response.status_code}")
+                print(f"   响应: {response.text[:500]}")
+                return f"AI调用失败: HTTP {response.status_code}"
 
-    except Exception as e:
-        import traceback
-        print(f"❌ AI调用异常: {type(e).__name__} - {str(e)}")
-        print(f"   详细错误:\n{traceback.format_exc()}")
-        return f"AI调用异常: {str(e)}"
+        except httpx.TimeoutException as e:
+            # 如果是超时错误，且还有重试次数，则重试
+            if attempt < max_retries:
+                print(f"⏱️  AI调用超时，准备重试 ({attempt + 1}/{max_retries})...")
+                continue
+            else:
+                import traceback
+                print(f"❌ AI调用超时（已重试 {max_retries} 次）: {type(e).__name__} - {str(e)}")
+                print(f"   详细错误:\n{traceback.format_exc()}")
+                raise  # 重新抛出异常，让调用方处理
+
+        except Exception as e:
+            # 其他异常也重试
+            if attempt < max_retries:
+                print(f"⚠️  AI调用异常，准备重试 ({attempt + 1}/{max_retries}): {type(e).__name__} - {str(e)}")
+                continue
+            else:
+                import traceback
+                print(f"❌ AI调用异常（已重试 {max_retries} 次）: {type(e).__name__} - {str(e)}")
+                print(f"   详细错误:\n{traceback.format_exc()}")
+                raise  # 重新抛出异常，让调用方处理
 
 
 # 示例使用
