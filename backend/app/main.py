@@ -1,24 +1,37 @@
 """
 Main Application Entry Point
-FastAPI 主应用程序入口 - 标准MVC架构
+FastAPI 主应用程序入口 - 分层模块化架构
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import settings
 from backend.app.core.proxy import setup_proxy
-from backend.app.db.database import init_database
+from backend.app.db.database import init_database, get_db
 
-# 导入所有API路由（Controller层）
-from backend.app.api import (
-    health_router,
-    user_router,
-    course_router,
-    scenario_router,
-    chat_router
-)
-from backend.app.api.auth import router as auth_router
-from backend.app.api.evaluation import router as evaluation_router
+# 导入所有API路由（新的模块化架构）
+from backend.app.api import health_router
+
+# 认证与用户模块
+from backend.app.modules.auth.api.routers import auth_router, users_router
+
+# 课程模块
+from backend.app.modules.course.api.routers import router as course_router
+
+# 情景模拟模块
+from backend.app.modules.scenario.api.routers import router as scenario_router
+
+# 对话交互模块
+from backend.app.modules.chat.api.routers import router as chat_router
+
+# 评估系统模块
+from backend.app.modules.evaluation.api.routers import router as evaluation_router
+
+# 学习进度模块
+from backend.app.modules.progress.api.routers import router as progress_router
+
+# 菜单管理模块
+from backend.app.modules.menu.api.routers import router as menu_router
 
 
 # 创建 FastAPI 应用实例
@@ -40,14 +53,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 注册所有路由
+# 注册所有路由（新的模块化架构）
 app.include_router(health_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
-app.include_router(user_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
 app.include_router(course_router, prefix="/api")
 app.include_router(scenario_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(evaluation_router, prefix="/api")
+app.include_router(progress_router, prefix="/api")
+app.include_router(menu_router, prefix="/api")
 
 
 # ================================================
@@ -62,7 +77,7 @@ async def root():
         "status": "running",
         "docs": "/api/docs",
         "redoc": "/api/redoc",
-        "structure": "标准MVC架构 (backend/app/api/ -> backend/app/services/ -> backend/app/crud/ -> backend/app/models/)"
+        "structure": "分层模块化架构 (modules/{auth,course,scenario,chat,evaluation,progress}/)"
     }
 
 
@@ -102,13 +117,18 @@ async def startup_event():
     else:
         print(f"\n🤖 AI配置: ⚠️  未配置")
 
-    # 显示MVC架构信息
-    print(f"\n🏗️  MVC架构:")
-    print(f"   Controller (api/): {len([user_router, course_router, scenario_router, chat_router])} 个路由模块")
-    print(f"   Service (services/): 4 个服务模块")
-    print(f"   CRUD (crud/): 4 个CRUD模块")
-    print(f"   Model (models/): 5 个ORM模型")
-    print(f"   Schema (schemas/): 4 个DTO模型")
+    # 显示模块化架构信息
+    print(f"\n🏗️  分层模块化架构:")
+    print(f"   模块 (modules/): 7 个业务模块")
+    print(f"   - auth (认证与用户)")
+    print(f"   - course (课程管理)")
+    print(f"   - scenario (情景模拟)")
+    print(f"   - chat (对话交互)")
+    print(f"   - evaluation (评估系统)")
+    print(f"   - progress (学习进度)")
+    print(f"   - menu (菜单管理)")
+    print(f"   基础设施 (shared/): core, db, common, infrastructure")
+    print(f"   模块接口 (interfaces/): scenario_interface")
 
     print("="*70 + "\n")
 
@@ -117,6 +137,16 @@ async def startup_event():
 
     # 测试数据库连接
     init_database()
+
+    # 初始化评估智能体以订阅事件
+    from backend.app.modules.evaluation.agents.mentor_agent import MentorAgent
+    db_gen = get_db()
+    db = next(db_gen)
+    try:
+        mentor_agent = MentorAgent(db)
+        print(f"✅ MentorAgent 已初始化并订阅事件")
+    except Exception as e:
+        print(f"⚠️  MentorAgent 初始化失败: {e}")
 
 
 @app.on_event("shutdown")
