@@ -8,6 +8,7 @@ from .scenario import Scenario
 from .chat import ChatSession, ChatMessage
 from .progress import UserProgress
 from .evaluation import EvaluationReport
+from .menu import Menu, RoleMenuPermission
 
 __all__ = [
     "User",
@@ -17,4 +18,6 @@ __all__ = [
     "ChatSession",
     "ChatMessage",
     "EvaluationReport",
+    "Menu",
+    "RoleMenuPermission",
 ]

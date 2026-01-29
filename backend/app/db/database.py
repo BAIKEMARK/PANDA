@@ -3,7 +3,6 @@ Database Session Module
 数据库会话管理
 """
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker, declarative_base
 
 from backend.app.core.config import settings

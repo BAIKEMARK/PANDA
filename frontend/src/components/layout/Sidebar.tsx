@@ -1,39 +1,82 @@
 /**
- * 侧边栏导航组件
+ * 侧边栏导航组件 - 使用动态菜单
  */
+import { useEffect, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Layout, Menu, Avatar, Typography } from 'antd';
+import { Layout, Menu, Avatar, Typography, Spin } from 'antd';
 import {
   BookOutlined,
+  ExperimentOutlined,
   MessageOutlined,
+  LineChartOutlined,
+  SettingOutlined,
   UserOutlined,
+  TeamOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/auth.store';
+import { useMenuStore } from '@/stores/menu.store';
 
 const { Sider } = Layout;
 const { Text } = Typography;
 
+// 图标映射
+const iconMap: Record<string, React.ReactNode> = {
+  BookOutlined: <BookOutlined />,
+  ExperimentOutlined: <ExperimentOutlined />,  // 实验图标
+  SimulationOutlined: <ExperimentOutlined />,  // 数据库中使用 SimulationOutlined，映射到 ExperimentOutlined
+  MessageOutlined: <MessageOutlined />,
+  LineChartOutlined: <LineChartOutlined />,
+  SettingOutlined: <SettingOutlined />,
+  UserOutlined: <UserOutlined />,
+  TeamOutlined: <TeamOutlined />,
+  MenuOutlined: <MenuOutlined />,
+};
+
 export const Sidebar = () => {
   const user = useAuthStore((state) => state.user);
+  const { menus, isLoading, fetchUserMenus } = useMenuStore();
   const location = useLocation();
 
-  const navItems = [
-    {
-      key: '/courses',
-      icon: <BookOutlined />,
-      label: <NavLink to="/courses">课程学习</NavLink>,
-    },
-    {
-      key: '/scenarios',
-      icon: <MessageOutlined />,
-      label: <NavLink to="/scenarios">情景模拟</NavLink>,
-    },
-    {
-      key: '/profile',
-      icon: <UserOutlined />,
-      label: <NavLink to="/profile">个人中心</NavLink>,
-    },
-  ];
+  // 加载用户菜单
+  useEffect(() => {
+    if (user?.role) {
+      fetchUserMenus(user.role);
+    }
+  }, [user?.role, fetchUserMenus]);
+
+  // 将菜单数据转换为 Ant Design Menu 格式
+  const menuItems = useMemo(() => {
+    if (!menus || menus.length === 0) return undefined;
+
+    return menus.map((menu) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const item: any = {
+        key: menu.path,
+        icon: iconMap[menu.icon] || <MenuOutlined />,
+        label: (
+          <NavLink to={menu.path} style={{ color: 'inherit' }}>
+            {menu.title}
+          </NavLink>
+        ),
+      };
+
+      // 处理子菜单
+      if (menu.children && menu.children.length > 0) {
+        item.children = menu.children.map((child) => ({
+          key: child.path,
+          icon: iconMap[child.icon] || <MenuOutlined />,
+          label: (
+            <NavLink to={child.path} style={{ color: 'inherit' }}>
+              {child.title}
+            </NavLink>
+          ),
+        }));
+      }
+
+      return item;
+    });
+  }, [menus]);
 
   return (
     <Sider
@@ -72,17 +115,23 @@ export const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <Menu
-        theme="dark"
-        mode="inline"
-        selectedKeys={[location.pathname]}
-        items={navItems}
-        style={{ 
-          background: 'transparent', 
-          borderRight: 0,
-          marginTop: '8px',
-        }}
-      />
+      {isLoading ? (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <Spin size="small" />
+        </div>
+      ) : (
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          style={{
+            background: 'transparent',
+            borderRight: 0,
+            marginTop: '8px',
+          }}
+        />
+      )}
 
       {/* User Info */}
       <div
