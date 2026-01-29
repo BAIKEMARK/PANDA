@@ -1,8 +1,15 @@
 """
 PANDA 后端启动脚本
 """
+import sys
+from pathlib import Path
+
+# 将项目根目录添加到 Python 路径
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 import uvicorn
-from app.core.config import settings
+from backend.app.config.config import settings
 
 if __name__ == "__main__":
     uvicorn.run(

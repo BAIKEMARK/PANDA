@@ -5,7 +5,7 @@ Database Session Module
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker, declarative_base
 
-from backend.app.core.config import settings
+from backend.app.config.config import settings
 
 # 创建ORM基类
 Base = declarative_base()
@@ -15,7 +15,7 @@ engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
     pool_recycle=3600,
-    echo=settings.DEBUG,
+    echo=False,  # 关闭 SQL 日志，避免干扰调试输出
 )
 
 # 同步会话工厂

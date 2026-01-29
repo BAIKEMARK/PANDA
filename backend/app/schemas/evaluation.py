@@ -8,7 +8,7 @@ from datetime import datetime
 
 
 class RadarChart(BaseModel):
-    """雷达图数据 - THP五维评分"""
+    """雷达图数据 - THP五维评分 (0-100 分制)"""
     A_risk_identification: int = Field(..., ge=0, le=100, description="A类-风险识别能力")
     B_communication: int = Field(..., ge=0, le=100, description="B类-沟通支持能力")
     C_skill_application: int = Field(..., ge=0, le=100, description="C类-THP技能应用")
@@ -33,38 +33,6 @@ class FeedbackItem(BaseModel):
     patient_state_snapshot: Optional[Union[str, Dict[str, Any]]] = Field(None, description="患者状态快照")
     critique: str = Field(..., description="批评意见")
     expert_suggestion: str = Field(..., description="专家建议")
-
-
-class EvaluationReportBase(BaseModel):
-    """评估报告基础模型"""
-    session_id: str
-    total_score: Optional[int] = Field(default=None, ge=0, le=100, description="总分 (0-100)")
-    level_assessment: Optional[str] = Field(default=None, description="等级评定: 优秀/良好/合格/不合格")
-    radar_a_risk_identification: Optional[int] = Field(None, ge=0, le=100, description="A类-风险识别能力")
-    radar_b_communication: Optional[int] = Field(None, ge=0, le=100, description="B类-沟通支持能力")
-    radar_c_skill_application: Optional[int] = Field(None, ge=0, le=100, description="C类-THP技能应用")
-    radar_d_safety_management: Optional[int] = Field(None, ge=0, le=100, description="D类-安全管理能力")
-    radar_e_self_efficacy: Optional[int] = Field(None, ge=0, le=100, description="E类-自我效能感")
-    state_analysis: Optional[Dict[str, Any]] = Field(None, description="状态变化分析")
-    detailed_feedback: Optional[List[FeedbackItem]] = Field(None, description="详细反馈列表")
-    technical_guidance: Optional[str] = Field(None, description="技术指导建议")
-    meta_data: Optional[Dict[str, Any]] = Field(None, description="其他元数据")
-
-
-class EvaluationReportCreate(BaseModel):
-    """评估报告创建模型"""
-    session_id: str
-    total_score: int = Field(..., ge=0, le=100)
-    level_assessment: str
-    radar_a_risk_identification: int = Field(..., ge=0, le=100)
-    radar_b_communication: int = Field(..., ge=0, le=100)
-    radar_c_skill_application: int = Field(..., ge=0, le=100)
-    radar_d_safety_management: int = Field(..., ge=0, le=100)
-    radar_e_self_efficacy: int = Field(..., ge=0, le=100)
-    state_analysis: Optional[Dict[str, Any]] = None
-    detailed_feedback: Optional[List[FeedbackItem]] = None
-    technical_guidance: Optional[str] = None
-    meta_data: Optional[Dict[str, Any]] = None
 
 
 class EvaluationReportResponse(BaseModel):
@@ -108,12 +76,11 @@ class EvaluationReportResponse(BaseModel):
                 try:
                     state_analysis = StateAnalysis(**report.state_analysis)
                 except Exception:
-                    # 如果验证失败，保持原始字典格式
                     state_analysis = report.state_analysis
             else:
                 state_analysis = report.state_analysis
 
-        # 处理详细反馈数据 - 添加健壮的错误处理
+        # 处理详细反馈数据
         detailed_feedback = None
         if report.detailed_feedback:
             if isinstance(report.detailed_feedback, list):
@@ -121,15 +88,10 @@ class EvaluationReportResponse(BaseModel):
                 for item in report.detailed_feedback:
                     if isinstance(item, dict):
                         try:
-                            # 尝试验证并转换为 FeedbackItem
                             valid_feedback_items.append(FeedbackItem(**item))
-                        except Exception as e:
-                            # 验证失败时，记录错误并跳过该项，或者保留原始字典
-                            print(f"⚠️  跳过无效的反馈项: {e}")
-                            # 可以选择跳过或者保留原始数据
-                            # valid_feedback_items.append(item)
+                        except Exception:
+                            pass
                     else:
-                        # 如果已经是 FeedbackItem 对象，直接添加
                         valid_feedback_items.append(item)
                 detailed_feedback = valid_feedback_items if valid_feedback_items else None
             else:

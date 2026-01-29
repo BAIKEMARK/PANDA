@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from backend.app.db.database import get_db
-from backend.app.modules.evaluation.schemas.evaluation import EvaluationReportResponse
+from backend.app.schemas.evaluation import EvaluationReportResponse
 from backend.app.modules.evaluation.services.evaluation_service import EvaluationService
 from backend.app.modules.evaluation.agents.mentor_agent import MentorAgent
 from backend.app.common.exceptions import NotFoundException

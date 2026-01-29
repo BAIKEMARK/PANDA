@@ -2,11 +2,30 @@
 Main Application Entry Point
 FastAPI 主应用程序入口 - 分层模块化架构
 """
+import logging
+
+# 配置详细日志（包括 LangChain 和 HTTP 请求）
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# LangChain 日志
+langchain_logger = logging.getLogger("langchain")
+langchain_logger.setLevel(logging.DEBUG)
+
+# HTTP 客户端日志（显示完整 API 请求）
+httpx_logger = logging.getLogger("httpx")
+httpx_logger.setLevel(logging.INFO)
+
+# HTTP core 日志
+httpcore_logger = logging.getLogger("httpcore")
+httpcore_logger.setLevel(logging.INFO)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.core.config import settings
-from backend.app.core.proxy import setup_proxy
+from backend.app.config.config import settings
 from backend.app.db.database import init_database, get_db
 
 # 导入所有API路由（新的模块化架构）
@@ -99,41 +118,16 @@ async def startup_event():
     print(f"   主机: {settings.DB_HOST}:{settings.DB_PORT}")
     print(f"   数据库: {settings.DB_NAME}")
 
-    # 显示代理配置
-    if settings.HTTP_PROXY or settings.HTTPS_PROXY:
-        print(f"\n🌐 代理配置:")
-        if settings.HTTP_PROXY:
-            print(f"   HTTP:  {settings.HTTP_PROXY}")
-        if settings.HTTPS_PROXY:
-            print(f"   HTTPS: {settings.HTTPS_PROXY}")
-    else:
-        print(f"\n🌐 代理: 未配置 (直连)")
-
     # 显示AI配置
     if settings.AI_TEXT_KEY:
         print(f"\n🤖 AI配置:")
         print(f"   模型: {settings.AI_TEXT_MODEL}")
+        print(f"   框架: LangChain")
         print(f"   状态: ✅ 已配置")
     else:
         print(f"\n🤖 AI配置: ⚠️  未配置")
 
-    # 显示模块化架构信息
-    print(f"\n🏗️  分层模块化架构:")
-    print(f"   模块 (modules/): 7 个业务模块")
-    print(f"   - auth (认证与用户)")
-    print(f"   - course (课程管理)")
-    print(f"   - scenario (情景模拟)")
-    print(f"   - chat (对话交互)")
-    print(f"   - evaluation (评估系统)")
-    print(f"   - progress (学习进度)")
-    print(f"   - menu (菜单管理)")
-    print(f"   基础设施 (shared/): core, db, common, infrastructure")
-    print(f"   模块接口 (interfaces/): scenario_interface")
-
     print("="*70 + "\n")
-
-    # 设置代理
-    setup_proxy()
 
     # 测试数据库连接
     init_database()

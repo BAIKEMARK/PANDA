@@ -36,8 +36,6 @@ class EventBus:
         Example:
             event_bus.publish("chat.session_ended", {"session_id": "xxx"})
         """
-        print(f"📢 [EventBus] 发布事件: {event_name}")
-
         # 记录事件日志
         self._event_log.append({
             "event": event_name,
@@ -47,17 +45,12 @@ class EventBus:
         # 获取订阅者
         handlers = self._subscribers.get(event_name, [])
 
-        if not handlers:
-            print(f"   (无订阅者)")
-            return
-
         # 通知所有订阅者
         for handler in handlers:
             try:
                 handler(data)
-                print(f"   ✓ 已通知订阅者: {handler.__name__}")
             except Exception as e:
-                print(f"   ✗ 订阅者处理失败: {handler.__name__} - {e}")
+                print(f"❌ 事件处理失败 [{event_name}]: {e}")
 
     def subscribe(self, event_name: str, handler: Callable) -> None:
         """
@@ -75,7 +68,6 @@ class EventBus:
 
         if handler not in self._subscribers[event_name]:
             self._subscribers[event_name].append(handler)
-            print(f"📌 [EventBus] 订阅事件: {event_name} -> {handler.__name__}")
 
     def unsubscribe(self, event_name: str, handler: Callable) -> None:
         """
@@ -88,7 +80,6 @@ class EventBus:
         if event_name in self._subscribers:
             if handler in self._subscribers[event_name]:
                 self._subscribers[event_name].remove(handler)
-                print(f"🔌 [EventBus] 取消订阅: {event_name} -> {handler.__name__}")
 
     def get_subscribers(self, event_name: str) -> List[Callable]:
         """获取事件的订阅者列表"""
