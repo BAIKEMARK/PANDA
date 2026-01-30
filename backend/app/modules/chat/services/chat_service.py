@@ -19,7 +19,7 @@ class ChatService:
         self.db = db
         self.repository = ChatRepository(db)
 
-    def create_session(self, session_data: ChatSessionCreate, user_id: str) -> ChatSession:
+    def create_session(self, session_data: ChatSessionCreate, user_id: str = "user-001") -> ChatSession:
         """创建新会话"""
         return self.repository.create_chat_session(session_data, user_id)
 

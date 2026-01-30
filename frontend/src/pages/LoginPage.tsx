@@ -217,7 +217,7 @@ export const LoginPage = () => {
 
       {/* Footer */}
       <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 24 }}>
-        © 2025 PANDA Training System
+        © 2026 PANDA Training System
       </Text>
     </div>
   );

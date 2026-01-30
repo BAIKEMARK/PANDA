@@ -37,18 +37,15 @@ class Settings(BaseSettings):
 
     # ==================== AI模型配置 ====================
     AI_TEXT_URL: Optional[str] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    AI_TEXT_KEY: Optional[str] = "sk-9c70d2d653e040f8a8901eb179863453"
+    AI_TEXT_KEY: Optional[str] = "sk-*******************"
     AI_TEXT_MODEL: str = "qwen-max"
     AI_TIMEOUT: int = 30
 
-    # ==================== 搜索工具配置 ====================
-    GOOGLE_CSE_ID: Optional[str] = None
-    GOOGLE_API_KEY: Optional[str] = None
-    GOOGLE_SEARCH_RESULTS: int = 10
-
-    # ==================== 代理配置 ====================
-    HTTP_PROXY: Optional[str] = None
-    HTTPS_PROXY: Optional[str] = None
+    # ==================== LLM 高级配置 ====================
+    LLM_MAX_RETRIES: int = 3
+    LLM_TIMEOUT: int = 120
+    LLM_TEMPERATURE: float = 0.7
+    LLM_STREAMING: bool = False
 
     # ==================== CORS配置 ====================
     CORS_ORIGINS_STR: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"

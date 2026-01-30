@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from backend.app.db.database import get_db
-from backend.app.core.config import settings
+from backend.app.config.config import settings
 
 router = APIRouter(tags=["系统"])
 
@@ -33,9 +33,7 @@ async def detailed_health_check(db: Session = Depends(get_db)):
             "debug": settings.DEBUG
         },
         "database": {"status": "unknown"},
-        "ai_configured": bool(settings.AI_TEXT_KEY),
-        "google_configured": bool(settings.GOOGLE_API_KEY),
-        "proxy_configured": bool(settings.HTTP_PROXY or settings.HTTPS_PROXY)
+        "ai_configured": bool(settings.AI_TEXT_KEY)
     }
 
     # 测试数据库连接

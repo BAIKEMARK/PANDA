@@ -6,7 +6,7 @@ from typing import Optional
 
 from backend.app.models.user import User
 from backend.app.modules.auth.services.user_service import UserService
-from backend.app.core.security import verify_password, create_access_token, decode_access_token
+from backend.app.config.security import verify_password, create_access_token, decode_access_token
 from backend.app.common.exceptions import UnauthorizedException
 
 
