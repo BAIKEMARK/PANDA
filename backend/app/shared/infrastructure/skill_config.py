@@ -28,8 +28,8 @@ class SkillConfigManager:
         """获取配置文件路径"""
         # 获取当前文件目录 (backend/app/shared/infrastructure/)
         current_dir = Path(__file__).parent.absolute()
-        # 向上查找 backend/app/core/skill_config.json
-        config_path = current_dir.parent.parent / "core" / "skill_config.json"
+        # 向上查找 backend/app/config/skill_config.json
+        config_path = current_dir.parent.parent / "config" / "skill_config.json"
         return config_path
 
     def _load_config(self) -> None:
@@ -37,16 +37,13 @@ class SkillConfigManager:
         config_path = self._get_config_path()
 
         if not config_path.exists():
-            print(f"⚠️  Skill配置文件不存在: {config_path}")
             self._config = self._get_default_config()
             return
 
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
                 self._config = json.load(f)
-            print(f"✅ Skill配置加载成功: {config_path}")
-        except Exception as e:
-            print(f"❌ Skill配置加载失败: {e}")
+        except Exception:
             self._config = self._get_default_config()
 
     def _get_default_config(self) -> Dict:

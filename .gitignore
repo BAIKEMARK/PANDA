@@ -86,3 +86,5 @@ Thumbs.db
 # Claude Code 相关
 .claude/
 
+# 临时文件夹
+docs/temp/

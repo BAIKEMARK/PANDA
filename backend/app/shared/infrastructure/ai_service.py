@@ -1,14 +1,13 @@
 """
 AI 服务统一接口
-封装所有 AI 调用，为业务模块提供统一的 AI 访问接口
+基于 LangChain 框架提供对话和评估功能
 """
-import httpx
 from typing import List, Dict, Optional
-from backend.app.core.config import settings
+from backend.app.config.config import settings
 
 
 class AIService:
-    """AI 服务统一接口 - 单例模式"""
+    """AI 服务统一接口 - 基于 LangChain"""
 
     _instance: Optional['AIService'] = None
 
@@ -18,10 +17,18 @@ class AIService:
         return cls._instance
 
     def __init__(self):
-        """初始化 AI 服务"""
-        self.api_key = settings.AI_TEXT_KEY
-        self.model = settings.AI_TEXT_MODEL
-        self.url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+        """初始化 LangChain AI 服务"""
+        if not hasattr(self, '_initialized'):
+            try:
+                from backend.app.modules.chat.chains.conversation_chain import conversation_chain
+                from backend.app.modules.evaluation.chains.evaluation_chain import evaluation_chain
+
+                self.conversation_chain = conversation_chain
+                self.evaluation_chain = evaluation_chain
+                self._initialized = True
+            except Exception as e:
+                print(f"❌ AI服务初始化失败: {e}")
+                raise
 
     def generate_conversation_response(
         self,
@@ -32,89 +39,84 @@ class AIService:
         temperature: float = 0.7
     ) -> str:
         """
-        生成对话回复
+        生成对话回复（使用 LangChain）
 
         Args:
             system_prompt: 系统提示词
             user_message: 用户最新消息
             conversation_history: 对话历史 [{role: "user/assistant", content: "..."}]
-            max_tokens: 最大token数
-            temperature: 温度参数
+            max_tokens: 最大token数（LangChain 自动管理）
+            temperature: 温度参数（在链初始化时配置）
 
         Returns:
             AI 生成的回复文本
         """
-        if not self.api_key:
-            return "抱歉，AI服务未配置。请联系管理员配置AI_TEXT_KEY。"
-
-        # 构建消息列表
-        messages = []
-
-        # 添加系统提示
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-
-        # 添加历史对话
-        messages.extend(conversation_history)
-
-        # 添加最新用户消息
-        messages.append({"role": "user", "content": user_message})
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-
-        body = {
-            "model": self.model,
-            "input": {
-                "messages": messages
-            },
-            "parameters": {
-                "max_tokens": max_tokens,
-                "temperature": temperature
-            }
-        }
-
         try:
-            print(f"📡 正在调用 AI API...")
-            print(f"   模型: {self.model}")
-
-            timeout_config = httpx.Timeout(
-                connect=10.0,
-                read=120.0,
-                write=30.0,
-                pool=30.0
+            # 直接传递完整的 system_prompt，不再解析
+            # 因为 skill_prompt 内部包含 "【" 字符，用 split 会错误分割
+            response = self.conversation_chain.invoke(
+                system_prompt=system_prompt,
+                user_message=user_message,
+                conversation_history=conversation_history
             )
 
-            with httpx.Client(timeout=timeout_config) as client:
-                response = client.post(
-                    self.url,
-                    headers=headers,
-                    json=body
-                )
-
-            if response.status_code == 200:
-                data = response.json()
-
-                # 尝试多种可能的响应格式
-                if "output" in data and "choices" in data["output"] and len(data["output"]["choices"]) > 0:
-                    result = data["output"]["choices"][0]["message"]["content"].strip()
-                    return result
-                elif "output" in data and "text" in data["output"]:
-                    result = data["output"]["text"].strip()
-                    return result
-                elif "choices" in data and len(data["choices"]) > 0:
-                    result = data["choices"][0]["message"]["content"].strip()
-                    return result
-                else:
-                    return f"AI生成回复格式错误。响应数据: {str(data)[:200]}"
-
-            else:
-                return f"AI调用失败: HTTP {response.status_code}"
+            return response
 
         except Exception as e:
+            print(f"❌ AI调用异常: {type(e).__name__} - {str(e)}")
             raise Exception(f"AI调用异常: {type(e).__name__} - {str(e)}")
+
+    def _convert_ai_model_to_api(self, report_model) -> Dict:
+        """
+        将 AI 内部模型（0-25/15/10 分）转换为 API 响应模型（0-100 分）
+
+        AI 内部分制:
+        - A/B/C: 0-25 分
+        - D: 0-15 分
+        - E: 0-10 分
+
+        API 响应分制: 全部转换为 0-100 分
+
+        如果 AI 返回值超出定义范围，按比例缩放并限制在 0-100
+        """
+        radar = report_model.radar_chart
+
+        def scale_to_100(value: int, max_defined: int) -> int:
+            """将定义范围的分数缩放到 0-100，并处理超出范围的情况"""
+            # 先按定义的满分进行缩放
+            scaled = value * (100 / max_defined)
+            # 限制在 0-100 范围内（处理 AI 返回异常值的情况）
+            return min(max(scaled, 0), 100)
+
+        return {
+            "total_score": report_model.total_score,
+            "level_assessment": report_model.level_assessment,
+            "radar_chart": {
+                # A/B/C: 定义满分 25 → 100 分制
+                "A_risk_identification": scale_to_100(radar.A_risk_identification, 25),
+                "B_communication": scale_to_100(radar.B_communication, 25),
+                "C_skill_application": scale_to_100(radar.C_skill_application, 25),
+                # D: 定义满分 15 → 100 分制
+                "D_safety_management": scale_to_100(radar.D_safety_management, 15),
+                # E: 定义满分 10 → 100 分制
+                "E_self_efficacy": scale_to_100(radar.E_self_efficacy, 10)
+            },
+            "state_analysis": report_model.state_analysis,
+            "detailed_feedback": [
+                {
+                    "dimension": item.dimension,
+                    "status": item.status,
+                    "dialogue_ref_id": item.dialogue_ref_id if item.dialogue_ref_id > 0 else None,
+                    "user_input": item.user_input if item.user_input else None,
+                    "patient_state_snapshot": item.patient_state_snapshot if item.patient_state_snapshot else None,
+                    "critique": item.critique,
+                    "expert_suggestion": item.expert_suggestion
+                }
+                for item in report_model.detailed_feedback
+            ],
+            "technical_guidance": report_model.technical_guidance,
+            "meta_data": {"ai_generated": True, "langchain_version": "0.1.16"}
+        }
 
     def generate_evaluation_report(
         self,
@@ -123,101 +125,47 @@ class AIService:
         max_retries: int = 2
     ) -> Dict:
         """
-        生成评估报告
+        生成评估报告（统一入口，使用 LangChain）
 
         Args:
-            conversation_text: 对话历史文本
+            conversation_text: 对话历史文本（包含场景信息）
             evaluation_criteria: 评估标准
-            max_retries: 最大重试次数
+            max_retries: 最大重试次数（LangChain 自动管理）
 
         Returns:
-            评估报告字典
+            评估报告字典（0-100 分制）
         """
-        # 构建 prompt
-        prompt = f"""
-你是一位围产期抑郁护理培训专家导师。请基于以下信息，对护士的对话表现进行专业评估。
+        try:
+            # 从 conversation_text 中提取场景信息
+            scenario_title = "围产期抑郁场景"
+            patient_background = "见对话历史"
 
-# 评分标准 (THP五维评分法)
-{evaluation_criteria}
+            lines = conversation_text.split('\n')
+            for line in lines:
+                if '- 场景标题:' in line or '场景标题:' in line:
+                    scenario_title = line.split(':', 1)[1].strip() if ':' in line else scenario_title
+                elif '- 患者背景:' in line or '患者背景:' in line:
+                    patient_background = line.split(':', 1)[1].strip() if ':' in line else patient_background
 
-# 对话历史
-{conversation_text}
+            # 调用 LangChain 评估链
+            if isinstance(evaluation_criteria, dict):
+                criteria_text = evaluation_criteria.get("text", str(evaluation_criteria))
+            else:
+                criteria_text = str(evaluation_criteria)
 
-# 任务要求
-请以JSON格式返回评估报告。请直接返回JSON，不要有其他说明文字。
-"""
+            report_model = self.evaluation_chain.invoke(
+                conversation_text=conversation_text,
+                scenario_title=scenario_title,
+                patient_background=patient_background,
+                evaluation_criteria=criteria_text
+            )
 
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
+            # 转换为 API 响应格式（0-100 分制）
+            return self._convert_ai_model_to_api(report_model)
 
-        body = {
-            "model": self.model,
-            "input": {
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ]
-            },
-            "parameters": {
-                "max_tokens": 3000,
-                "temperature": 0.7
-            }
-        }
-
-        # 重试逻辑
-        for attempt in range(max_retries + 1):
-            try:
-                print(f"📡 正在调用 AI 评估生成 (尝试 {attempt + 1}/{max_retries + 1})...")
-
-                timeout_config = httpx.Timeout(
-                    connect=10.0,
-                    read=360.0,
-                    write=30.0,
-                    pool=30.0
-                )
-
-                with httpx.Client(timeout=timeout_config) as client:
-                    response = client.post(
-                        self.url,
-                        headers=headers,
-                        json=body
-                    )
-
-                if response.status_code == 200:
-                    data = response.json()
-
-                    # 尝试多种可能的响应格式
-                    result_text = ""
-                    if "output" in data and "choices" in data["output"] and len(data["output"]["choices"]) > 0:
-                        result_text = data["output"]["choices"][0]["message"]["content"].strip()
-                    elif "output" in data and "text" in data["output"]:
-                        result_text = data["output"]["text"].strip()
-                    elif "choices" in data and len(data["choices"]) > 0:
-                        result_text = data["choices"][0]["message"]["content"].strip()
-
-                    # 解析 JSON
-                    import json
-                    try:
-                        return json.loads(result_text)
-                    except json.JSONDecodeError:
-                        # 尝试提取 JSON 部分
-                        start_idx = result_text.find('{')
-                        end_idx = result_text.rfind('}') + 1
-                        if start_idx != -1 and end_idx > start_idx:
-                            json_str = result_text[start_idx:end_idx]
-                            return json.loads(json_str)
-                        else:
-                            raise ValueError("无法找到有效的JSON内容")
-                else:
-                    raise Exception(f"HTTP {response.status_code}: {response.text[:500]}")
-
-            except Exception as e:
-                if attempt < max_retries:
-                    print(f"⚠️ AI评估调用异常，准备重试: {type(e).__name__} - {str(e)}")
-                    continue
-                else:
-                    raise Exception(f"AI评估生成失败（已重试 {max_retries} 次）: {type(e).__name__} - {str(e)}")
+        except Exception as e:
+            print(f"❌ 评估生成失败: {type(e).__name__} - {str(e)}")
+            raise Exception(f"评估生成失败: {type(e).__name__} - {str(e)}")
 
 
 # 创建全局实例

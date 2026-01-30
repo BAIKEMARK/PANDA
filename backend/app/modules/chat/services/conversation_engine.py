@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from backend.app.modules.chat.repositories.chat_repository import ChatRepository
 from backend.app.shared.infrastructure.ai_service import AIService
 from backend.app.shared.infrastructure.skill_config import skill_config_manager
-from backend.app.shared.infrastructure.event_bus import EventBus, Events
+from backend.app.shared.infrastructure.event_bus import event_bus, Events
 from backend.app.interfaces.scenario_interface import ScenarioInterface
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ class ConversationEngine:
         self.ai_service = ai_service
         self.skill_config = skill_config_manager
         self.scenario_interface = scenario_interface
-        self.event_bus = EventBus()
+        self.event_bus = event_bus  # 使用全局单例
 
     def generate_ai_response(
         self,
@@ -66,7 +66,7 @@ class ConversationEngine:
         # 4. 构建对话上下文
         messages_history = self.repository.get_session_messages(session_id)
 
-        # 5. 调用shared的AI服务（而非直接import google_search）
+        # 5. 调用shared的AI服务（基于LangChain）
         conversation_context = self._build_context(
             scenario_config,
             skill_prompt,
