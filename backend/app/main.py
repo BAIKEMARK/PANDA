@@ -3,11 +3,26 @@ Main Application Entry Point
 FastAPI 主应用程序入口 - 分层模块化架构
 """
 import logging
+import re
+
+# 自定义日志格式化器：将 Unicode 转义序列解码为中文
+class UnicodeFormatter(logging.Formatter):
+    """自定义格式化器，将日志中的 Unicode 转义序列解码为可读中文"""
+    def format(self, record):
+        message = super().format(record)
+        # 将 \uXXXX 转义序列解码为实际字符
+        try:
+            message = message.encode('utf-8').decode('unicode_escape')
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            pass  # 如果解码失败，保持原样
+        return message
 
 # 配置详细日志（包括 LangChain 和 HTTP 请求）
+handler = logging.StreamHandler()
+handler.setFormatter(UnicodeFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    handlers=[handler]
 )
 
 # LangChain 日志
@@ -21,6 +36,10 @@ httpx_logger.setLevel(logging.INFO)
 # HTTP core 日志
 httpcore_logger = logging.getLogger("httpcore")
 httpcore_logger.setLevel(logging.INFO)
+
+# OpenAI 客户端日志（应用 Unicode 解码）
+openai_logger = logging.getLogger("openai")
+openai_logger.handlers = [handler]
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
