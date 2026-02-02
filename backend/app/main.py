@@ -5,17 +5,22 @@ FastAPI 主应用程序入口 - 分层模块化架构
 import logging
 import re
 
-# 自定义日志格式化器：将 Unicode 转义序列解码为中文
+# 自定义日志格式化器：安全地将 \uXXXX 转义序列解码为中文
 class UnicodeFormatter(logging.Formatter):
-    """自定义格式化器，将日志中的 Unicode 转义序列解码为可读中文"""
+    """自定义格式化器，使用正则表达式安全解码 Unicode 转义序列"""
+    
+    # 匹配 \uXXXX 或 \\uXXXX 形式的 Unicode 转义序列
+    UNICODE_ESCAPE_PATTERN = re.compile(r'(?:\\\\|\\)u([0-9a-fA-F]{4})')
+    
     def format(self, record):
         message = super().format(record)
-        # 将 \uXXXX 转义序列解码为实际字符
-        try:
-            message = message.encode('utf-8').decode('unicode_escape')
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            pass  # 如果解码失败，保持原样
-        return message
+        # 只替换 \uXXXX 形式的转义序列，不影响其他字符
+        def replace_unicode(match):
+            try:
+                return chr(int(match.group(1), 16))
+            except ValueError:
+                return match.group(0)  # 如果转换失败，保持原样
+        return self.UNICODE_ESCAPE_PATTERN.sub(replace_unicode, message)
 
 # 配置详细日志（包括 LangChain 和 HTTP 请求）
 handler = logging.StreamHandler()
@@ -36,10 +41,6 @@ httpx_logger.setLevel(logging.INFO)
 # HTTP core 日志
 httpcore_logger = logging.getLogger("httpcore")
 httpcore_logger.setLevel(logging.INFO)
-
-# OpenAI 客户端日志（应用 Unicode 解码）
-openai_logger = logging.getLogger("openai")
-openai_logger.handlers = [handler]
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
