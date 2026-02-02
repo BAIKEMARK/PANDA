@@ -15,6 +15,9 @@ import { ChatPage } from '../pages/ChatPage';
 import { EvaluationReportPage } from '../pages/EvaluationReportPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { OrganizationPage } from '../pages/admin/OrganizationPage';
+import { UserManagePage } from '../pages/admin/UserManagePage';
+import { TrainingClassPage } from '../pages/admin/TrainingClassPage';
 import { PrivateRoute, PublicRoute } from './privateRoutes';
 
 // 路由配置
@@ -55,6 +58,23 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <ProfilePage />,
+      },
+      {
+        path: 'admin',
+        children: [
+          {
+            path: 'organizations',
+            element: <OrganizationPage />,
+          },
+          {
+            path: 'users',
+            element: <UserManagePage />,
+          },
+          {
+            path: 'classes',
+            element: <TrainingClassPage />,
+          },
+        ],
       },
     ],
   },
