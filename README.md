@@ -7,18 +7,20 @@
 **核心功能**：
 - **内容学习模块**：基于THP框架的在线多媒体课程
 - **虚拟情景模拟**：AI驱动的PND案例互动演练
+- **Agent智能体系统**：动态患者状态模拟，实时响应护士沟通方式
 - **实训考核模块**：理论与实践结合的综合性评估
 - **能力评估系统**：THP五维评分（风险识别、沟通支持、技能应用、安全管理、自我效能）
 
 ## 🛠️ 技术栈
 
 ### 后端
-- **框架**：FastAPI + SQLAlchemy 2.0
-- **数据库**：MySQL 8.0+
-- **AI框架**：LangChain + LangChain Core
-- **LLM提供商**：阿里百炼（通义千问）
+- **框架**：FastAPI 0.109.0 + SQLAlchemy 2.0.25
+- **数据库**：MySQL 8.0+ + Redis 5.0+
+- **AI框架**：LangChain 1.2.7 + LangChain Core 1.2.7 + LangChain OpenAI 1.1.7
+- **数据验证**：Pydantic 2.7+
+- **LLM提供商**：阿里百炼（通义千问）/ DeepSeek
 - **认证**：JWT
-- **架构**：分层模块化架构
+- **架构**：分层模块化架构 + Agent智能体系统
 
 ### 前端
 - **框架**：React 18 + TypeScript 5
@@ -32,6 +34,7 @@
 - **Python**: 3.12+
 - **Node.js**: v20+
 - **MySQL**: 8.0+
+- **Redis**: 5.0+ (用于实时状态管理)
 
 ## 📦 部署方案
 
@@ -49,10 +52,22 @@ cd PANDA
 mysql -u root -p
 
 # 执行初始化脚本
-source backend/database/schema.sql
+source docs/项目文档/resources/panda.sql
 ```
 
-### 3. 后端部署
+### 3. 启动 Redis
+
+```bash
+# Windows
+redis-server
+
+# Linux/Mac
+sudo service redis-server start
+# 或
+redis-server
+```
+
+### 4. 后端部署
 
 ```bash
 cd backend
@@ -62,13 +77,13 @@ pip install -r requirements.txt
 
 # 配置环境变量
 cp .env.example .env
-# 编辑 .env，配置数据库密码和AI密钥
+# 编辑 .env，配置数据库密码、Redis和AI密钥
 
 # 启动服务
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python start.py
 ```
 
-### 4. 前端部署
+### 5. 前端部署
 
 ```bash
 cd frontend
@@ -83,7 +98,7 @@ npm run dev
 npm run build
 ```
 
-### 5. 环境变量配置
+### 6. 环境变量配置
 
 **后端** (`backend/.env`):
 ```bash
@@ -93,6 +108,11 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=panda
+
+# Redis配置
+REDIS_URL=redis://localhost:6379/0
+REDIS_TTL_STATE=86400  # 状态24小时过期
+REDIS_MAX_HISTORY=50   # 对话历史保留50轮
 
 # AI模型配置 - 阿里百炼平台
 # 获取地址: https://bailian.console.aliyun.com/
@@ -105,6 +125,9 @@ LLM_MAX_RETRIES=3
 LLM_TIMEOUT=120
 LLM_TEMPERATURE=0.7
 LLM_STREAMING=false
+
+# CORS 配置
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
 
 **前端** (`frontend/.env`):
@@ -130,19 +153,29 @@ PANDA/
 │   │   │   ├── course/   # 课程管理
 │   │   │   ├── scenario/ # 情景模拟
 │   │   │   ├── chat/     # 对话交互
+│   │   │   ├── agent/    # Agent智能体系统
+│   │   │   │   ├── core/ # 核心组件
+│   │   │   │   │   ├── agent_orchestrator.py    # Agent编排器
+│   │   │   │   │   ├── state_update_engine.py   # 状态更新引擎
+│   │   │   │   │   └── crisis_detector.py       # 危机检测器
+│   │   │   │   ├── chains/     # Agent链
+│   │   │   │   ├── prompts/    # Agent提示词
+│   │   │   │   ├── services/   # 状态服务
+│   │   │   │   └── repositories/# 状态仓储
 │   │   │   ├── evaluation/# 评估系统
 │   │   │   ├── progress/ # 学习进度
 │   │   │   └── menu/     # 菜单管理
 │   │   ├── shared/       # 共享基础设施
-│   │   │   ├── core/     # LangChain核心
+│   │   │   ├── ai/       # LangChain核心
 │   │   │   ├── db/       # 数据库
 │   │   │   ├── common/   # 通用工具
 │   │   │   └── infrastructure/ # 基础服务
+│   │   │       └── redis_state_manager.py # Redis状态管理
+│   │   ├── config/       # 配置层
+│   │   │   └── skill_config.json # 技能配置
+│   │   ├── interfaces/   # 模块间接口
 │   │   ├── models/       # ORM模型
 │   │   ├── schemas/      # Pydantic模型
-│   │   ├── api/          # API路由
-│   │   ├── core/         # 核心配置
-│   │   ├── db/           # 数据库配置
 │   │   └── main.py       # 应用入口
 │   └── requirements.txt  # Python依赖
 ├── frontend/             # React前端
@@ -153,7 +186,11 @@ PANDA/
 ├── docs/                 # 项目文档
 │   ├── THP.md           # THP框架说明
 │   ├── 项目介绍.md       # 项目详细介绍
-│   └── 开发规则.md       # 开发规范
+│   ├── 开发规则.md       # 开发规范
+│   └── 项目文档/         # 详细文档
+│       └── resources/    # 资源文件
+│           ├── 数据库设计.md  # 数据库设计
+│           └── panda.sql     # SQL脚本
 └── README.md             # 项目说明
 ```
 
@@ -171,48 +208,42 @@ modules/{module_name}/
 └── repositories/ # 数据访问层
 ```
 
-### 共享基础设施 (shared/)
-
-- **core/**: LangChain核心组件
-  - `langchain_manager.py`: LLM统一管理（单例模式）
-  - `chains/`: 对话链和评估链（LCEL）
-  - `prompts/`: 提示词模板
-
-- **infrastructure/**: 基础服务
-  - `ai_service.py`: AI服务统一接口
-  - `event_bus.py`: 事件总线（发布/订阅）
-  - `skill_config.py`: 技能配置管理
-
-### AI模块技术栈
-
-- **LangChain**: LLM应用开发框架
-- **LCEL (LangChain Expression Language)**: 声明式链组合
-- **Pydantic Output Parser**: 结构化输出
-- **事件驱动架构**: 模块间解耦通信
-
-## 🤖 AI配置说明
-
-### LangChain配置
-
-系统使用LangChain框架统一管理AI调用，支持：
-
-- **对话生成**: 使用 `ConversationChain` 处理多轮对话
-- **评估报告**: 使用 `EvaluationChain` 生成结构化评估
-- **自动重试**: 内置指数退避重试机制
-- **错误处理**: 统一的异常处理和降级策略
-
-### 模型配置
-
-- **主模型**: `qwen-max`（通义千问最强模型）
-- **超时时间**: 120秒
-- **重试次数**: 3次
-- **温度参数**: 0.7（平衡创造性和准确性）
-
 ## 📚 文档
 
-- [THP框架说明](docs/THP.md) - THP五维评分体系详解
 - [项目介绍](docs/项目介绍.md) - 项目背景和目标
 - [开发规则](docs/开发规则.md) - 开发规范和最佳实践
+- [数据库设计](docs/项目文档/resources/数据库设计.md) - 数据库设计和ER图
+- [后端文档](backend/README.md) - 后端架构详细说明
+- [AI模块架构](docs/ai_module_architecture.md) - LangChain集成详细文档
+- [后续开发任务清单](docs/后续开发任务清单.md) - 后续开发任务
+
+## 🔄 更新日志
+
+### v0.3.0 (2026-01-31)
+- ✅ 升级 LangChain 到 1.2.7
+- ✅ 升级 Pydantic 到 2.7+
+- ✅ 实现 Agent 智能体系统
+  - AgentOrchestrator 编排器
+  - PatientAgentChain 患者链
+  - StateUpdateEngine 状态更新引擎
+  - CrisisDetector 危机检测器
+- ✅ 集成 Redis 实时状态管理
+  - RedisStateManager 状态管理器
+  - Redis + MySQL 混合存储
+- ✅ 实现动态患者状态更新
+  - 四项指标（心情/满意度/抑郁程度/信任度）
+  - 基于 skill_config.json 规则匹配
+- ✅ 添加 patient_states 表和状态历史记录
+
+### v0.2.0 (2024-01-29)
+- ✅ 重构 AI 模块架构
+- ✅ 技能配置系统
+- ✅ 事件总线集成
+
+### v0.1.0 (2024-01-15)
+- ✅ 基础框架搭建
+- ✅ THP 五维评估体系
+- ✅ 分层模块化架构
 
 ## 📄 许可证
 

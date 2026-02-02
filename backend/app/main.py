@@ -32,7 +32,7 @@ logging.basicConfig(
 
 # LangChain 日志
 langchain_logger = logging.getLogger("langchain")
-langchain_logger.setLevel(logging.DEBUG)
+langchain_logger.setLevel(logging.INFO)
 
 # HTTP 客户端日志（显示完整 API 请求）
 httpx_logger = logging.getLogger("httpx")
@@ -49,7 +49,7 @@ from backend.app.config.config import settings
 from backend.app.db.database import init_database, get_db
 
 # 导入所有API路由（新的模块化架构）
-from backend.app.api import health_router
+from backend.app.api import health_router, agent_router
 
 # 认证与用户模块
 from backend.app.modules.auth.api.routers import auth_router, users_router
@@ -94,6 +94,7 @@ app.add_middleware(
 
 # 注册所有路由（新的模块化架构）
 app.include_router(health_router, prefix="/api")
+app.include_router(agent_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(course_router, prefix="/api")

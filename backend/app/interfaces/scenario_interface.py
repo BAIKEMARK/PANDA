@@ -17,6 +17,7 @@ class ScenarioConfig:
     patient_background: str
     difficulty: int
     time_period: str
+    # 所有对话都使用Agent模式，无需agent_mode字段
 
 
 class ScenarioInterface(ABC):

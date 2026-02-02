@@ -47,6 +47,23 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.7
     LLM_STREAMING: bool = False
 
+    # ==================== Redis配置 ====================
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: Optional[str] = None
+    REDIS_DECODE_RESPONSES: bool = True
+    REDIS_SOCKET_CONNECT_TIMEOUT: int = 5
+    REDIS_SOCKET_TIMEOUT: int = 5
+    REDIS_MAX_CONNECTIONS: int = 50
+
+    @property
+    def REDIS_URL(self) -> str:
+        """获取Redis连接URL"""
+        if self.REDIS_PASSWORD:
+            return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
     # ==================== CORS配置 ====================
     CORS_ORIGINS_STR: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
 
