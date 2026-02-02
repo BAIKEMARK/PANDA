@@ -52,6 +52,12 @@ from backend.app.modules.progress.api.routers import router as progress_router
 # 菜单管理模块
 from backend.app.modules.menu.api.routers import router as menu_router
 
+# 后台管理模块
+from backend.app.modules.admin.api.organization import router as org_router
+from backend.app.modules.admin.api.role import router as role_router
+from backend.app.modules.admin.api.user import router as user_admin_router
+from backend.app.modules.admin.api.training import router as training_router
+
 
 # 创建 FastAPI 应用实例
 app = FastAPI(
@@ -82,6 +88,10 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(evaluation_router, prefix="/api")
 app.include_router(progress_router, prefix="/api")
 app.include_router(menu_router, prefix="/api")
+app.include_router(org_router, prefix="/api")
+app.include_router(role_router, prefix="/api")
+app.include_router(user_admin_router, prefix="/api")
+app.include_router(training_router, prefix="/api")
 
 
 # ================================================

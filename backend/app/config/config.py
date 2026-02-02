@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     DB_HOST: str = "localhost"
     DB_PORT: int = 3306
     DB_USER: str = "root"
-    DB_PASSWORD: str = "010430"
+    DB_PASSWORD: str = "test0000"
     DB_NAME: str = "panda"
     DB_CHARSET: str = "utf8mb4"
 
