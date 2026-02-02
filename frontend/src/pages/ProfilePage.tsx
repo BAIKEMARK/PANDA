@@ -70,13 +70,13 @@ export const ProfilePage = () => {
       message.success('密码修改成功，请重新登录');
       setIsPasswordModalOpen(false);
       passwordForm.resetFields();
-      
+
       // 清除记住的密码
       localStorage.removeItem('login_remember');
       localStorage.removeItem('login_email');
       localStorage.removeItem('login_password');
       localStorage.removeItem('login_auto');
-      
+
       // 登出并跳转到登录页
       logout();
       navigate('/login', { replace: true });
@@ -122,8 +122,8 @@ export const ProfilePage = () => {
             </div>
           </Col>
           <Col>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<EditOutlined />}
               onClick={handleEditClick}
             >
@@ -162,75 +162,6 @@ export const ProfilePage = () => {
           </Descriptions.Item>
         </Descriptions>
       </Card>
-
-      {/* Stats Cards */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={8}>
-          <Card
-            bordered={false}
-            style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '12px',
-              color: '#fff'
-            }}
-          >
-            <div style={{ fontSize: '36px', marginBottom: '12px' }}>📚</div>
-            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-              课程学习
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
-              -
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.8, marginTop: '8px' }}>
-              已学习课程
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={8}>
-          <Card
-            bordered={false}
-            style={{
-              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              borderRadius: '12px',
-              color: '#fff'
-            }}
-          >
-            <div style={{ fontSize: '36px', marginBottom: '12px' }}>💬</div>
-            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-              对话练习
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
-              -
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.8, marginTop: '8px' }}>
-              完成会话数
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={8}>
-          <Card
-            bordered={false}
-            style={{
-              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-              borderRadius: '12px',
-              color: '#fff'
-            }}
-          >
-            <div style={{ fontSize: '36px', marginBottom: '12px' }}>📊</div>
-            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-              平均得分
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
-              -
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.8, marginTop: '8px' }}>
-              综合评分
-            </div>
-          </Card>
-        </Col>
-      </Row>
 
       {/* 编辑资料弹窗 */}
       <Modal

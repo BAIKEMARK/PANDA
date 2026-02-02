@@ -33,6 +33,9 @@ export const ChatWindow = ({ messages, isTyping = false, patientBackground }: Ch
     created_at: new Date().toISOString(),
   } : null;
 
+  // 提取患者姓名 (假设格式为 "姓名, 年龄...")
+  const patientName = patientBackground ? patientBackground.split(/[,\uff0c\s]/)[0] : '患者';
+
   return (
     <div style={{
       height: '100%',
@@ -54,10 +57,20 @@ export const ChatWindow = ({ messages, isTyping = false, patientBackground }: Ch
           />
         ) : (
           <div>
-            {/* 患者背景作为第一条气泡 */}
-            {backgroundMessage && <MessageBubble key={backgroundMessage.id} message={backgroundMessage} />}
+            {/* 患者背景作为第一条气泡 - 显示 PANDA助手 */}
+            {backgroundMessage && (
+              <MessageBubble
+                key={backgroundMessage.id}
+                message={backgroundMessage}
+                senderName="PANDA助手"
+              />
+            )}
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                senderName={message.role === MessageRole.ASSISTANT ? patientName : undefined}
+              />
             ))}
           </div>
         )}
@@ -101,7 +114,7 @@ export const ChatWindow = ({ messages, isTyping = false, patientBackground }: Ch
                 }} />
               </div>
               <Text type="secondary" style={{ fontSize: '13px', marginLeft: '8px' }}>
-                PANDA助手正在输入...
+                {patientName}正在输入...
               </Text>
             </div>
           </div>

@@ -9,10 +9,22 @@ from backend.app.db.database import get_db
 from backend.app.modules.progress.schemas.progress import (
     UserProgressResponse, UserProgressCreate, UserProgressUpdate
 )
+from backend.app.modules.progress.schemas.dashboard import DashboardStatsResponse
 from backend.app.modules.progress.services.progress_service import ProgressService
+from backend.app.modules.progress.services.dashboard_service import DashboardService
 from backend.app.common.exceptions import NotFoundException
 
 router = APIRouter(prefix="/progress", tags=["学习进度"])
+
+
+@router.get("/dashboard", response_model=DashboardStatsResponse)
+async def get_dashboard_stats(
+    user_id: str = "user-001",  # TODO: 从JWT token获取
+    db: Session = Depends(get_db)
+):
+    """获取学习仪表盘统计数据"""
+    service = DashboardService(db)
+    return service.get_user_dashboard_stats(user_id)
 
 
 @router.post("/courses/{course_id}/start", response_model=UserProgressResponse, status_code=status.HTTP_201_CREATED)
