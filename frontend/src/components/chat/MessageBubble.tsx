@@ -2,7 +2,7 @@
  * 消息气泡组件
  */
 import { Avatar, Typography } from 'antd';
-import { UserOutlined, RobotOutlined } from '@ant-design/icons';
+import { RobotOutlined } from '@ant-design/icons';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
@@ -12,11 +12,21 @@ const { Text } = Typography;
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  senderName?: string;
 }
 
-export const MessageBubble = ({ message }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, senderName }: MessageBubbleProps) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
+
+  // Helper to parse date as UTC if no timezone specified
+  const parseDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    // If string doesn't contain Z or timezone offset, assume UTC and append Z
+    // This fixes the "8 hours ago" bug caused by backend sending UTC without Z
+    const isUTC = !dateStr.includes('Z') && !/\+\d{2}:\d{2}$/.test(dateStr);
+    return new Date(isUTC ? `${dateStr}Z` : dateStr);
+  };
 
   // 系统消息
   if (isSystem) {
@@ -57,7 +67,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
           {message.created_at && (
             <div style={{ textAlign: 'right', marginTop: '4px' }}>
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                {formatDistanceToNow(new Date(message.created_at), {
+                {formatDistanceToNow(parseDate(message.created_at), {
                   addSuffix: true,
                   locale: zhCN,
                 })}
@@ -80,7 +90,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
             icon={<RobotOutlined />}
             style={{ backgroundColor: '#722ed1' }}
           />
-          <Text style={{ fontSize: '13px', color: '#595959' }}>PANDA助手</Text>
+          <Text style={{ fontSize: '13px', color: '#595959' }}>{senderName || 'PANDA助手'}</Text>
         </div>
 
         {/* Message with Markdown */}
@@ -103,12 +113,12 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
           >
             <ReactMarkdown
               components={{
-                p: ({ children }: { children: React.ReactNode }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
-                ul: ({ children }: { children: React.ReactNode }) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }}>{children}</ul>,
-                ol: ({ children }: { children: React.ReactNode }) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }}>{children}</ol>,
-                li: ({ children }: { children: React.ReactNode }) => <li style={{ marginBottom: '4px' }}>{children}</li>,
-                strong: ({ children }: { children: React.ReactNode }) => <strong style={{ fontWeight: 600, color: '#262626' }}>{children}</strong>,
-                code: ({ inline, children }: { inline?: boolean; children: React.ReactNode }) =>
+                p: ({ children }: { children?: React.ReactNode }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
+                ul: ({ children }: { children?: React.ReactNode }) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }}>{children}</ul>,
+                ol: ({ children }: { children?: React.ReactNode }) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }}>{children}</ol>,
+                li: ({ children }: { children?: React.ReactNode }) => <li style={{ marginBottom: '4px' }}>{children}</li>,
+                strong: ({ children }: { children?: React.ReactNode }) => <strong style={{ fontWeight: 600, color: '#262626' }}>{children}</strong>,
+                code: ({ inline, children }: { inline?: boolean; children?: React.ReactNode }) =>
                   inline ? (
                     <code style={{
                       background: '#f5f5f5',
@@ -128,10 +138,10 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
                       margin: '8px 0'
                     }}>{children}</code>
                   ),
-                h1: ({ children }: { children: React.ReactNode }) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h1>,
-                h2: ({ children }: { children: React.ReactNode }) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h2>,
-                h3: ({ children }: { children: React.ReactNode }) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h3>,
-                blockquote: ({ children }: { children: React.ReactNode }) => (
+                h1: ({ children }: { children?: React.ReactNode }) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h1>,
+                h2: ({ children }: { children?: React.ReactNode }) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h2>,
+                h3: ({ children }: { children?: React.ReactNode }) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }}>{children}</h3>,
+                blockquote: ({ children }: { children?: React.ReactNode }) => (
                   <blockquote style={{
                     borderLeft: '3px solid #d9d9d9',
                     paddingLeft: '12px',
@@ -150,7 +160,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
         {message.created_at && (
           <div style={{ marginTop: '4px' }}>
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              {formatDistanceToNow(new Date(message.created_at), {
+              {formatDistanceToNow(parseDate(message.created_at), {
                 addSuffix: true,
                 locale: zhCN,
               })}
