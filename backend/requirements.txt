@@ -32,5 +32,5 @@ loguru==0.7.2
 # ==================== LangChain 相关 ====================
 langchain==0.1.16
 langchain-openai==0.0.6
-langchain-core==0.1.40
-langsmith==0.0.75
+langchain-core==0.1.42
+langsmith>=0.1.0,<0.2.0

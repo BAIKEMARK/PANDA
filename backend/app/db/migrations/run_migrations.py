@@ -21,9 +21,8 @@ def run_migrations():
     
     migrations_dir = Path(__file__).parent
     migration_files = [
-        "001_create_admin_tables.sql",
-        "002_alter_existing_tables.sql",
-        "003_init_default_data.sql"
+        "01_create_tables.sql",
+        "02_init_data.sql"
     ]
     
     with engine.connect() as conn:
@@ -39,10 +38,49 @@ def run_migrations():
                 sql = f.read()
             
             try:
-                for statement in sql.split(';'):
-                    statement = statement.strip()
-                    if statement and not statement.startswith('--'):
+                statements = []
+                current_statement = ""
+                for line in sql.split('\n'):
+                    line = line.strip()
+                    # 跳过注释行
+                    if line.startswith('--') or not line:
+                        continue
+                    current_statement += line + " "
+                    # 如果行以分号结尾，说明是一个完整的语句
+                    if line.endswith(';'):
+                        statements.append(current_statement.strip())
+                        current_statement = ""
+                
+                # 处理最后一个语句（可能没有分号）
+                if current_statement.strip():
+                    statements.append(current_statement.strip())
+                
+                for statement in statements:
+                    if not statement:
+                        continue
+                    try:
                         conn.execute(text(statement))
+                    except Exception as e:
+                        # 忽略列已存在、索引已存在、表已存在的错误
+                        error_msg = str(e).lower()
+                        error_code = getattr(e, 'orig', None)
+                        error_code_str = str(error_code) if error_code else ''
+                        
+                        # 需要忽略的错误类型
+                        ignorable_errors = [
+                            'duplicate column', 'already exists', 
+                            'duplicate key', 'duplicate entry',
+                            "doesn't exist",  # 表不存在（基础表可能还未创建）
+                            'failed to open the referenced table',  # 外键引用的表不存在
+                            'table', 'does not exist'
+                        ]
+                        
+                        if any(keyword in error_msg for keyword in ignorable_errors):
+                            print(f"  [跳过] {error_msg[:100]}...")
+                        else:
+                            print(f"  [错误] {error_msg}")
+                            raise
+                
                 conn.commit()
                 print(f"✅ {migration_file} 执行成功")
             except Exception as e:

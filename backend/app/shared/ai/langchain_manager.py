@@ -61,9 +61,9 @@ class LangChainManager:
                 http_client=http_client,
                 verbose=True,  # 启用详细日志，打印完整的 API 请求和响应
             )
-            print(f"✅ LangChain LLM初始化: {settings.AI_TEXT_MODEL}")
+            print(f"[OK] LangChain LLM初始化: {settings.AI_TEXT_MODEL}")
         except Exception as e:
-            print(f"❌ LLM初始化失败: {e}")
+            print(f"[ERROR] LLM初始化失败: {e}")
             raise
 
     def get_llm(self) -> BaseChatModel:

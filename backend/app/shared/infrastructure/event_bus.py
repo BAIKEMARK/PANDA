@@ -50,7 +50,7 @@ class EventBus:
             try:
                 handler(data)
             except Exception as e:
-                print(f"❌ 事件处理失败 [{event_name}]: {e}")
+                print(f"[ERROR] 事件处理失败 [{event_name}]: {e}")
 
     def subscribe(self, event_name: str, handler: Callable) -> None:
         """

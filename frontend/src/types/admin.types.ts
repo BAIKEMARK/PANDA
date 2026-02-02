@@ -90,3 +90,44 @@ export interface User {
   created_at: string;
   updated_at: string;
 }
+
+export interface Certificate {
+  id: string;
+  user_id: string;
+  certificate_number: string;
+  issue_date: string;
+  credit_hours: number;
+  org_id?: string;
+  class_id?: string;
+  template_id?: string;
+  status: 'valid' | 'revoked';
+  revoked_at?: string;
+  revoked_by?: string;
+}
+
+export interface CertificateTemplate {
+  id: string;
+  org_id: string;
+  name: string;
+  template_config?: Record<string, any>;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Question {
+  id: string;
+  org_id?: string;
+  scope: 'private' | 'platform' | 'shared';
+  question_type: 'single' | 'multiple' | 'judge';
+  question_text: string;
+  options: string[];
+  correct_answer: string[];
+  explanation?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  knowledge_tags?: string[];
+  chapter_id?: string;
+  status: 'draft' | 'active' | 'disabled';
+  created_at: string;
+  updated_at: string;
+}

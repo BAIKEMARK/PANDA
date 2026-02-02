@@ -34,7 +34,7 @@ class MentorAgent:
             try:
                 self.generate_evaluation(session_id)
             except Exception as e:
-                print(f"❌ 评估生成失败: {e}")
+                print(f"[ERROR] 评估生成失败: {e}")
                 # 发布失败事件
                 self.event_bus.publish(
                     Events.EVALUATION_FAILED,
@@ -73,7 +73,7 @@ class MentorAgent:
                 evaluation_criteria=evaluation_criteria
             )
         except Exception as e:
-            print(f"❌ AI 评估失败: {e}")
+            print(f"[ERROR] AI 评估失败: {e}")
             self.event_bus.publish(
                 Events.EVALUATION_FAILED,
                 {"session_id": session_id, "error": str(e)}

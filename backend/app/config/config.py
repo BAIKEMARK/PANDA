@@ -80,10 +80,10 @@ def _find_env_file() -> str:
 
     for location in possible_locations:
         if location.exists():
-            print(f"✅ 找到 .env 文件: {location}")
+            print(f"[OK] 找到 .env 文件: {location}")
             return str(location)
 
-    print("⚠️  未找到 .env 文件，使用默认配置")
+    print("[WARN] 未找到 .env 文件，使用默认配置")
     return ".env"
 
 

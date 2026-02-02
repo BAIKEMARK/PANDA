@@ -146,7 +146,7 @@ async def end_session(
         engine.end_session(session_id, final_score)
     except Exception as e:
         # 事件发布失败不影响会话结束，但记录错误
-        print(f"⚠️ 事件发布失败: {e}")
+        print(f"[WARN] 事件发布失败: {e}")
 
     return service.get_session(session_id)
 

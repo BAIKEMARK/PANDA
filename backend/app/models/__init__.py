@@ -13,6 +13,7 @@ from .organization import Organization, Role, Permission, RolePermission, UserOr
 from .training import TrainingClass, ClassStudent, ClassTask
 from .question import QuestionBank
 from .audit import AuditLog
+from .certificate import Certificate, CertificateTemplate
 
 __all__ = [
     "User",
@@ -34,4 +35,6 @@ __all__ = [
     "ClassTask",
     "QuestionBank",
     "AuditLog",
+    "Certificate",
+    "CertificateTemplate",
 ]

@@ -27,7 +27,7 @@ class AIService:
                 self.evaluation_chain = evaluation_chain
                 self._initialized = True
             except Exception as e:
-                print(f"❌ AI服务初始化失败: {e}")
+                print(f"[ERROR] AI服务初始化失败: {e}")
                 raise
 
     def generate_conversation_response(
@@ -63,7 +63,7 @@ class AIService:
             return response
 
         except Exception as e:
-            print(f"❌ AI调用异常: {type(e).__name__} - {str(e)}")
+            print(f"[ERROR] AI调用异常: {type(e).__name__} - {str(e)}")
             raise Exception(f"AI调用异常: {type(e).__name__} - {str(e)}")
 
     def _convert_ai_model_to_api(self, report_model) -> Dict:
@@ -164,7 +164,7 @@ class AIService:
             return self._convert_ai_model_to_api(report_model)
 
         except Exception as e:
-            print(f"❌ 评估生成失败: {type(e).__name__} - {str(e)}")
+            print(f"[ERROR] 评估生成失败: {type(e).__name__} - {str(e)}")
             raise Exception(f"评估生成失败: {type(e).__name__} - {str(e)}")
 
 

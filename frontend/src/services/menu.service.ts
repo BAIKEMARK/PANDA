@@ -43,6 +43,29 @@ class MenuService {
     const { data } = await apiClient.get<MenuItem>(`/menus/${id}`);
     return data;
   }
+
+  /**
+   * 创建菜单
+   */
+  async createMenu(data: Partial<MenuItem>): Promise<MenuItem> {
+    const { data: result } = await apiClient.post<MenuItem>('/menus/', data);
+    return result;
+  }
+
+  /**
+   * 更新菜单
+   */
+  async updateMenu(id: string, data: Partial<MenuItem>): Promise<MenuItem> {
+    const { data: result } = await apiClient.put<MenuItem>(`/menus/${id}`, data);
+    return result;
+  }
+
+  /**
+   * 删除菜单
+   */
+  async deleteMenu(id: string): Promise<void> {
+    await apiClient.delete(`/menus/${id}`);
+  }
 }
 
 // 导出单例

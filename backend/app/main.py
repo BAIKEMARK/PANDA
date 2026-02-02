@@ -58,6 +58,13 @@ from backend.app.modules.admin.api.role import router as role_router
 from backend.app.modules.admin.api.user import router as user_admin_router
 from backend.app.modules.admin.api.training import router as training_router
 
+# 证书管理模块
+from backend.app.modules.certificate.api.certificate import router as certificate_router
+from backend.app.modules.certificate.api.certificate_template import router as certificate_template_router
+
+# 题库管理模块
+from backend.app.modules.question.api.question import router as question_router
+
 
 # 创建 FastAPI 应用实例
 app = FastAPI(
@@ -92,6 +99,9 @@ app.include_router(org_router, prefix="/api")
 app.include_router(role_router, prefix="/api")
 app.include_router(user_admin_router, prefix="/api")
 app.include_router(training_router, prefix="/api")
+app.include_router(certificate_router, prefix="/api")
+app.include_router(certificate_template_router, prefix="/api")
+app.include_router(question_router, prefix="/api")
 
 
 # ================================================
@@ -117,25 +127,25 @@ async def root():
 async def startup_event():
     """应用启动时执行"""
     print("\n" + "="*70)
-    print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION}")
+    print(f"[START] {settings.APP_NAME} v{settings.APP_VERSION}")
     print("="*70)
-    print(f"📖 API文档: http://localhost:8000/api/docs")
-    print(f"🔧 ReDoc文档: http://localhost:8000/api/redoc")
-    print(f"🔧 调试模式: {settings.DEBUG}")
+    print(f"[API文档] http://localhost:8000/api/docs")
+    print(f"[ReDoc文档] http://localhost:8000/api/redoc")
+    print(f"[调试模式] {settings.DEBUG}")
 
     # 显示数据库配置
-    print(f"\n📊 数据库配置:")
+    print(f"\n[数据库配置]")
     print(f"   主机: {settings.DB_HOST}:{settings.DB_PORT}")
     print(f"   数据库: {settings.DB_NAME}")
 
     # 显示AI配置
     if settings.AI_TEXT_KEY:
-        print(f"\n🤖 AI配置:")
+        print(f"\n[AI配置]")
         print(f"   模型: {settings.AI_TEXT_MODEL}")
         print(f"   框架: LangChain")
-        print(f"   状态: ✅ 已配置")
+        print(f"   状态: [OK] 已配置")
     else:
-        print(f"\n🤖 AI配置: ⚠️  未配置")
+        print(f"\n[AI配置] [WARN] 未配置")
 
     print("="*70 + "\n")
 
@@ -148,16 +158,16 @@ async def startup_event():
     db = next(db_gen)
     try:
         mentor_agent = MentorAgent(db)
-        print(f"✅ MentorAgent 已初始化并订阅事件")
+        print(f"[OK] MentorAgent 已初始化并订阅事件")
     except Exception as e:
-        print(f"⚠️  MentorAgent 初始化失败: {e}")
+        print(f"[WARN] MentorAgent 初始化失败: {e}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """应用关闭时执行"""
     print("\n" + "="*70)
-    print("👋 应用正在关闭...")
+    print("[SHUTDOWN] 应用正在关闭...")
     print("="*70 + "\n")
 
 

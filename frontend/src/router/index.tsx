@@ -18,6 +18,10 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 import { OrganizationPage } from '../pages/admin/OrganizationPage';
 import { UserManagePage } from '../pages/admin/UserManagePage';
 import { TrainingClassPage } from '../pages/admin/TrainingClassPage';
+import { RoleManagePage } from '../pages/admin/RoleManagePage';
+import { MenuManagePage } from '../pages/admin/MenuManagePage';
+import { QuestionBankPage } from '../pages/admin/QuestionBankPage';
+import { CertificatePage } from '../pages/admin/CertificatePage';
 import { PrivateRoute, PublicRoute } from './privateRoutes';
 
 // 路由配置
@@ -73,6 +77,22 @@ export const router = createBrowserRouter([
           {
             path: 'classes',
             element: <TrainingClassPage />,
+          },
+          {
+            path: 'roles',
+            element: <RoleManagePage />,
+          },
+          {
+            path: 'menus',
+            element: <MenuManagePage />,
+          },
+          {
+            path: 'questions',
+            element: <QuestionBankPage />,
+          },
+          {
+            path: 'certificates',
+            element: <CertificatePage />,
           },
         ],
       },
