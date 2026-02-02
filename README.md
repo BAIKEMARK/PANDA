@@ -215,7 +215,33 @@ modules/{module_name}/
 - [数据库设计](docs/项目文档/resources/数据库设计.md) - 数据库设计和ER图
 - [后端文档](backend/README.md) - 后端架构详细说明
 - [AI模块架构](docs/ai_module_architecture.md) - LangChain集成详细文档
+- [管理端对接文档](docs/管理端对接文档.md) - 管理端开发交付指南
 - [后续开发任务清单](docs/后续开发任务清单.md) - 后续开发任务
+
+## 🗄️ 数据库迁移
+
+项目使用增量迁移脚本管理数据库变更，位于 `backend/app/db/migrations/` 目录。
+
+### 首次部署
+
+```bash
+# 1. 登录 MySQL 并创建数据库
+mysql -u root -p
+CREATE DATABASE panda CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE panda;
+
+# 2. 执行主初始化脚本
+SOURCE backend/app/db/panda.sql;
+
+# 3. 执行增量迁移（如有）
+SOURCE backend/app/db/migrations/add_video_url.sql;
+```
+
+### 迁移文件清单
+
+| 文件名 | 说明 | 新增字段 |
+|--------|------|----------|
+| `add_video_url.sql` | 课程视频支持 | `courses.video_url` |
 
 ## 🔄 更新日志
 

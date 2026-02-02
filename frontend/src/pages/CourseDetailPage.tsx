@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Button, Card, Tag, Spin, Empty, Breadcrumb, Divider, Alert } from 'antd';
+import { Typography, Button, Card, Tag, Spin, Empty, Breadcrumb } from 'antd';
 import {
   ArrowLeftOutlined,
   ReadOutlined,
@@ -23,6 +23,7 @@ export const CourseDetailPage = () => {
   const { currentCourse, isLoading, error, loadCourse } = useCourseStore();
   const { setLoading } = useUIStore();
   const [readingProgress, setReadingProgress] = useState<number>(0);
+  const [pdfUrl, setPdfUrl] = useState<string>('/example.pdf'); // 默认使用 example.pdf
 
   useEffect(() => {
     if (!courseId) return;
@@ -54,6 +55,42 @@ export const CourseDetailPage = () => {
 
     fetchCourse();
   }, [courseId, loadCourse, setLoading, currentCourse?.id]);
+
+  // 检查课程 PDF URL 是否有效，无效则使用 example.pdf
+  useEffect(() => {
+    const checkPdfUrl = async () => {
+      const url = currentCourse?.content_url;
+
+      // 如果 URL 为空、不是 PDF、或者包含 /api/（错误的路径），直接用 example.pdf
+      if (!url || !url.toLowerCase().endsWith('.pdf') || url.includes('/api/')) {
+        setPdfUrl('/example.pdf');
+        return;
+      }
+
+      // 对于静态文件路径，尝试 HEAD 请求检测文件是否存在
+      // 只检查以 / 开头的相对路径（静态文件）
+      if (url.startsWith('/') && !url.startsWith('/api/')) {
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          // 检查响应类型是否为 PDF（避免 Vite 返回 index.html）
+          const contentType = response.headers.get('content-type');
+          if (response.ok && contentType?.includes('application/pdf')) {
+            setPdfUrl(url);
+            return;
+          }
+        } catch {
+          // 忽略错误，使用默认值
+        }
+      }
+
+      // 默认使用 example.pdf
+      setPdfUrl('/example.pdf');
+    };
+
+    if (currentCourse) {
+      checkPdfUrl();
+    }
+  }, [currentCourse]);
 
   // 监听滚动以保存阅读进度
   useEffect(() => {
@@ -110,6 +147,16 @@ export const CourseDetailPage = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+      {/* 返回按钮 */}
+      <Button
+        type="link"
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate('/courses')}
+        style={{ padding: 0, marginBottom: '16px', color: '#1890ff' }}
+      >
+        返回课程中心
+      </Button>
+
       {/* 导航面包屑 */}
       <Breadcrumb
         items={[
@@ -163,67 +210,45 @@ export const CourseDetailPage = () => {
         </div>
       </Card>
 
-      {/* 课程内容区域 */}
+      {/* 视频内容区域（如果有视频） */}
+      {currentCourse.video_url && (
+        <Card
+          title={<><ReadOutlined /> 课程视频</>}
+          bordered={false}
+          style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: '24px' }}
+          bodyStyle={{ padding: '16px' }}
+        >
+          <video
+            src={currentCourse.video_url}
+            controls
+            style={{
+              width: '100%',
+              maxHeight: '600px',
+              borderRadius: '8px',
+              background: '#000',
+            }}
+          >
+            您的浏览器不支持视频播放
+          </video>
+        </Card>
+      )}
+
+      {/* 课程课件区域 */}
       <Card
         title={<><ReadOutlined /> 课程课件</>}
         bordered={false}
         style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', minHeight: '800px' }}
         bodyStyle={{ padding: 0, height: '800px' }}
       >
-        {(() => {
-          const url = currentCourse.content_url;
-          // 简单的检查：如果 URL 是相对路径且本地实际上没有这些文件（即开发环境），
-          // 这会导致 Vite 返回 index.html，从而在 iframe 里套娃显示网页。
-          // 这里我们做一个简单的后缀检查，或者默认显示占位符
-          const isPdf = url && url.toLowerCase().endsWith('.pdf');
-
-          // 在开发环境中，如果没有真实部署 PDF，暂时显示 Empty 状态，避免套娃
-          // 或者可以使用一个在线的示例 PDF 用于演示
-          // const demoPdf = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
-
-          if (url && isPdf) {
-            return (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
-                {/* 
-                   注意：由于本地 public 文件夹下缺少对应的 PDF 文件，直接 iframe 加载会触发 404 -> index.html 回退。
-                   为了避免"网页套娃"现象，这里先注释掉 iframe，除非确认文件存在。
-                   在生产环境中，应该确保 content_url 指向真实存在的静态资源。
-                 */}
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={
-                    <div>
-                      <Text strong>演示环境：部分课件文件未上传</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        目标文件: {url} <br />
-                        请在 frontend/public/courses/ 目录下放置对应 PDF 文件
-                      </Text>
-                    </div>
-                  }
-                />
-                {/* 如果你确实有了文件，取消下面注释即可 */}
-                {/* 
-                  <iframe
-                    src={url}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                    }}
-                    title={currentCourse.title}
-                  /> 
-                  */}
-              </div>
-            );
-          }
-
-          return (
-            <div style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-              <Empty description="暂无课件内容 (URL无效或非PDF)" />
-            </div>
-          );
-        })()}
+        <iframe
+          src={pdfUrl}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+          }}
+          title={currentCourse.title}
+        />
       </Card>
 
       {/* 底部浮动进度提示 (可选，增强体验) */}

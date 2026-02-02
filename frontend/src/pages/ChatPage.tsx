@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Space, Tag, Modal, message, Alert } from 'antd';
-import { StopOutlined, CommentOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { StopOutlined, CommentOutlined, PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useChatStore } from '@/stores/chat.store';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -117,7 +117,15 @@ export const ChatPage = () => {
           flexShrink: 0,
         }}
       >
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/scenarios')}
+            style={{ color: '#666' }}
+          >
+            返回
+          </Button>
           <Title level={5} style={{ margin: 0 }}>
             <CommentOutlined style={{ marginRight: '8px' }} />
             {currentSession?.scenario_title || '对话练习'}
