@@ -32,7 +32,7 @@ class DetailedFeedbackItem(BaseModel):
 class EvaluationReportModel(BaseModel):
     """评估报告完整模型"""
     total_score: int = Field(description="总分 (0-100)")
-    level_assessment: str = Field(description="等级评定 (优秀/良好/合格/不合格)")
+    level_assessment: str = Field(description="总分等级评定 (优秀/良好/合格/不合格)")
     radar_chart: THPRadarChart = Field(description="五维雷达图数据")
     state_analysis: Dict = Field(description="状态分析")
     detailed_feedback: List[DetailedFeedbackItem] = Field(description="详细反馈列表")
@@ -165,6 +165,14 @@ def get_thp_rubric_text() -> str:
 
 ## 总分计算
 总分 = A + B + C + D + E (满分100分)
+
+## 总分等级评定
+- 优秀: 90-100分
+- 良好: 80-89分
+- 合格: 60-79分
+- 不合格: 0-59分
+
+
 
 """
 
