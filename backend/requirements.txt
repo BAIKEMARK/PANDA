@@ -7,10 +7,11 @@ python-multipart==0.0.6
 pymysql==1.1.0
 cryptography==41.0.7
 SQLAlchemy==2.0.25
+redis==5.0.1
 
 # 数据验证
-pydantic==2.5.3
-pydantic-settings==2.1.0
+pydantic>=2.7.4
+pydantic-settings>=2.3.0
 email-validator==2.1.0
 
 # 认证与安全
@@ -24,13 +25,14 @@ aiohttp==3.9.1
 
 # 工具库
 python-dateutil==2.8.2
-openai==1.10.0
+openai==2.16.0
 
 # 日志
 loguru==0.7.2
 
 # ==================== LangChain 相关 ====================
-langchain==0.1.16
-langchain-openai==0.0.6
-langchain-core==0.1.40
-langsmith==0.0.75
+# 升级到 v1.x 版本以支持 Pydantic v2
+langchain==1.2.7
+langchain-openai==1.1.7
+langchain-core==1.2.7
+langsmith==0.6.6

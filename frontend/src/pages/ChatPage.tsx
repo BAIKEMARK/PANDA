@@ -2,9 +2,9 @@
  * 聊天页面
  */
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Button, Space, Tag, Modal, message } from 'antd';
-import { StopOutlined, CommentOutlined } from '@ant-design/icons';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Typography, Button, Space, Tag, Modal, message, Alert } from 'antd';
+import { StopOutlined, CommentOutlined, PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useChatStore } from '@/stores/chat.store';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -14,8 +14,17 @@ const { Title } = Typography;
 export const ChatPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentSession, messages, isLoading, isTyping, loadMessages, sendMessage, endSession, setTyping } = useChatStore();
   const [isEnding, setIsEnding] = useState(false);
+
+  // 判断是否从历史记录进入（默认只读模式）
+  // 如果从scenario页面新建会话进入，则不是只读
+  const [isReadOnly, setIsReadOnly] = useState(() => {
+    // 检查来源：如果是从 /progress 或 /dashboard 进入，则为只读模式
+    const fromHistory = location.state?.fromHistory === true;
+    return fromHistory;
+  });
 
   useEffect(() => {
     if (!sessionId) return;
@@ -32,7 +41,7 @@ export const ChatPage = () => {
   }, [sessionId, loadMessages]);
 
   const handleSendMessage = async (content: string) => {
-    if (!sessionId) return;
+    if (!sessionId || isReadOnly) return;
 
     try {
       setTyping(true);
@@ -81,6 +90,11 @@ export const ChatPage = () => {
     });
   };
 
+  const handleContinueChat = () => {
+    setIsReadOnly(false);
+    message.success('已进入对话模式，您可以继续对话了');
+  };
+
   return (
     <div style={{
       height: 'calc(100vh - 64px - 40px)',
@@ -103,7 +117,15 @@ export const ChatPage = () => {
           flexShrink: 0,
         }}
       >
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/scenarios')}
+            style={{ color: '#666' }}
+          >
+            返回
+          </Button>
           <Title level={5} style={{ margin: 0 }}>
             <CommentOutlined style={{ marginRight: '8px' }} />
             {currentSession?.scenario_title || '对话练习'}
@@ -114,15 +136,28 @@ export const ChatPage = () => {
           {currentSession && (
             <Tag color="blue">{messages.length} 条消息</Tag>
           )}
-          <Button
-            type="primary"
-            danger
-            icon={<StopOutlined />}
-            onClick={handleEndSession}
-            disabled={isEnding || isLoading}
-          >
-            结束对话
-          </Button>
+          {isReadOnly ? (
+            <Tag color="orange">只读模式</Tag>
+          ) : null}
+          {isReadOnly ? (
+            <Button
+              type="primary"
+              icon={<PlayCircleOutlined />}
+              onClick={handleContinueChat}
+            >
+              继续对话
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              danger
+              icon={<StopOutlined />}
+              onClick={handleEndSession}
+              disabled={isEnding || isLoading}
+            >
+              结束对话
+            </Button>
+          )}
         </Space>
       </div>
 
@@ -135,9 +170,24 @@ export const ChatPage = () => {
         />
       </div>
 
-      {/* Chat Input */}
+      {/* Chat Input or Read-only Notice */}
       <div style={{ flexShrink: 0 }}>
-        <ChatInput onSend={handleSendMessage} disabled={isLoading} isLoading={isTyping} />
+        {isReadOnly ? (
+          <Alert
+            message="您正在查看历史对话记录"
+            description="点击右上角「继续对话」按钮可继续与患者交流"
+            type="info"
+            showIcon
+            style={{ margin: '16px 24px' }}
+            action={
+              <Button type="primary" size="small" onClick={handleContinueChat}>
+                继续对话
+              </Button>
+            }
+          />
+        ) : (
+          <ChatInput onSend={handleSendMessage} disabled={isLoading} isLoading={isTyping} />
+        )}
       </div>
     </div>
   );

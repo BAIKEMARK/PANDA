@@ -15,6 +15,7 @@ import { ChatPage } from '../pages/ChatPage';
 import { EvaluationReportPage } from '../pages/EvaluationReportPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { LearningDashboardPage } from '../pages/LearningDashboardPage';
 import { PrivateRoute, PublicRoute } from './privateRoutes';
 
 // 路由配置
@@ -30,7 +31,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/courses" replace />,
+        element: <Navigate to="/progress" replace />,
+      },
+      {
+        path: 'progress',
+        element: <LearningDashboardPage />,
       },
       {
         path: 'courses',

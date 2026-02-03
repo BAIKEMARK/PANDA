@@ -211,8 +211,8 @@ export const EvaluationReportPage = () => {
                 }}
               >
                 <div style={{ marginBottom: '8px' }}>
-                  <Tag color={item.status === 'pass' ? 'green' : 'red'}>
-                    {item.status === 'pass' ? '通过' : '失败'}
+                  <Tag color={item.status === '通过' ? 'green' : 'red'}>
+                    {item.status === '通过' ? '通过' : '失败'}
                   </Tag>
                   <Text strong>{item.dimension}</Text>
                 </div>
