@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
-from backend.app.common.constants import CourseLevel
+from backend.app.core.common.constants import CourseLevel
 
 
 class CourseBase(BaseModel):

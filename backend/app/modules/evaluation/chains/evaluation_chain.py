@@ -5,7 +5,7 @@
 from typing import Dict
 from langchain_core.output_parsers import PydanticOutputParser
 
-from backend.app.shared.ai.langchain_manager import langchain_manager
+from backend.app.core.ai.langchain_manager import langchain_manager
 from backend.app.modules.evaluation.prompts.evaluation_prompt import (
     create_evaluation_prompt_template,
     create_evaluation_output_parser,
@@ -42,7 +42,8 @@ class EvaluationChain:
         conversation_text: str,
         scenario_title: str,
         patient_background: str,
-        evaluation_criteria: str
+        evaluation_criteria: str,
+        crisis_detection_summary: str = None
     ) -> EvaluationReportModel:
         """
         同步调用评估链
@@ -52,12 +53,14 @@ class EvaluationChain:
             scenario_title: 场景标题
             patient_background: 患者背景
             evaluation_criteria: 评估标准文本
+            crisis_detection_summary: 危机检测摘要（自杀倾向等）
 
         Returns:
             EvaluationReportModel: 评估报告模型
         """
         # 构建请求数据
         request_data = {
+            "crisis_detection_summary": crisis_detection_summary or "【危机检测】系统未检测到明显的自杀倾向。",
             "evaluation_criteria": evaluation_criteria,
             "scenario_title": scenario_title,
             "patient_background": patient_background,
@@ -74,7 +77,8 @@ class EvaluationChain:
         conversation_text: str,
         scenario_title: str,
         patient_background: str,
-        evaluation_criteria: str
+        evaluation_criteria: str,
+        crisis_detection_summary: str = None
     ) -> EvaluationReportModel:
         """
         异步调用评估链
@@ -84,11 +88,13 @@ class EvaluationChain:
             scenario_title: 场景标题
             patient_background: 患者背景
             evaluation_criteria: 评估标准文本
+            crisis_detection_summary: 危机检测摘要（自杀倾向等）
 
         Returns:
             EvaluationReportModel: 评估报告模型
         """
         result = await self.chain.ainvoke({
+            "crisis_detection_summary": crisis_detection_summary or "【危机检测】系统未检测到明显的自杀倾向。",
             "evaluation_criteria": evaluation_criteria,
             "scenario_title": scenario_title,
             "patient_background": patient_background,

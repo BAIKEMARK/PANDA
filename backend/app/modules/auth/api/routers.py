@@ -13,7 +13,7 @@ from backend.app.modules.auth.schemas.user import (
 )
 from backend.app.modules.auth.services.user_service import UserService
 from backend.app.modules.auth.services.auth_service import AuthService
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 
 router = APIRouter()
 auth_router = APIRouter(prefix="/auth", tags=["认证"])

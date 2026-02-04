@@ -75,9 +75,8 @@ cd backend
 # 安装依赖
 pip install -r requirements.txt
 
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env，配置数据库密码、Redis和AI密钥
+# 配置环境变量（已有 .env 文件可跳过）
+# cp .env.example .env
 
 # 启动服务
 python start.py
@@ -128,6 +127,14 @@ LLM_STREAMING=false
 
 # CORS 配置
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# 日志配置
+LOG_LEVEL=INFO
+LOG_DIR=logs
+LOG_FORMAT=text
+LOG_TO_CONSOLE=True
+LOG_MAX_BYTES_KB=1024
+LOG_BACKUP_DAYS=30
 ```
 
 **前端** (`frontend/.env`):
@@ -146,67 +153,210 @@ VITE_API_URL=http://localhost:8000/api
 
 ```
 PANDA/
-├── backend/              # FastAPI后端
+├── backend/                    # FastAPI后端
 │   ├── app/
-│   │   ├── modules/      # 业务模块（分层模块化架构）
-│   │   │   ├── auth/     # 认证与用户
-│   │   │   ├── course/   # 课程管理
-│   │   │   ├── scenario/ # 情景模拟
-│   │   │   ├── chat/     # 对话交互
-│   │   │   ├── agent/    # Agent智能体系统
-│   │   │   │   ├── core/ # 核心组件
-│   │   │   │   │   ├── agent_orchestrator.py    # Agent编排器
-│   │   │   │   │   ├── state_update_engine.py   # 状态更新引擎
-│   │   │   │   │   └── crisis_detector.py       # 危机检测器
-│   │   │   │   ├── chains/     # Agent链
-│   │   │   │   ├── prompts/    # Agent提示词
-│   │   │   │   ├── services/   # 状态服务
-│   │   │   │   └── repositories/# 状态仓储
-│   │   │   ├── evaluation/# 评估系统
-│   │   │   ├── progress/ # 学习进度
-│   │   │   └── menu/     # 菜单管理
-│   │   ├── shared/       # 共享基础设施
-│   │   │   ├── ai/       # LangChain核心
-│   │   │   ├── db/       # 数据库
-│   │   │   ├── common/   # 通用工具
-│   │   │   └── infrastructure/ # 基础服务
-│   │   │       └── redis_state_manager.py # Redis状态管理
-│   │   ├── config/       # 配置层
-│   │   │   └── skill_config.json # 技能配置
-│   │   ├── interfaces/   # 模块间接口
-│   │   ├── models/       # ORM模型
-│   │   ├── schemas/      # Pydantic模型
-│   │   └── main.py       # 应用入口
-│   └── requirements.txt  # Python依赖
-├── frontend/             # React前端
-│   └── src/
-│       ├── pages/        # 页面组件
-│       ├── components/   # UI组件
-│       └── services/     # API调用
-├── docs/                 # 项目文档
-│   ├── THP.md           # THP框架说明
-│   ├── 项目介绍.md       # 项目详细介绍
-│   ├── 开发规则.md       # 开发规范
-│   └── 项目文档/         # 详细文档
-│       └── resources/    # 资源文件
-│           ├── 数据库设计.md  # 数据库设计
-│           └── panda.sql     # SQL脚本
-└── README.md             # 项目说明
+│   │   ├── main.py            # 应用入口
+│   │   ├── core/              # 核心基础层
+│   │   │   ├── config/        # 配置管理（settings, security, logging）
+│   │   │   ├── ai/            # AI基础设施（langchain_manager）
+│   │   │   ├── services/      # 基础服务（ai_service, event_bus, redis, skill_config）
+│   │   │   └── common/        # 通用工具（constants, exceptions）
+│   │   ├── interfaces/        # 模块间接口（依赖倒置）
+│   │   ├── models/            # ORM模型
+│   │   ├── schemas/           # Pydantic模型
+│   │   ├── db/                # 数据库（Session, Base, 迁移脚本）
+│   │   ├── api/               # 系统级端点（health check）
+│   │   └── modules/           # 业务模块（分层模块化架构）
+│   │       ├── auth/          # 认证与用户管理
+│   │       ├── course/        # 课程管理
+│   │       ├── scenario/      # 场景管理
+│   │       ├── conversation/  # 对话模拟（统一业务域）
+│   │       │   ├── api/       # API路由
+│   │       │   ├── services/  # 业务服务
+│   │       │   ├── repositories/ # 数据访问
+│   │       │   ├── schemas/   # 数据模型
+│   │       │   ├── chains/    # LangChain链
+│   │       │   ├── prompts/   # 提示词模板
+│   │       │   └── agent/     # Agent子系统
+│   │       │       ├── config/    # 技能配置（skill_config.json）
+│   │       │       ├── chains/    # Agent链
+│   │       │       ├── core/      # Agent核心（orchestrator, state_engine, crisis_detector）
+│   │       │       ├── models/    # 数据模型
+│   │       │       ├── prompts/   # 提示词
+│   │       │       ├── repositories/
+│   │       │       └── services/
+│   │       ├── evaluation/    # 评估系统
+│   │       │   ├── agents/     # MentorAgent（事件驱动）
+│   │       │   ├── chains/     # 评估链
+│   │       │   └── prompts/    # 评估提示词
+│   │       ├── progress/      # 学习进度
+│   │       └── menu/          # 菜单管理
+│   └── requirements.txt       # Python依赖
+├── frontend/                   # React前端
+│   ├── src/
+│   │   ├── pages/            # 页面组件
+│   │   ├── components/       # UI组件
+│   │   │   ├── chat/        # 对话组件
+│   │   │   ├── evaluation/  # 评估组件
+│   │   │   ├── course/      # 课程组件
+│   │   │   └── layout/      # 布局组件
+│   │   ├── stores/          # Zustand状态管理
+│   │   ├── services/        # API服务
+│   │   └── router/          # 路由配置
+│   └── package.json
+├── docs/                      # 项目文档
+│   ├── 项目介绍.md            # 项目背景和目标
+│   ├── 开发规则.md            # 开发规范
+│   ├── 管理端对接文档.md      # 管理端开发指南
+│   ├── 后续开发任务清单.md    # 开发任务
+│   └── 项目文档/              # 详细文档
+│       └── resources/         # 资源文件
+│           ├── 名词解释.md
+│           ├── 后台管理需求.md
+│           ├── 数据库设计.md
+│           ├── 竞品分析.md
+│           └── 系统功能设计.md
+└── README.md                  # 项目说明
 ```
 
 ## 🏗️ 后端架构说明
 
-### 分层模块化架构
+### 核心基础层 (core/)
 
-项目采用**分层模块化架构**，每个业务模块包含完整的层次结构：
+核心基础层包含整个项目共享的基础设施，是不可变的底层支撑：
+
+```
+core/
+├── config/          # 配置管理
+│   ├── settings.py      # 应用配置（从环境变量读取）
+│   ├── security.py      # 安全配置（JWT、密码哈希）
+│   └── logging.py       # 日志配置（按大小切割）
+├── ai/              # AI基础设施
+│   └── langchain_manager.py    # LLM统一管理器（单例）
+├── services/        # 基础服务
+│   ├── ai_service.py          # AI服务统一接口
+│   ├── event_bus.py           # 事件总线（发布-订阅）
+│   ├── redis_state_manager.py # Redis状态管理器
+│   └── skill_config.py        # 技能配置加载器
+└── common/          # 通用工具
+    ├── constants.py           # 枚举常量
+    └── exceptions.py          # 自定义异常
+```
+
+### 业务模块层 (modules/)
+
+每个业务模块采用分层架构：
 
 ```
 modules/{module_name}/
-├── api/          # API路由层
-├── schemas/      # 数据模型层
-├── services/     # 业务逻辑层
-└── repositories/ # 数据访问层
+├── api/          # Controller层 - 处理HTTP请求
+├── services/     # Service层 - 业务逻辑
+├── repositories/ # Repository层 - 数据访问
+└── schemas/      # DTO层 - Pydantic数据模型
 ```
+
+### 对话模拟模块 (conversation/)
+
+核心业务模块，整合了对话和Agent功能：
+
+```
+conversation/
+├── api/                    # HTTP接口
+│   └── routers.py          # /api/chat/* 端点
+├── services/
+│   ├── chat_service.py             # 对话服务
+│   └── conversation_engine.py      # 对话编排引擎
+├── agent/                  # Agent子系统
+│   ├── config/
+│   │   └── skill_config.json      # 患者行为规则
+│   ├── core/
+│   │   ├── agent_orchestrator.py  # Agent编排器
+│   │   ├── state_update_engine.py # 状态更新引擎
+│   │   └── crisis_detector.py     # 危机检测器
+│   ├── chains/
+│   │   ├── patient_agent_chain.py # 患者Agent链
+│   │   └── state_update_chain.py  # 状态更新链
+│   ├── prompts/
+│   │   └── patient_agent_prompt.py
+│   ├── services/
+│   │   └── patient_state_service.py
+│   └── repositories/
+│       └── patient_state_repository.py
+├── repositories/
+│   └── chat_repository.py
+└── schemas/
+    └── chat.py
+```
+
+### 事件驱动架构
+
+系统使用事件总线实现模块间解耦：
+
+```
+ChatService.end_session()
+    ↓
+EventBus.publish(CHAT_SESSION_ENDED)
+    ↓
+MentorAgent (订阅者)
+    ↓
+自动生成评估报告
+```
+
+## 🤖 Agent智能体系统
+
+### 系统架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Agent Orchestrator                      │
+│                   (Agent 编排器)                          │
+└───────────────────────────┬─────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│ Patient Agent │   │ State Update  │   │ Crisis Detector│
+│    Chain      │   │    Chain      │   │   (规则检测)   │
+└───────────────┘   └───────────────┘   └───────────────┘
+        │                   │                   │
+        └───────────────────┴───────────────────┘
+                            │
+                            ▼
+                ┌─────────────────────────┐
+                │   Patient State Service │
+                │      (状态持久化)        │
+                └───────────┬─────────────┘
+                            │
+            ┌───────────────┴───────────────┐
+            │                               │
+            ▼                               ▼
+        ┌───────────────┐           ┌───────────────┐
+        │     Redis     │           │    MySQL      │
+        │  (实时缓存)    │           │ (持久化存储)   │
+        └───────────────┘           └───────────────┘
+```
+
+### 患者状态模型
+
+系统通过四维指标模拟患者状态：
+
+| 指标 | 范围 | 说明 |
+|------|------|------|
+| `mood_score` | 0-100 | 心情指数，越高越积极 |
+| `satisfaction_score` | 0-100 | 满意度，反映患者对沟通的满意程度 |
+| `depression_level` | 0-100 | 抑郁程度，越高症状越严重 |
+| `rapport_score` | 0-100 | 信任度，反映护患关系亲疏 |
+
+### 技能配置系统
+
+`skill_config.json` 定义患者行为规则：
+
+- **角色定义**：患者角色设定
+- **核心原则**：模拟行为准则
+- **指标规则**：状态变化规则（护士共情 +10~15，说教 -10~-20）
+- **危机阈值**：触发危机的临界值
+- **危机响应**：危机发生时的患者反应
 
 ## 📚 文档
 
@@ -214,7 +364,6 @@ modules/{module_name}/
 - [开发规则](docs/开发规则.md) - 开发规范和最佳实践
 - [数据库设计](docs/项目文档/resources/数据库设计.md) - 数据库设计和ER图
 - [后端文档](backend/README.md) - 后端架构详细说明
-- [AI模块架构](docs/ai_module_architecture.md) - LangChain集成详细文档
 - [管理端对接文档](docs/管理端对接文档.md) - 管理端开发交付指南
 - [后续开发任务清单](docs/后续开发任务清单.md) - 后续开发任务
 
@@ -241,9 +390,27 @@ SOURCE backend/app/db/migrations/add_video_url.sql;
 
 | 文件名 | 说明 | 新增字段 |
 |--------|------|----------|
+| `add_suicide_risk_fields.sql` | 自杀风险检测 | `chat_sessions.has_suicide_risk`, `suicide_risk_alerted` |
 | `add_video_url.sql` | 课程视频支持 | `courses.video_url` |
 
 ## 🔄 更新日志
+
+### v0.4.0 (2025-02-05) - 架构重构版
+- ✅ **目录结构重构**
+  - `config/` → `core/config/`
+  - `shared/` → 拆分到 `core/ai/`, `core/services/`, `core/common/`
+  - `chat/` + `agent/` → 合并为 `conversation/`
+  - `skill_config.json` → `conversation/agent/config/`
+- ✅ **统一日志系统**
+  - 按大小切割日志（1MB）
+  - 文件命名：`app.YYYY-MM-DD_N.log`
+  - 可配置保留天数
+- ✅ **自杀风险集成评估**
+  - 危机检测摘要注入评估提示词
+  - A类风险识别评分受自杀倾向影响
+- ✅ **代码清理**
+  - 移除调试端点 `api/agent.py`
+  - 更新所有导入路径
 
 ### v0.3.0 (2026-01-31)
 - ✅ 升级 LangChain 到 1.2.7

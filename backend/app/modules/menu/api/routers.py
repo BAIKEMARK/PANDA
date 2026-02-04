@@ -11,7 +11,7 @@ from backend.app.modules.menu.schemas.menu import (
     RoleMenuPermissionCreate, RoleMenuPermissionUpdate, RoleMenuPermissionResponse
 )
 from backend.app.modules.menu.services.menu_service import MenuService
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 
 router = APIRouter(prefix="/menus", tags=["菜单管理"])
 

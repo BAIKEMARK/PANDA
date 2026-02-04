@@ -4,10 +4,20 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Space, Tag, Modal, message, Alert } from 'antd';
-import { StopOutlined, CommentOutlined, PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import {
+  StopOutlined,
+  CommentOutlined,
+  PlayCircleOutlined,
+  ArrowLeftOutlined,
+  WarningOutlined,
+  ExclamationCircleOutlined,
+  AlertOutlined as AlertIcon
+} from '@ant-design/icons';
 import { useChatStore } from '@/stores/chat.store';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ChatInput } from '@/components/chat/ChatInput';
+import chatService from '@/services/chat.service';
+import type { ChatMessage } from '@/types/chat.types';
 
 const { Title } = Typography;
 
@@ -19,9 +29,7 @@ export const ChatPage = () => {
   const [isEnding, setIsEnding] = useState(false);
 
   // 判断是否从历史记录进入（默认只读模式）
-  // 如果从scenario页面新建会话进入，则不是只读
   const [isReadOnly, setIsReadOnly] = useState(() => {
-    // 检查来源：如果是从 /progress 或 /dashboard 进入，则为只读模式
     const fromHistory = location.state?.fromHistory === true;
     return fromHistory;
   });
@@ -31,7 +39,7 @@ export const ChatPage = () => {
 
     const fetchMessages = async () => {
       try {
-        await loadMessages(sessionId); // sessionId是字符串UUID，不需要转数字
+        await loadMessages(sessionId);
       } catch (err) {
         console.error('加载消息失败:', err);
       }
@@ -45,9 +53,30 @@ export const ChatPage = () => {
 
     try {
       setTyping(true);
-      await sendMessage(sessionId, content); // sessionId是字符串UUID，不需要转数字
+      const result = await sendMessage(sessionId, content);
+
+      // 检查是否患者想离开（通过meta_data）
+      const lastMessage = result as ChatMessage;
+      if (lastMessage?.meta_data?.patient_leaving) {
+        // 患者表示要离开，延迟弹窗让用户选择
+        setTimeout(() => {
+          Modal.confirm({
+            title: '患者表示要离开',
+            icon: <ExclamationCircleOutlined />,
+            content: '患者表示要结束对话并离开。您可以选择进行评估，或继续尝试挽留患者。',
+            okText: '进行评估',
+            cancelText: '继续对话',
+            onOk: () => {
+              navigate(`/evaluation/${sessionId}`);
+            },
+            onCancel: () => {
+              message.info('您可以继续发送消息尝试与患者交流');
+            },
+          });
+        }, 1500); // 延迟1.5秒，让用户看到告别消息
+      }
     } catch (err) {
-      // Handle error
+      console.error('发送消息失败:', err);
     } finally {
       setTyping(false);
     }
@@ -65,18 +94,16 @@ export const ChatPage = () => {
         try {
           setIsEnding(true);
 
-          // 显示加载提示
           const hide = message.loading({
             content: '正在生成评估报告，请稍候（可能需要1-6分钟）...',
-            duration: 0, // 不自动关闭
+            duration: 0,
           });
 
-          await endSession(sessionId); // sessionId是字符串UUID，不需要转数字
+          await endSession(sessionId);
 
-          hide(); // 关闭加载提示
+          hide();
           message.success('评估报告生成成功！');
 
-          // 延迟跳转，让用户看到成功提示
           setTimeout(() => {
             navigate(`/evaluation/${sessionId}`);
           }, 500);
@@ -85,6 +112,39 @@ export const ChatPage = () => {
           message.error('评估报告生成失败，请稍后重试');
         } finally {
           setIsEnding(false);
+        }
+      },
+    });
+  };
+
+  const handleAlert = async () => {
+    if (!sessionId) return;
+
+    Modal.confirm({
+      title: '确认报警',
+      icon: <WarningOutlined style={{ color: '#ff4d4f' }} />,
+      content: '确认患者存在自杀倾向需要报警吗？报警后将自动结束对话并生成评估报告。',
+      okText: '确认报警',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const hide = message.loading({
+            content: '正在处理报警并生成评估报告...',
+            duration: 0,
+          });
+
+          await chatService.alertSuicideRisk(sessionId);
+
+          hide();
+          message.success('已记录报警，正在生成评估报告...');
+
+          setTimeout(() => {
+            navigate(`/evaluation/${sessionId}`);
+          }, 500);
+        } catch (err) {
+          console.error('报警失败:', err);
+          message.error('报警失败，请稍后重试');
         }
       },
     });
@@ -148,20 +208,42 @@ export const ChatPage = () => {
               继续对话
             </Button>
           ) : (
-            <Button
-              type="primary"
-              danger
-              icon={<StopOutlined />}
-              onClick={handleEndSession}
-              disabled={isEnding || isLoading}
-            >
-              结束对话
-            </Button>
+            <>
+              {/* 报警按钮 - 一直显示，让用户自己判断 */}
+              <Button
+                danger
+                icon={<AlertIcon />}
+                onClick={handleAlert}
+                style={{ marginRight: '8px' }}
+              >
+                报警
+              </Button>
+              <Button
+                type="primary"
+                icon={<StopOutlined />}
+                onClick={handleEndSession}
+                disabled={isEnding || isLoading}
+              >
+                结束对话
+              </Button>
+            </>
           )}
         </Space>
       </div>
 
-      {/* Chat Window - 可滚动区域 */}
+      {/* 报警提示横幅 */}
+      {!isReadOnly && (
+        <Alert
+          message="提示"
+          description="如观察到患者存在自杀倾向，请及时点击「报警」按钮记录处理。"
+          type="info"
+          showIcon
+          closable
+          style={{ margin: '12px 24px', borderRadius: '4px' }}
+        />
+      )}
+
+      {/* Chat Window */}
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <ChatWindow
           messages={messages}

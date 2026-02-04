@@ -3,53 +3,25 @@ Main Application Entry Point
 FastAPI 主应用程序入口 - 分层模块化架构
 """
 import logging
-import re
-
-# 自定义日志格式化器：安全地将 \uXXXX 转义序列解码为中文
-class UnicodeFormatter(logging.Formatter):
-    """自定义格式化器，使用正则表达式安全解码 Unicode 转义序列"""
-    
-    # 匹配 \uXXXX 或 \\uXXXX 形式的 Unicode 转义序列
-    UNICODE_ESCAPE_PATTERN = re.compile(r'(?:\\\\|\\)u([0-9a-fA-F]{4})')
-    
-    def format(self, record):
-        message = super().format(record)
-        # 只替换 \uXXXX 形式的转义序列，不影响其他字符
-        def replace_unicode(match):
-            try:
-                return chr(int(match.group(1), 16))
-            except ValueError:
-                return match.group(0)  # 如果转换失败，保持原样
-        return self.UNICODE_ESCAPE_PATTERN.sub(replace_unicode, message)
-
-# 配置详细日志（包括 LangChain 和 HTTP 请求）
-handler = logging.StreamHandler()
-handler.setFormatter(UnicodeFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logging.basicConfig(
-    level=logging.DEBUG,
-    handlers=[handler]
-)
-
-# LangChain 日志
-langchain_logger = logging.getLogger("langchain")
-langchain_logger.setLevel(logging.INFO)
-
-# HTTP 客户端日志（显示完整 API 请求）
-httpx_logger = logging.getLogger("httpx")
-httpx_logger.setLevel(logging.INFO)
-
-# HTTP core 日志
-httpcore_logger = logging.getLogger("httpcore")
-httpcore_logger.setLevel(logging.INFO)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.config.config import settings
+from backend.app.core.config.settings import settings
 from backend.app.db.database import init_database, get_db
+from backend.app.core.config.logging import setup_logging, get_logger
+
+# 初始化统一日志配置
+setup_logging()
+logger = get_logger(__name__)
+
+# 配置第三方库日志级别
+logging.getLogger("langchain").setLevel(logging.INFO)
+logging.getLogger("httpx").setLevel(logging.INFO)
+logging.getLogger("httpcore").setLevel(logging.INFO)
 
 # 导入所有API路由（新的模块化架构）
-from backend.app.api import health_router, agent_router
+from backend.app.api import health_router
 
 # 认证与用户模块
 from backend.app.modules.auth.api.routers import auth_router, users_router
@@ -61,7 +33,7 @@ from backend.app.modules.course.api.routers import router as course_router
 from backend.app.modules.scenario.api.routers import router as scenario_router
 
 # 对话交互模块
-from backend.app.modules.chat.api.routers import router as chat_router
+from backend.app.modules.conversation.api.routers import router as chat_router
 
 # 评估系统模块
 from backend.app.modules.evaluation.api.routers import router as evaluation_router
@@ -94,7 +66,6 @@ app.add_middleware(
 
 # 注册所有路由（新的模块化架构）
 app.include_router(health_router, prefix="/api")
-app.include_router(agent_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(course_router, prefix="/api")

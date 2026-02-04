@@ -7,7 +7,7 @@ from typing import List, Optional
 from backend.app.models.user import User
 from backend.app.modules.auth.schemas.user import UserCreate, UserUpdate
 from backend.app.modules.auth.repositories.user_repository import UserRepository
-from backend.app.common.exceptions import ConflictException
+from backend.app.core.common.exceptions import ConflictException
 
 
 class UserService:

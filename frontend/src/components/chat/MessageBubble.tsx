@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '@/types/chat.types';
+import { MessageRole } from '@/types/chat.types';
 
 const { Text } = Typography;
 
@@ -16,8 +17,9 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble = ({ message, senderName }: MessageBubbleProps) => {
-  const isUser = message.role === 'user';
-  const isSystem = message.role === 'system';
+  // 使用枚举进行比较，而不是字符串
+  const isUser = message.role === MessageRole.USER;
+  const isSystem = message.role === MessageRole.SYSTEM;
 
   // Helper to parse date as UTC if no timezone specified
   const parseDate = (dateStr: string) => {

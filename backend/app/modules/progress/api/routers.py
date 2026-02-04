@@ -12,7 +12,7 @@ from backend.app.modules.progress.schemas.progress import (
 from backend.app.modules.progress.schemas.dashboard import DashboardStatsResponse
 from backend.app.modules.progress.services.progress_service import ProgressService
 from backend.app.modules.progress.services.dashboard_service import DashboardService
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 
 router = APIRouter(prefix="/progress", tags=["学习进度"])
 

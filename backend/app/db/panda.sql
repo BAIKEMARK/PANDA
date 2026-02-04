@@ -89,6 +89,10 @@ CREATE TABLE `chat_sessions` (
   `end_time` datetime DEFAULT NULL COMMENT '结束时间',
   `final_score` int DEFAULT NULL COMMENT '最终得分',
   `meta_data` json DEFAULT NULL COMMENT '会话元数据',
+  `has_suicide_risk` tinyint(1) DEFAULT '0' COMMENT '会话中是否检测到自杀倾向',
+  `suicide_risk_alerted` tinyint(1) DEFAULT '0' COMMENT '用户是否点击了报警按钮',
+  `suicide_risk_alert_time` datetime DEFAULT NULL COMMENT '报警时间',
+  `suicide_risk_first_detected` datetime DEFAULT NULL COMMENT '首次检测到自杀倾向的时间',
   PRIMARY KEY (`id`),
   KEY `idx_user` (`user_id`),
   KEY `idx_status` (`status`)
@@ -114,7 +118,8 @@ DROP TABLE IF EXISTS `courses`;
 CREATE TABLE `courses` (
   `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '课程唯一标识符',
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '课程标题',
-  `content_url` text COLLATE utf8mb4_unicode_ci COMMENT '课程内容URL或路径',
+  `content_url` text COLLATE utf8mb4_unicode_ci COMMENT '课件PDF URL',
+  `video_url` text COLLATE utf8mb4_unicode_ci COMMENT '视频URL',
   `sort_order` int DEFAULT '0' COMMENT '排序顺序',
   `level` enum('L1','L2','L3','L4') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'L1' COMMENT 'THP层级',
   `description` text COLLATE utf8mb4_unicode_ci COMMENT '课程描述',
@@ -131,7 +136,7 @@ CREATE TABLE `courses` (
 
 LOCK TABLES `courses` WRITE;
 /*!40000 ALTER TABLE `courses` DISABLE KEYS */;
-INSERT INTO `courses` VALUES ('c-001','围产期抑郁概述','/courses/l1-overview.pdf',1,'L1','了解围产期抑郁的定义、流行病学数据和社会影响','2025-01-01 00:00:00'),('c-002','围产期抑郁的识别与筛查','/courses/l1-screening.pdf',2,'L1','学习使用EPDS量表进行抑郁筛查的方法和技巧','2025-01-01 00:00:00'),('c-003','基础沟通技巧','/courses/l1-communication.pdf',3,'L1','掌握与围产期女性沟通的基本原则和技巧','2025-01-01 00:00:00'),('c-004','心理支持技术','/courses/l2-support.pdf',4,'L2','学习提供情感支持和心理疏导的专业技术','2025-01-01 00:00:00'),('c-005','危机干预基础','/courses/l2-crisis.pdf',5,'L2','识别自杀风险信号，掌握初步危机干预方法','2025-01-01 00:00:00'),('c-006','家庭支持系统评估','/courses/l2-family.pdf',6,'L2','评估和动员家庭支持资源的方法','2025-01-01 00:00:00'),('c-007','认知行为疗法入门','/courses/l3-cbt.pdf',7,'L3','CBT基本原理及在围产期抑郁中的应用','2025-01-01 00:00:00'),('c-008','药物治疗知识','/courses/l3-medication.pdf',8,'L3','了解围产期抑郁的药物治疗方案和注意事项','2025-01-01 00:00:00'),('c-009','多学科协作','/courses/l4-mdt.pdf',9,'L4','与精神科、产科等多学科团队协作的方法','2025-01-01 00:00:00'),('c-010','案例督导与反思','/courses/l4-supervision.pdf',10,'L4','通过案例分析提升临床决策能力','2025-01-01 00:00:00');
+INSERT INTO `courses` VALUES ('c-001','围产期抑郁概述','/courses/l1-overview.pdf',NULL,1,'L1','了解围产期抑郁的定义、流行病学数据和社会影响','2025-01-01 00:00:00'),('c-002','围产期抑郁的识别与筛查','/courses/l1-screening.pdf',NULL,2,'L1','学习使用EPDS量表进行抑郁筛查的方法和技巧','2025-01-01 00:00:00'),('c-003','基础沟通技巧','/courses/l1-communication.pdf',NULL,3,'L1','掌握与围产期女性沟通的基本原则和技巧','2025-01-01 00:00:00'),('c-004','心理支持技术','/courses/l2-support.pdf',NULL,4,'L2','学习提供情感支持和心理疏导的专业技术','2025-01-01 00:00:00'),('c-005','危机干预基础','/courses/l2-crisis.pdf',NULL,5,'L2','识别自杀风险信号，掌握初步危机干预方法','2025-01-01 00:00:00'),('c-006','家庭支持系统评估','/courses/l2-family.pdf',NULL,6,'L2','评估和动员家庭支持资源的方法','2025-01-01 00:00:00'),('c-007','认知行为疗法入门','/courses/l3-cbt.pdf',NULL,7,'L3','CBT基本原理及在围产期抑郁中的应用','2025-01-01 00:00:00'),('c-008','药物治疗知识','/courses/l3-medication.pdf',NULL,8,'L3','了解围产期抑郁的药物治疗方案和注意事项','2025-01-01 00:00:00'),('c-009','多学科协作','/courses/l4-mdt.pdf',NULL,9,'L4','与精神科、产科等多学科团队协作的方法','2025-01-01 00:00:00'),('c-010','案例督导与反思','/courses/l4-supervision.pdf',NULL,10,'L4','通过案例分析提升临床决策能力','2025-01-01 00:00:00');
 /*!40000 ALTER TABLE `courses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -426,4 +431,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-31  3:01:54
+-- Dump completed on 2026-02-05  2:28:57
