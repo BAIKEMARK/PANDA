@@ -12,7 +12,6 @@ export interface MenuItem {
   sort_order: number;
   is_visible: boolean;
   is_enabled: boolean;
-  permission_codes?: string[];
   children?: MenuItem[];
   created_at: string;
   updated_at: string;
@@ -28,7 +27,6 @@ export interface MenuResponse {
   sort_order: number;
   is_visible: boolean;
   is_enabled: boolean;
-  permission_codes?: string[];
   children?: MenuResponse[];
   created_at: string;
   updated_at: string;

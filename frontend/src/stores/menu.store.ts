@@ -13,7 +13,7 @@ interface MenuState {
   error: string | null;
 
   // Actions
-  fetchUserMenus: () => Promise<void>;
+  fetchUserMenus: (role: string) => Promise<void>;
   clearMenus: () => void;
   setError: (error: string | null) => void;
 }
@@ -25,10 +25,10 @@ export const useMenuStore = create<MenuState>((set) => ({
   error: null,
 
   // 获取用户菜单
-  fetchUserMenus: async () => {
+  fetchUserMenus: async (role: string) => {
     set({ isLoading: true, error: null });
     try {
-      const menus = await menuService.getUserMenus();
+      const menus = await menuService.getUserMenus(role);
       set({ menus, isLoading: false });
     } catch (error: any) {
       set({

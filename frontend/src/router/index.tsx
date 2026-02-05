@@ -15,20 +15,13 @@ import { ChatPage } from '../pages/ChatPage';
 import { EvaluationReportPage } from '../pages/EvaluationReportPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
-import { LearningDashboardPage } from '../pages/LearningDashboardPage';
-import { AdminDashboardPage } from '../pages/AdminDashboardPage';
-import {
-  AdminAuditPage,
-  AdminClassesPage,
-  AdminContentsPage,
-  AdminExportsPage,
-  AdminMenusPage,
-  AdminOrgsPage,
-  AdminPermissionsPage,
-  AdminRolesPage,
-  AdminSettingsPage,
-  AdminUsersPage,
-} from '../pages/AdminPages';
+import { OrganizationPage } from '../pages/admin/OrganizationPage';
+import { UserManagePage } from '../pages/admin/UserManagePage';
+import { TrainingClassPage } from '../pages/admin/TrainingClassPage';
+import { RoleManagePage } from '../pages/admin/RoleManagePage';
+import { MenuManagePage } from '../pages/admin/MenuManagePage';
+import { QuestionBankPage } from '../pages/admin/QuestionBankPage';
+import { CertificatePage } from '../pages/admin/CertificatePage';
 import { PrivateRoute, PublicRoute } from './privateRoutes';
 
 // 路由配置
@@ -44,11 +37,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/progress" replace />,
-      },
-      {
-        path: 'progress',
-        element: <LearningDashboardPage />,
+        element: <Navigate to="/courses" replace />,
       },
       {
         path: 'courses',
@@ -76,18 +65,37 @@ export const router = createBrowserRouter([
       },
       {
         path: 'admin',
-        element: <AdminDashboardPage />,
+        children: [
+          {
+            path: 'organizations',
+            element: <OrganizationPage />,
+          },
+          {
+            path: 'users',
+            element: <UserManagePage />,
+          },
+          {
+            path: 'classes',
+            element: <TrainingClassPage />,
+          },
+          {
+            path: 'roles',
+            element: <RoleManagePage />,
+          },
+          {
+            path: 'menus',
+            element: <MenuManagePage />,
+          },
+          {
+            path: 'questions',
+            element: <QuestionBankPage />,
+          },
+          {
+            path: 'certificates',
+            element: <CertificatePage />,
+          },
+        ],
       },
-      { path: 'admin/orgs', element: <AdminOrgsPage /> },
-      { path: 'admin/users', element: <AdminUsersPage /> },
-      { path: 'admin/roles', element: <AdminRolesPage /> },
-      { path: 'admin/menus', element: <AdminMenusPage /> },
-      { path: 'admin/permissions', element: <AdminPermissionsPage /> },
-      { path: 'admin/contents', element: <AdminContentsPage /> },
-      { path: 'admin/classes', element: <AdminClassesPage /> },
-      { path: 'admin/exports', element: <AdminExportsPage /> },
-      { path: 'admin/audit', element: <AdminAuditPage /> },
-      { path: 'admin/settings', element: <AdminSettingsPage /> },
     ],
   },
   {
