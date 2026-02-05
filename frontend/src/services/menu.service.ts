@@ -11,12 +11,9 @@ import type { MenuItem, MenuTreeNode } from '../types/menu.types';
 class MenuService {
   /**
    * 根据用户角色获取可访问的菜单树
-   * @param role 用户角色 (student/instructor/admin)
    */
-  async getUserMenus(role: string): Promise<MenuItem[]> {
-    const { data } = await apiClient.get<MenuItem[]>('/menus/user', {
-      params: { role }
-    });
+  async getUserMenus(): Promise<MenuItem[]> {
+    const { data } = await apiClient.get<MenuItem[]>('/menus/user');
     return data;
   }
 
@@ -34,6 +31,20 @@ class MenuService {
   async getAllMenus(): Promise<MenuItem[]> {
     const { data } = await apiClient.get<MenuItem[]>('/menus/');
     return data;
+  }
+
+  async createMenu(payload: Partial<MenuItem> & { id: string; title: string }): Promise<MenuItem> {
+    const { data } = await apiClient.post<MenuItem>('/menus/', payload);
+    return data;
+  }
+
+  async updateMenu(id: string, payload: Partial<MenuItem>): Promise<MenuItem> {
+    const { data } = await apiClient.put<MenuItem>(`/menus/${id}`, payload);
+    return data;
+  }
+
+  async deleteMenu(id: string): Promise<void> {
+    await apiClient.delete(`/menus/${id}`);
   }
 
   /**

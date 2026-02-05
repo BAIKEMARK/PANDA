@@ -40,10 +40,10 @@ export const Sidebar = () => {
 
   // 加载用户菜单
   useEffect(() => {
-    if (user?.role) {
-      fetchUserMenus(user.role);
+    if (user) {
+      fetchUserMenus();
     }
-  }, [user?.role, fetchUserMenus]);
+  }, [user, fetchUserMenus]);
 
   // 将菜单数据转换为 Ant Design Menu 格式
   const menuItems = useMemo(() => {
@@ -54,11 +54,7 @@ export const Sidebar = () => {
       const item: any = {
         key: menu.path,
         icon: iconMap[menu.icon] || <MenuOutlined />,
-        label: (
-          <NavLink to={menu.path} style={{ color: 'inherit' }}>
-            {menu.title}
-          </NavLink>
-        ),
+        label: menu.title,
       };
 
       // 处理子菜单
@@ -72,6 +68,12 @@ export const Sidebar = () => {
             </NavLink>
           ),
         }));
+      } else {
+        item.label = (
+          <NavLink to={menu.path} style={{ color: 'inherit' }}>
+            {menu.title}
+          </NavLink>
+        );
       }
 
       return item;
