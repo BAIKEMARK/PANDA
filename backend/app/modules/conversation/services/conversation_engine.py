@@ -36,7 +36,7 @@ class ConversationEngine:
         self,
         session_id: str,
         user_message: str,
-        user_id: str = "user-001"
+        user_id: str
     ) -> Dict:
         """
         生成患者Agent回复（所有对话都通过Agent进行）

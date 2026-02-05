@@ -38,6 +38,6 @@ class CrisisEvent(BaseModel):
     severity: str = Field(description="严重程度: low/medium/high/critical")
     current_value: int = Field(description="触发时的当前值")
     threshold: int = Field(description="触发的阈值")
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
     message: str = Field(description="危机描述信息")
 

@@ -93,7 +93,7 @@ class PatientStateRepository:
         if message_count is not None:
             db_state.message_count = message_count
 
-        db_state.updated_at = datetime.now()
+        db_state.updated_at = datetime.utcnow()
 
         self.db.commit()
         self.db.refresh(db_state)

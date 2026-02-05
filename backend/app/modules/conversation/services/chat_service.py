@@ -19,8 +19,14 @@ class ChatService:
         self.db = db
         self.repository = ChatRepository(db)
 
-    def create_session(self, session_data: ChatSessionCreate, user_id: str = "user-001") -> ChatSession:
-        """创建新会话"""
+    def create_session(self, session_data: ChatSessionCreate, user_id: str) -> ChatSession:
+        """
+        创建新会话
+
+        Args:
+            session_data: 会话创建数据
+            user_id: 用户ID（从JWT token获取）
+        """
         return self.repository.create_chat_session(session_data, user_id)
 
     def get_session(self, session_id: str) -> Optional[dict]:

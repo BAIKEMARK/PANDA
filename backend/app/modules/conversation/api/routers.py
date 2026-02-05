@@ -16,6 +16,7 @@ from backend.app.modules.conversation.services.chat_service import ChatService
 from backend.app.modules.conversation.services.conversation_engine import ConversationEngine
 from backend.app.core.common.exceptions import NotFoundException
 from backend.app.core.config.logging import get_logger
+from backend.app.core.dependencies import get_current_user_with_fallback
 
 logger = get_logger(__name__)
 
@@ -25,11 +26,12 @@ router = APIRouter(prefix="/chat", tags=["对话"])
 @router.post("/sessions", response_model=ChatSessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_session(
     session_data: ChatSessionCreate,
+    user_id: str = Depends(get_current_user_with_fallback),
     db: Session = Depends(get_db)
 ):
     """创建新的对话会话"""
     service = ChatService(db)
-    return service.create_session(session_data)
+    return service.create_session(session_data, user_id)
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionResponse)
@@ -59,6 +61,7 @@ async def get_session_messages(
 @router.post("/messages", response_model=ChatMessageResponse, status_code=status.HTTP_201_CREATED)
 async def send_message(
     message_data: ChatMessageCreate,
+    user_id: str = Depends(get_current_user_with_fallback),
     db: Session = Depends(get_db)
 ):
     """
@@ -90,7 +93,8 @@ async def send_message(
     try:
         result = await engine.generate_ai_response(
             session_id=message_data.session_id,
-            user_message=message_data.content
+            user_message=message_data.content,
+            user_id=user_id
         )
 
         # 3. 保存AI回复
