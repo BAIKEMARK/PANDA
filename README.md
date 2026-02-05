@@ -18,11 +18,11 @@
 - **框架**：FastAPI 0.109.0 + SQLAlchemy 2.0.25
 - **数据库**：MySQL 8.0+ + Redis 5.0+
 - **AI 框架**：LangChain 1.2.7
-- **LLM 提供商**：阿里百炼（通义千问）/ DeepSeek
+- **LLM 提供商**：阿里百炼
 - **认证**：JWT
 
 ### 前端
-- **框架**：React 18 + TypeScript 5
+- **框架**：React 19 + TypeScript 5
 - **构建工具**：Vite 5
 - **UI 库**：Ant Design 5.x
 - **状态管理**：Zustand
@@ -121,7 +121,7 @@ VITE_API_URL=http://localhost:8000/api
 
 ## 更新日志
 
-### v0.4.0 (2025-02-05) - 架构重构版
+### v0.4.0 (2026-02-05)
 - ✅ 核心基础层重构 (`core/config/`, `core/ai/`, `core/services/`, `core/common/`)
 - ✅ 对话模块统一 (`conversation/` 合并 chat + agent)
 - ✅ 统一日志系统（按大小切割，1MB/文件）

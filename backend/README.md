@@ -21,7 +21,7 @@
 | **LangChain OpenAI** | 1.1.7 | OpenAI 兼容接口 |
 | **Pydantic** | 2.7+ | 数据验证和结构化输出 |
 | **Redis** | 5.0.1 | 实时状态缓存 |
-| **通义千问/DeepSeek** | - | LLM 提供商 |
+| **通义千问** | - | LLM 提供商 |
 
 ### 架构设计原则
 
@@ -521,45 +521,37 @@ Max Length: 50轮
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=your_password
+DB_PASSWORD=your_mysql_password_here
 DB_NAME=panda
+DB_CHARSET=utf8mb4
+
+# JWT认证配置
+SECRET_KEY=your-secret-key-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
+# AI模型配置
+AI_TEXT_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+AI_TEXT_KEY=your_ai_api_key_here
+AI_TEXT_MODEL=qwen-max
+AI_TIMEOUT=30
+
+# CORS配置
+CORS_ORIGINS_STR=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175
 
 # Redis 配置
 REDIS_URL=redis://localhost:6379/0
-REDIS_TTL_STATE=86400  # 状态24小时过期
-REDIS_MAX_HISTORY=50   # 对话历史保留50轮
+REDIS_TTL_STATE=86400
+REDIS_MAX_HISTORY=50
 
-# AI 模型配置 - 阿里百炼平台
-AI_TEXT_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-AI_TEXT_KEY=sk-*******************
-AI_TEXT_MODEL=qwen-max
-
-# LLM 高级配置
-LLM_MAX_RETRIES=3
-LLM_TIMEOUT=120
-LLM_TEMPERATURE=0.7
-LLM_STREAMING=false
-
-# CORS 配置
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
-
-# JWT 认证
-SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
+# 日志配置
+LOG_LEVEL=DEBUG
+LOG_DIR=logs
+LOG_FORMAT=text
+LOG_TO_CONSOLE=True
+LOG_MAX_BYTES_KB=1024
+LOG_BACKUP_DAYS=30
 ```
-
-### 配置说明
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `REDIS_URL` | Redis 连接地址 | redis://localhost:6379/0 |
-| `REDIS_TTL_STATE` | 状态过期时间（秒） | 86400 (24小时) |
-| `REDIS_MAX_HISTORY` | 对话历史保留轮数 | 50 |
-| `AI_TEXT_URL` | 通义千问 API 地址 | https://dashscope.aliyuncs.com/compatible-mode/v1 |
-| `AI_TEXT_MODEL` | 模型名称 | qwen-max / deepseek-v3.2 |
-| `LLM_MAX_RETRIES` | 最大重试次数 | 3 |
-| `LLM_TIMEOUT` | 超时时间（秒） | 120 |
-| `LLM_TEMPERATURE` | 温度参数 | 0.7 |
 
 ---
 
