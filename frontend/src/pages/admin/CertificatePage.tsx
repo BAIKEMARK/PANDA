@@ -135,7 +135,7 @@ export function CertificatePage() {
     }
   };
 
-  const certColumns = [
+  const baseCertColumns = [
     {
       title: '证书编号',
       dataIndex: 'certificate_number',
@@ -179,8 +179,9 @@ export function CertificatePage() {
       ),
     },
   ];
+  const certColumns = baseCertColumns.map((col) => ({ ...col, align: 'center' as const }));
 
-  const templateColumns = [
+  const baseTemplateColumns = [
     {
       title: '模板名称',
       dataIndex: 'name',
@@ -214,6 +215,7 @@ export function CertificatePage() {
       ),
     },
   ];
+  const templateColumns = baseTemplateColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
     <div style={{ padding: '24px' }}>

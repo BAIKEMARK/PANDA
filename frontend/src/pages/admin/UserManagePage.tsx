@@ -72,7 +72,7 @@ export function UserManagePage() {
     }
   };
 
-  const columns = [
+  const baseColumns = [
     {
       title: '姓名',
       dataIndex: 'name',
@@ -121,6 +121,7 @@ export function UserManagePage() {
       ),
     },
   ];
+  const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
     <div style={{ padding: '24px' }}>

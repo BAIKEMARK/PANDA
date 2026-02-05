@@ -95,7 +95,7 @@ export function TrainingClassPage() {
     archived: { text: '已归档', color: 'default' },
   };
 
-  const columns = [
+  const baseColumns = [
     {
       title: '班级名称',
       dataIndex: 'name',
@@ -137,6 +137,7 @@ export function TrainingClassPage() {
       ),
     },
   ];
+  const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
     <div style={{ padding: '24px' }}>

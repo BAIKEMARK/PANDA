@@ -65,7 +65,11 @@ export function MenuManagePage() {
         await menuService.updateMenu(editingMenu.id, values);
         message.success('更新成功');
       } else {
-        await menuService.createMenu(values);
+        const id =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `m-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
+        await menuService.createMenu({ id, ...values });
         message.success('创建成功');
       }
       setModalVisible(false);
@@ -75,7 +79,7 @@ export function MenuManagePage() {
     }
   };
 
-  const columns = [
+  const baseColumns = [
     {
       title: '菜单标题',
       dataIndex: 'title',
@@ -123,6 +127,7 @@ export function MenuManagePage() {
       ),
     },
   ];
+  const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   const buildTreeData = (items: any[]): any[] => {
     return items.map(item => ({

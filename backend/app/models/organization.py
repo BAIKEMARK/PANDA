@@ -32,7 +32,13 @@ class Role(Base):
     scope = Column(SQLEnum("system", "org", name="role_scope"), default="org", comment="作用域")
     created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
 
-    permissions = relationship("Permission", secondary="role_permissions", back_populates="roles")
+    permissions = relationship(
+        "Permission",
+        secondary="role_permissions",
+        primaryjoin="Role.id==RolePermission.role_id",
+        secondaryjoin="Permission.id==RolePermission.permission_id",
+        back_populates="roles",
+    )
 
 
 class Permission(Base):
@@ -46,7 +52,13 @@ class Permission(Base):
     description = Column(String(500), comment="权限说明")
     created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
 
-    roles = relationship("Role", secondary="role_permissions", back_populates="permissions")
+    roles = relationship(
+        "Role",
+        secondary="role_permissions",
+        primaryjoin="Permission.id==RolePermission.permission_id",
+        secondaryjoin="Role.id==RolePermission.role_id",
+        back_populates="permissions",
+    )
 
 
 class RolePermission(Base):

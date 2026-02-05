@@ -24,6 +24,10 @@ class RoleService {
     return response.data;
   }
 
+  async delete(id: string): Promise<void> {
+    await api.delete(`/admin/roles/${id}`);
+  }
+
   async assignPermissions(id: string, permissionIds: string[]): Promise<Role> {
     const response = await api.post<Role>(`/admin/roles/${id}/permissions`, {
       permission_ids: permissionIds,

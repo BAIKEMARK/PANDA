@@ -52,6 +52,13 @@ class RoleService:
         self.db.refresh(role)
         return role
 
+    def delete(self, role_id: str) -> None:
+        role = self.get(role_id)
+        if not role:
+            raise NotFoundException(f"角色不存在: {role_id}")
+        self.db.delete(role)
+        self.db.commit()
+
     def assign_permissions(self, role_id: str, permission_ids: List[str]) -> Role:
         role = self.get(role_id)
         if not role:

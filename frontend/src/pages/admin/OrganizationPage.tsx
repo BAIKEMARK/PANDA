@@ -72,7 +72,7 @@ export function OrganizationPage() {
     }
   };
 
-  const columns = [
+  const baseColumns = [
     {
       title: '机构名称',
       dataIndex: 'name',
@@ -116,6 +116,7 @@ export function OrganizationPage() {
       ),
     },
   ];
+  const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
     <div style={{ padding: '24px' }}>

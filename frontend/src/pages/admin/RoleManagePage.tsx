@@ -67,7 +67,7 @@ export function RoleManagePage() {
       content: '确定要删除这个角色吗？',
       onOk: async () => {
         try {
-          await roleService.update(id, { status: 'inactive' });
+          await roleService.delete(id);
           message.success('删除成功');
           loadRoles();
         } catch (error: any) {
@@ -108,7 +108,7 @@ export function RoleManagePage() {
     }
   };
 
-  const columns = [
+  const baseColumns = [
     {
       title: '角色代码',
       dataIndex: 'code',
@@ -150,6 +150,7 @@ export function RoleManagePage() {
       ),
     },
   ];
+  const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
     <div style={{ padding: '24px' }}>

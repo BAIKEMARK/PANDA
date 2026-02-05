@@ -27,6 +27,11 @@ class MenuService:
         self.menu_repo = MenuRepository(db)
         self.permission_repo = RoleMenuPermissionRepository(db)
 
+    def _norm_id(self, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        return value.strip()
+
     # ==================== 菜单管理 ====================
 
     def get_all_menus(self, skip: int = 0, limit: int = 100) -> List[MenuResponse]:
@@ -47,20 +52,22 @@ class MenuService:
         all_menus = self.menu_repo.get_enabled_menus()
 
         # 构建菜单字典
-        menu_dict = {m.id: MenuResponse.model_validate(m) for m in all_menus}
+        menu_dict = {self._norm_id(m.id): MenuResponse.model_validate(m) for m in all_menus}
+
+        # 先清空 children，避免后续排序覆盖
+        for menu in menu_dict.values():
+            menu.children = []
 
         # 构建树形结构
         root_menus = []
         for menu in menu_dict.values():
-            if menu.parent_id is None:
+            parent_id = self._norm_id(menu.parent_id)
+            if parent_id is None:
                 # 顶级菜单
-                menu.children = []
                 root_menus.append(menu)
-            elif menu.parent_id in menu_dict:
+            elif parent_id in menu_dict:
                 # 子菜单
-                parent = menu_dict[menu.parent_id]
-                if not parent.children:
-                    parent.children = []
+                parent = menu_dict[parent_id]
                 parent.children.append(menu)
 
         # 按sort_order排序
@@ -83,22 +90,27 @@ class MenuService:
         """
         # 获取角色可访问的菜单
         accessible_menus = self.permission_repo.get_menus_by_role(role)
+        if role == "admin" and not accessible_menus:
+            # 兜底：没有角色菜单权限数据时，管理员显示全部可见菜单
+            accessible_menus = self.menu_repo.get_enabled_menus()
 
         # 构建菜单字典
-        menu_dict = {m.id: MenuResponse.model_validate(m) for m in accessible_menus}
+        menu_dict = {self._norm_id(m.id): MenuResponse.model_validate(m) for m in accessible_menus}
+
+        # 先清空 children，避免后续排序覆盖
+        for menu in menu_dict.values():
+            menu.children = []
 
         # 构建树形结构
         root_menus = []
         for menu in menu_dict.values():
-            if menu.parent_id is None:
+            parent_id = self._norm_id(menu.parent_id)
+            if parent_id is None:
                 # 顶级菜单
-                menu.children = []
                 root_menus.append(menu)
-            elif menu.parent_id in menu_dict:
+            elif parent_id in menu_dict:
                 # 子菜单（父菜单也在可访问列表中）
-                parent = menu_dict[menu.parent_id]
-                if not parent.children:
-                    parent.children = []
+                parent = menu_dict[parent_id]
                 parent.children.append(menu)
 
         # 按sort_order排序

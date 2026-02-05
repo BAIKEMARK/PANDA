@@ -107,6 +107,32 @@ async def update_role(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_role(
+    role_id: str,
+    current_user: User = Depends(get_current_user_dependency),
+    db: Session = Depends(get_db)
+):
+    permission_service = PermissionService(db)
+    if not permission_service.has_permission(current_user.id, "org:delete"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足: org:delete")
+
+    service = RoleService(db)
+    audit_service = AuditService(db)
+
+    try:
+        service.delete(role_id)
+        audit_service.log(
+            user_id=current_user.id,
+            action="delete_role",
+            resource_type="role",
+            resource_id=role_id
+        )
+        return None
+    except NotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.post("/{role_id}/permissions", response_model=RoleResponse)
 async def assign_permissions(
     role_id: str,

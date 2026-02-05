@@ -84,7 +84,7 @@ export function QuestionBankPage() {
     }
   };
 
-  const columns = [
+  const baseColumns = [
     {
       title: '题型',
       dataIndex: 'question_type',
@@ -147,6 +147,7 @@ export function QuestionBankPage() {
       ),
     },
   ];
+  const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
     <div style={{ padding: '24px' }}>

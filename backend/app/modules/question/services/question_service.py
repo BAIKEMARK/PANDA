@@ -11,7 +11,17 @@ class QuestionService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, question_type: str, question_text: str, options: List[str], 
+    def _maybe_json_load(self, value):
+        if value is None:
+            return None
+        if isinstance(value, (list, dict)):
+            return value
+        try:
+            return json.loads(value)
+        except (TypeError, json.JSONDecodeError):
+            return value
+
+    def create(self, question_type: str, question_text: str, options: List[str],
                correct_answer: List[str], **kwargs) -> QuestionBank:
         question = QuestionBank(
             id=str(uuid4()),
@@ -25,23 +35,17 @@ class QuestionService:
         self.db.add(question)
         self.db.commit()
         self.db.refresh(question)
-        if question.options:
-            question.options = json.loads(question.options)
-        if question.correct_answer:
-            question.correct_answer = json.loads(question.correct_answer)
-        if question.knowledge_tags:
-            question.knowledge_tags = json.loads(question.knowledge_tags)
+        question.options = self._maybe_json_load(question.options)
+        question.correct_answer = self._maybe_json_load(question.correct_answer)
+        question.knowledge_tags = self._maybe_json_load(question.knowledge_tags)
         return question
 
     def get(self, question_id: str) -> Optional[QuestionBank]:
         question = self.db.query(QuestionBank).filter(QuestionBank.id == question_id).first()
         if question:
-            if question.options:
-                question.options = json.loads(question.options)
-            if question.correct_answer:
-                question.correct_answer = json.loads(question.correct_answer)
-            if question.knowledge_tags:
-                question.knowledge_tags = json.loads(question.knowledge_tags)
+            question.options = self._maybe_json_load(question.options)
+            question.correct_answer = self._maybe_json_load(question.correct_answer)
+            question.knowledge_tags = self._maybe_json_load(question.knowledge_tags)
         return question
 
     def list(self, org_id: Optional[str] = None, question_type: Optional[str] = None,
@@ -55,12 +59,9 @@ class QuestionService:
             query = query.filter(QuestionBank.status == status)
         questions = query.offset(skip).limit(limit).all()
         for question in questions:
-            if question.options:
-                question.options = json.loads(question.options)
-            if question.correct_answer:
-                question.correct_answer = json.loads(question.correct_answer)
-            if question.knowledge_tags:
-                question.knowledge_tags = json.loads(question.knowledge_tags)
+            question.options = self._maybe_json_load(question.options)
+            question.correct_answer = self._maybe_json_load(question.correct_answer)
+            question.knowledge_tags = self._maybe_json_load(question.knowledge_tags)
         return questions
 
     def update(self, question_id: str, **kwargs) -> QuestionBank:
@@ -81,12 +82,9 @@ class QuestionService:
         
         self.db.commit()
         self.db.refresh(question)
-        if question.options:
-            question.options = json.loads(question.options)
-        if question.correct_answer:
-            question.correct_answer = json.loads(question.correct_answer)
-        if question.knowledge_tags:
-            question.knowledge_tags = json.loads(question.knowledge_tags)
+        question.options = self._maybe_json_load(question.options)
+        question.correct_answer = self._maybe_json_load(question.correct_answer)
+        question.knowledge_tags = self._maybe_json_load(question.knowledge_tags)
         return question
 
     def delete(self, question_id: str) -> bool:
