@@ -17,7 +17,8 @@ class CourseLevel:
 class CourseBase(BaseModel):
     """课程基础模型"""
     title: str = Field(..., min_length=1, max_length=255)
-    content_url: Optional[str] = None
+    content_url: Optional[str] = None  # 课件PDF URL
+    video_url: Optional[str] = None    # 视频URL
     sort_order: int = 0
     level: str = CourseLevel.L1
     description: Optional[str] = None
@@ -32,6 +33,7 @@ class CourseUpdate(BaseModel):
     """课程更新模型"""
     title: Optional[str] = None
     content_url: Optional[str] = None
+    video_url: Optional[str] = None
     sort_order: Optional[int] = None
     level: Optional[str] = None
     description: Optional[str] = None
@@ -44,3 +46,4 @@ class CourseResponse(CourseBase):
 
     class Config:
         from_attributes = True
+

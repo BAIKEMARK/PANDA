@@ -22,6 +22,7 @@ import { RoleManagePage } from '../pages/admin/RoleManagePage';
 import { MenuManagePage } from '../pages/admin/MenuManagePage';
 import { QuestionBankPage } from '../pages/admin/QuestionBankPage';
 import { CertificatePage } from '../pages/admin/CertificatePage';
+import { LearningDashboardPage } from '../pages/LearningDashboardPage';
 import { PrivateRoute, PublicRoute } from './privateRoutes';
 
 // 路由配置
@@ -37,7 +38,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/courses" replace />,
+        element: <Navigate to="/progress" replace />,
+      },
+      {
+        path: 'progress',
+        element: <LearningDashboardPage />,
       },
       {
         path: 'courses',

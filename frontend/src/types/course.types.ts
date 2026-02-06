@@ -15,7 +15,8 @@ export enum CourseLevel {
 export interface Course {
   id: string;
   title: string;
-  content_url: string | null;
+  content_url: string | null;  // 课件PDF URL
+  video_url: string | null;    // 视频URL
   sort_order: number;
   level: CourseLevel;
   description: string | null;
@@ -26,6 +27,7 @@ export interface Course {
 export interface CourseCreate {
   title: string;
   content_url?: string;
+  video_url?: string;
   sort_order?: number;
   level: CourseLevel;
   description?: string;
@@ -35,6 +37,7 @@ export interface CourseCreate {
 export interface CourseUpdate {
   title?: string;
   content_url?: string;
+  video_url?: string;
   sort_order?: number;
   level?: CourseLevel;
   description?: string;

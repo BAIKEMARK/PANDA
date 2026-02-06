@@ -1,6 +1,7 @@
 """
 对话 API 路由
 """
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -13,6 +14,8 @@ from backend.app.modules.chat.schemas.chat import (
 from backend.app.modules.chat.services.chat_service import ChatService
 from backend.app.modules.chat.services.conversation_engine import ConversationEngine
 from backend.app.common.exceptions import NotFoundException
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["对话"])
 
@@ -71,18 +74,19 @@ async def send_message(
 
     # 2. 使用对话编排引擎生成AI回复（依赖注入方式）
     from backend.app.modules.scenario.services.scenario_service import ScenarioService
-    from backend.app.shared.infrastructure.ai_service import ai_service
+    from backend.app.modules.agent.core.agent_orchestrator import AgentOrchestrator
 
     scenario_service = ScenarioService(db)  # 实现ScenarioInterface
+    agent_orchestrator = AgentOrchestrator(db)  # Agent编排器
 
     engine = ConversationEngine(
         db=db,
-        ai_service=ai_service,
-        scenario_interface=scenario_service
+        scenario_interface=scenario_service,
+        agent_orchestrator=agent_orchestrator
     )
 
     try:
-        result = engine.generate_ai_response(
+        result = await engine.generate_ai_response(
             session_id=message_data.session_id,
             user_message=message_data.content
         )
@@ -99,6 +103,8 @@ async def send_message(
         return assistant_message
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()  # 打印完整错误堆栈
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"AI 生成失败: {str(e)}"
@@ -131,14 +137,15 @@ async def end_session(
 
     # 使用对话编排引擎发布会话结束事件
     from backend.app.modules.scenario.services.scenario_service import ScenarioService
-    from backend.app.shared.infrastructure.ai_service import ai_service
+    from backend.app.modules.agent.core.agent_orchestrator import AgentOrchestrator
 
     scenario_service = ScenarioService(db)
+    agent_orchestrator = AgentOrchestrator(db)
 
     engine = ConversationEngine(
         db=db,
-        ai_service=ai_service,
-        scenario_interface=scenario_service
+        scenario_interface=scenario_service,
+        agent_orchestrator=agent_orchestrator
     )
 
     try:
