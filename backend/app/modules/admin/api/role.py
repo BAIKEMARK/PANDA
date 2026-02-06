@@ -29,12 +29,18 @@ async def create_role(
     
     try:
         role = service.create(**role_data.model_dump())
+        # 加载默认分配的权限，便于前端直接看到效果
+        role.permissions = service.get_permissions(role.id)
         audit_service.log(
             user_id=current_user.id,
             action="create_role",
             resource_type="role",
             resource_id=role.id,
-            changes={"code": role.code, "name": role.name}
+            changes={
+                "code": role.code,
+                "name": role.name,
+                "default_permission_count": len(role.permissions or []),
+            },
         )
         return role
     except ConflictException as e:

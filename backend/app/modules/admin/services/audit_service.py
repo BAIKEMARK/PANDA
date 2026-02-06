@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Any
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, date
 
 from backend.app.models.audit import AuditLog
 from fastapi import Request
@@ -19,8 +19,15 @@ class AuditService:
         resource_id: Optional[str] = None,
         org_id: Optional[str] = None,
         changes: Optional[dict] = None,
-        request: Optional[Request] = None
+        request: Optional[Request] = None,
     ) -> AuditLog:
+        """记录审计日志。
+
+        注意：将 changes 中的 datetime/date 等不可 JSON 序列化类型转换为字符串，
+        避免 JSON 字段写入时抛出 `Object of type datetime is not JSON serializable`。
+        """
+        sanitized_changes = self._sanitize_changes(changes) if changes is not None else None
+
         log = AuditLog(
             id=str(uuid4()),
             user_id=user_id,
@@ -28,9 +35,9 @@ class AuditService:
             action=action,
             resource_type=resource_type,
             resource_id=resource_id,
-            changes=changes,
+            changes=sanitized_changes,
             ip_address=self._get_client_ip(request) if request else None,
-            user_agent=request.headers.get("user-agent") if request else None
+            user_agent=request.headers.get("user-agent") if request else None,
         )
         self.db.add(log)
         self.db.commit()
@@ -69,3 +76,14 @@ class AuditService:
                 return forwarded.split(",")[0].strip()
             return request.client.host if request.client else None
         return None
+
+    def _sanitize_changes(self, value: Any) -> Any:
+        """递归转换 changes 中不可 JSON 序列化的对象（如 datetime）为字符串。"""
+        if isinstance(value, (datetime, date)):
+            # 统一使用 ISO 格式，便于前端解析或展示
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {k: self._sanitize_changes(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._sanitize_changes(v) for v in value]
+        return value

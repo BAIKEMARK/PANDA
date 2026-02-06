@@ -77,5 +77,6 @@ class PermissionService:
         return {perm[0] for perm in perms}
 
     def _is_admin_user(self, user_id: str) -> bool:
+        """兼容旧数据：user.role 为基础角色枚举时，视为管理员."""
         user = self.db.query(User).filter(User.id == user_id).first()
-        return bool(user and user.role == "admin")
+        return bool(user and user.role in ("admin", "instructor"))

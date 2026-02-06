@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import userAdminService from '../../services/user-admin.service';
-import type { User } from '../../types/admin.types';
+import roleService from '../../services/role.service';
+import organizationService from '../../services/organization.service';
+import type { User, Role, Organization } from '../../types/admin.types';
 
 export function UserManagePage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -18,8 +22,14 @@ export function UserManagePage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const usersData = await userAdminService.list();
+      const [usersData, rolesData, orgsData] = await Promise.all([
+        userAdminService.list(),
+        roleService.list(),
+        organizationService.list(),
+      ]);
       setUsers(usersData.users);
+      setRoles(rolesData);
+      setOrganizations(orgsData);
     } catch (error: any) {
       message.error('加载数据失败: ' + (error.response?.data?.detail || error.message));
     } finally {
@@ -91,12 +101,14 @@ export function UserManagePage() {
       dataIndex: 'role',
       key: 'role',
       render: (role: string) => {
-        const roleMap: Record<string, string> = {
+        const found = roles.find((r) => r.code === role);
+        if (found) return found.name;
+        const fallbackMap: Record<string, string> = {
           student: '学员',
           instructor: '讲师',
           admin: '管理员',
         };
-        return roleMap[role] || role;
+        return fallbackMap[role] || role;
       },
     },
     {
@@ -166,12 +178,24 @@ export function UserManagePage() {
               </Form.Item>
             </>
           )}
-          <Form.Item name="role" label="角色" initialValue="student">
-            <Select>
-              <Select.Option value="student">学员</Select.Option>
-              <Select.Option value="instructor">讲师</Select.Option>
-              <Select.Option value="admin">管理员</Select.Option>
-            </Select>
+          <Form.Item name="org_id" label="机构">
+            <Select
+              allowClear
+              placeholder="请选择机构"
+              options={organizations.map((org) => ({
+                label: org.name,
+                value: org.id,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="role" label="角色" rules={[{ required: true }]}>
+            <Select
+              placeholder="请选择角色"
+              options={roles.map((role) => ({
+                label: role.name,
+                value: role.code,
+              }))}
+            />
           </Form.Item>
           <Form.Item name="phone" label="手机号">
             <Input />

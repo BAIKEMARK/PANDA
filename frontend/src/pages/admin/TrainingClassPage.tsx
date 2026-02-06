@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { format, parseISO } from 'date-fns';
+import dayjs from 'dayjs';
 import trainingService from '../../services/training.service';
 import organizationService from '../../services/organization.service';
 import type { TrainingClass } from '../../types/admin.types';
@@ -44,8 +45,9 @@ export function TrainingClassPage() {
     setEditingClass(cls);
     form.setFieldsValue({
       ...cls,
-      start_date: cls.start_date ? parseISO(cls.start_date) : null,
-      end_date: cls.end_date ? parseISO(cls.end_date) : null,
+      // Ant Design v5 使用 dayjs 作为日期类型
+      start_date: cls.start_date ? dayjs(cls.start_date) : null,
+      end_date: cls.end_date ? dayjs(cls.end_date) : null,
     });
     setModalVisible(true);
   };

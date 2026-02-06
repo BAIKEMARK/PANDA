@@ -18,6 +18,17 @@ SET @sql := IF(@col_exists = 0,
 );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+-- 将 users.role 从枚举迁移为通用字符串，以支持动态角色编码
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'role'
+);
+SET @sql := IF(@col_exists = 1,
+  'ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(100) NOT NULL DEFAULT ''student'' COMMENT ''角色代码（与 roles.code 对齐）''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 SET @col_exists := (
   SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'phone'
@@ -265,6 +276,49 @@ SET @sql := IF(@idx_exists = 0,
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ============================================
+-- 1.7) 扩展对话会话表字段（与 ChatSession 模型对齐）
+-- ============================================
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_sessions' AND COLUMN_NAME = 'has_suicide_risk'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `chat_sessions` ADD COLUMN `has_suicide_risk` TINYINT(1) DEFAULT 0 COMMENT ''会话中是否检测到自杀倾向''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_sessions' AND COLUMN_NAME = 'suicide_risk_alerted'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `chat_sessions` ADD COLUMN `suicide_risk_alerted` TINYINT(1) DEFAULT 0 COMMENT ''用户是否点击了报警按钮''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_sessions' AND COLUMN_NAME = 'suicide_risk_alert_time'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `chat_sessions` ADD COLUMN `suicide_risk_alert_time` DATETIME NULL COMMENT ''报警时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_sessions' AND COLUMN_NAME = 'suicide_risk_first_detected'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `chat_sessions` ADD COLUMN `suicide_risk_first_detected` DATETIME NULL COMMENT ''首次检测到自杀倾向的时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ============================================
 -- 2) 管理后台表结构（如已存在会跳过）
 -- ============================================
 
@@ -469,6 +523,55 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   INDEX `idx_resource` (`resource_type`, `resource_id`),
   INDEX `idx_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='审计日志表';
+
+-- 兼容已有 audit_logs 表结构：从 actor_id/detail 迁移到 user_id/changes
+SET @col_user := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'audit_logs' AND COLUMN_NAME = 'user_id'
+);
+SET @col_actor := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'audit_logs' AND COLUMN_NAME = 'actor_id'
+);
+SET @sql := IF(@col_user = 0 AND @col_actor = 1,
+  'ALTER TABLE `audit_logs` CHANGE COLUMN `actor_id` `user_id` CHAR(36) NULL COMMENT ''操作用户''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_user := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'audit_logs' AND COLUMN_NAME = 'user_id'
+);
+SET @sql := IF(@col_user = 0,
+  'ALTER TABLE `audit_logs` ADD COLUMN `user_id` CHAR(36) NULL COMMENT ''操作用户''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_detail := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'audit_logs' AND COLUMN_NAME = 'detail'
+);
+SET @col_changes := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'audit_logs' AND COLUMN_NAME = 'changes'
+);
+SET @sql := IF(@col_changes = 0 AND @col_detail = 1,
+  'ALTER TABLE `audit_logs` CHANGE COLUMN `detail` `changes` JSON NULL COMMENT ''变更内容''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_changes := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'audit_logs' AND COLUMN_NAME = 'changes'
+);
+SET @sql := IF(@col_changes = 0,
+  'ALTER TABLE `audit_logs` ADD COLUMN `changes` JSON NULL COMMENT ''变更内容''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 菜单表
 CREATE TABLE IF NOT EXISTS `menus` (

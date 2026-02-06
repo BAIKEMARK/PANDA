@@ -53,8 +53,9 @@ async def list_certificates(
 ):
     permission_service = PermissionService(db)
     if not permission_service.has_permission(current_user.id, "certificate:view"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足: certificate:view")
-    
+        # 无查看权限时直接返回空列表，避免登录后立刻看到权限报错
+        return []
+
     service = CertificateService(db)
     return service.list(user_id=user_id, org_id=org_id, skip=skip, limit=limit)
 

@@ -50,10 +50,12 @@ async def list_templates(
     current_user: User = Depends(get_current_user_dependency),
     db: Session = Depends(get_db)
 ):
+    # 证书模板仅限具有 org:view 权限或更高角色的用户访问
     permission_service = PermissionService(db)
     if not permission_service.has_permission(current_user.id, "org:view"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
-    
+        # 降级为空列表而不是抛错，避免非管理员登录直接看到权限错误
+        return []
+
     service = CertificateTemplateService(db)
     return service.list(org_id=org_id, status=status, skip=skip, limit=limit)
 

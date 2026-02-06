@@ -160,7 +160,7 @@ export const Sidebar = () => {
               {user?.name || '未登录'}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user?.role === 'student' ? '学员' : user?.role === 'instructor' ? '讲师' : '管理员'}
+              {user?.role || '普通用户'}
             </div>
           </div>
         </div>

@@ -1,6 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, message, Space, TreeSelect, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, EyeInvisibleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, message, Space, TreeSelect, Tooltip, Select } from 'antd';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  BookOutlined,
+  ExperimentOutlined,
+  MessageOutlined,
+  LineChartOutlined,
+  SettingOutlined,
+  UserOutlined,
+  TeamOutlined,
+  MenuOutlined,
+  BankOutlined,
+  TrophyOutlined,
+} from '@ant-design/icons';
 import menuService from '../../services/menu.service';
 import type { MenuItem } from '../../types/menu.types';
 
@@ -11,6 +29,25 @@ export function MenuManagePage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [form] = Form.useForm();
+
+  const iconOptions: { value: string; label: string; icon: React.ReactNode }[] = [
+    { value: 'BookOutlined', label: '课程（BookOutlined）', icon: <BookOutlined /> },
+    { value: 'SimulationOutlined', label: '情景模拟（SimulationOutlined）', icon: <ExperimentOutlined /> },
+    { value: 'ExperimentOutlined', label: '实验（ExperimentOutlined）', icon: <ExperimentOutlined /> },
+    { value: 'MessageOutlined', label: '消息（MessageOutlined）', icon: <MessageOutlined /> },
+    { value: 'LineChartOutlined', label: '统计（LineChartOutlined）', icon: <LineChartOutlined /> },
+    { value: 'SettingOutlined', label: '设置（SettingOutlined）', icon: <SettingOutlined /> },
+    { value: 'UserOutlined', label: '用户（UserOutlined）', icon: <UserOutlined /> },
+    { value: 'TeamOutlined', label: '团队（TeamOutlined）', icon: <TeamOutlined /> },
+    { value: 'MenuOutlined', label: '菜单（MenuOutlined）', icon: <MenuOutlined /> },
+    { value: 'BankOutlined', label: '机构（BankOutlined）', icon: <BankOutlined /> },
+    { value: 'TrophyOutlined', label: '证书（TrophyOutlined）', icon: <TrophyOutlined /> },
+  ];
+
+  const iconMap: Record<string, React.ReactNode> = iconOptions.reduce(
+    (acc, cur) => ({ ...acc, [cur.value]: cur.icon }),
+    {} as Record<string, React.ReactNode>,
+  );
 
   useEffect(() => {
     loadMenus();
@@ -108,6 +145,7 @@ export function MenuManagePage() {
       title: '图标',
       dataIndex: 'icon',
       key: 'icon',
+      render: (icon: string) => iconMap[icon] || <MenuOutlined />,
     },
     {
       title: '排序',
@@ -209,7 +247,20 @@ export function MenuManagePage() {
             <Input />
           </Form.Item>
           <Form.Item name="icon" label="图标">
-            <Input placeholder="Ant Design Icons 名称" />
+            <Select
+              allowClear
+              placeholder="请选择图标"
+              optionLabelProp="label"
+            >
+              {iconOptions.map((opt) => (
+                <Select.Option key={opt.value} value={opt.value} label={opt.label}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    {opt.icon}
+                    <span>{opt.label}</span>
+                  </span>
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item name="path" label="路由路径">
             <Input />

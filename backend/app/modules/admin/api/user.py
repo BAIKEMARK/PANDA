@@ -17,7 +17,6 @@ router = APIRouter(prefix="/admin/users", tags=["用户管理"])
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: UserCreate,
-    org_role: Optional[UserOrgAssign] = None,
     current_user: User = Depends(get_current_user_dependency),
     db: Session = Depends(get_db)
 ):
@@ -27,12 +26,9 @@ async def create_user(
     
     service = UserAdminService(db)
     audit_service = AuditService(db)
-    
+
     user_dict = user_data.model_dump()
-    if org_role:
-        user_dict["org_id"] = org_role.org_id
-        user_dict["role_id"] = org_role.role_id
-    
+
     try:
         user = service.create_user(user_dict, current_user.id)
         audit_service.log(

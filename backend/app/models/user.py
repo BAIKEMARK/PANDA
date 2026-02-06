@@ -16,7 +16,8 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True, comment="邮箱")
     password_hash = Column(String(255), nullable=False, comment="密码哈希")
     name = Column(String(100), nullable=False, comment="姓名")
-    role = Column(SQLEnum("student", "instructor", "admin", name="role"), default="student", comment="角色")
+    # 与 roles.code 对齐，支持动态角色
+    role = Column(String(50), default="student", comment="角色代码")
     org_id = Column(CHAR(36), index=True, comment="默认机构ID")
     phone = Column(String(50), comment="手机号")
     department = Column(String(100), comment="科室")

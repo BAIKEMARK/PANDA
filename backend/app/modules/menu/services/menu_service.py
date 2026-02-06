@@ -83,13 +83,31 @@ class MenuService:
         根据用户角色获取可访问的菜单树
 
         Args:
-            menu_roles: 用户角色列表
+            menu_roles: 用户角色列表（如 super_admin、org_admin、trainer 等业务角色）
             permission_codes: 用户权限编码列表
 
         Returns:
             菜单树形结构
         """
-        roles = [r for r in menu_roles if r]
+        # 角色规范化：将业务角色映射到菜单权限使用的基础角色枚举
+        # role_menu_permissions.role 目前仅支持: student / instructor / admin
+        base_role_mapping = {
+            "super_admin": "admin",
+            "org_admin": "admin",
+            "content_editor": "instructor",
+            "trainer": "instructor",
+            "auditor": "student",
+        }
+        roles: List[str] = []
+        for r in menu_roles:
+            if not r:
+                continue
+            roles.append(r)
+            # 补充映射后的基础角色，避免菜单权限表查不到
+            mapped = base_role_mapping.get(r)
+            if mapped and mapped not in roles:
+                roles.append(mapped)
+
         accessible_menus: List[Menu] = []
         for role in set(roles):
             accessible_menus.extend(self.permission_repo.get_menus_by_role(role))
