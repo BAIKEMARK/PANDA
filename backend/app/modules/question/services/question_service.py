@@ -4,7 +4,7 @@ from uuid import uuid4
 import json
 
 from backend.app.models.question import QuestionBank
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 
 
 class QuestionService:

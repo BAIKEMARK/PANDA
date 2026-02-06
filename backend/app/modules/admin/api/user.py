@@ -4,12 +4,12 @@ from typing import Optional
 
 from backend.app.db.database import get_db
 from backend.app.models.user import User
-from backend.app.common.middleware.permission import get_current_user_dependency
+from backend.app.core.common.middleware.permission import get_current_user_dependency
 from backend.app.modules.admin.services.permission_service import PermissionService
 from backend.app.modules.admin.schemas.user import UserCreate, UserUpdate, UserResponse, UserListResponse, UserOrgAssign
 from backend.app.modules.admin.services.user_admin_service import UserAdminService
 from backend.app.modules.admin.services.audit_service import AuditService
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 
 router = APIRouter(prefix="/admin/users", tags=["用户管理"])
 

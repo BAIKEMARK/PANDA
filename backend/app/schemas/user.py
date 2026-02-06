@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
-from backend.app.common.constants import UserRole
+from backend.app.core.common.constants import UserRole
 
 
 class UserBase(BaseModel):

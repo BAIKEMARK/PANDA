@@ -8,7 +8,7 @@ from typing import List, Optional
 from backend.app.models.scenario import Scenario
 from backend.app.modules.scenario.schemas.scenario import ScenarioCreate, ScenarioUpdate
 from backend.app.modules.scenario.repositories.scenario_repository import ScenarioRepository
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 from backend.app.interfaces.scenario_interface import ScenarioInterface, ScenarioConfig
 
 

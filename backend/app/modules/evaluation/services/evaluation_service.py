@@ -7,7 +7,7 @@ from typing import Optional
 from backend.app.models.evaluation import EvaluationReport
 from backend.app.modules.evaluation.repositories.evaluation_repository import EvaluationRepository
 from backend.app.schemas.evaluation import EvaluationReportResponse
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 
 
 class EvaluationService:

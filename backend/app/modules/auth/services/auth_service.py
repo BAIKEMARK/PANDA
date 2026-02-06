@@ -7,8 +7,8 @@ from typing import Optional, List
 from backend.app.models.user import User
 from backend.app.models.organization import Role, UserOrganization
 from backend.app.modules.auth.services.user_service import UserService
-from backend.app.config.security import verify_password, create_access_token, decode_access_token
-from backend.app.common.exceptions import UnauthorizedException
+from backend.app.core.config.security import verify_password, create_access_token, decode_access_token
+from backend.app.core.common.exceptions import UnauthorizedException
 from backend.app.modules.admin.services.permission_service import PermissionService
 
 

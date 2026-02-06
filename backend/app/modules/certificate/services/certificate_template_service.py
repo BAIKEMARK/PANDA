@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from backend.app.models.certificate import CertificateTemplate
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 
 
 class CertificateTemplateService:

@@ -642,4 +642,4 @@ import logoUrl from '@/assets/logo.png?url'
 
 ## 许可证
 
-Copyright © 2024 PANDA Team. All rights reserved.
+Copyright © 2026 PANDA Team. All rights reserved.

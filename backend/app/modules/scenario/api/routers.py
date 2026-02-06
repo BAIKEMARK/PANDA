@@ -8,7 +8,7 @@ from typing import List
 from backend.app.db.database import get_db
 from backend.app.modules.scenario.schemas.scenario import ScenarioCreate, ScenarioResponse, ScenarioUpdate
 from backend.app.modules.scenario.services.scenario_service import ScenarioService
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 
 router = APIRouter(prefix="/scenarios", tags=["场景"])
 

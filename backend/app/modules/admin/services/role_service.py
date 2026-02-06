@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from backend.app.models.organization import Role, Permission, RolePermission
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 
 
 class RoleService:

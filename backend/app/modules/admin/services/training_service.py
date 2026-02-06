@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from backend.app.models.training import TrainingClass, ClassStudent, ClassTask
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 from backend.app.modules.admin.services.permission_service import PermissionService
 
 

@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from backend.app.db.database import get_db
 from backend.app.models.user import User
-from backend.app.common.middleware.permission import get_current_user_dependency
+from backend.app.core.common.middleware.permission import get_current_user_dependency
 from backend.app.modules.admin.services.permission_service import PermissionService
 from backend.app.modules.admin.schemas.training import (
     TrainingClassCreate, TrainingClassUpdate, TrainingClassResponse,
@@ -12,7 +12,7 @@ from backend.app.modules.admin.schemas.training import (
 )
 from backend.app.modules.admin.services.training_service import TrainingService
 from backend.app.modules.admin.services.audit_service import AuditService
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 
 router = APIRouter(prefix="/admin/classes", tags=["班级管理"])
 

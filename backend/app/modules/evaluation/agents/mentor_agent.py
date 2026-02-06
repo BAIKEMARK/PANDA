@@ -9,8 +9,8 @@ from backend.app.models.chat import ChatSession, ChatMessage
 from backend.app.models.evaluation import EvaluationReport
 from backend.app.models.scenario import Scenario
 from backend.app.modules.evaluation.services.evaluation_service import EvaluationService
-from backend.app.shared.infrastructure.ai_service import ai_service
-from backend.app.shared.infrastructure.event_bus import event_bus, Events
+from backend.app.core.services.ai_service import ai_service
+from backend.app.core.services.event_bus import event_bus, Events
 
 
 class MentorAgent:
@@ -66,11 +66,15 @@ class MentorAgent:
         from backend.app.modules.evaluation.prompts.evaluation_prompt import get_thp_rubric_text
         evaluation_criteria = get_thp_rubric_text()
 
+        # 构建危机检测摘要
+        crisis_detection_summary = self._build_crisis_detection_summary(session)
+
         # 通过 AIService 调用（统一入口）
         try:
             evaluation_data = ai_service.generate_evaluation_report(
                 conversation_text=conversation_text,
-                evaluation_criteria=evaluation_criteria
+                evaluation_criteria=evaluation_criteria,
+                crisis_detection_summary=crisis_detection_summary
             )
         except Exception as e:
             print(f"[ERROR] AI 评估失败: {e}")
@@ -136,6 +140,26 @@ class MentorAgent:
             conversation_parts.append(part)
 
         return "\n".join(conversation_parts)
+
+    def _build_crisis_detection_summary(self, session: ChatSession) -> str:
+        """
+        构建危机检测摘要
+
+        Args:
+            session: 聊天会话对象
+
+        Returns:
+            危机检测摘要文本
+        """
+        if not session.has_suicide_risk:
+            return "【危机检测】系统未检测到明显的自杀倾向。"
+
+        if session.suicide_risk_alerted:
+            return """【危机检测】系统检测到患者存在自杀倾向。
+【用户应对】用户已点击报警按钮。"""
+        else:
+            return """【危机检测】系统检测到患者存在自杀倾向。
+【用户应对】用户未采取任何行动。"""
 
     def _save_report(self, session_id: str, evaluation_data: dict) -> EvaluationReport:
         """保存评估报告到数据库"""

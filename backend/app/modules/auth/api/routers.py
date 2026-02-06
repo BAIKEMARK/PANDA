@@ -3,7 +3,6 @@
 合并原 auth.py 和 users.py
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -13,14 +12,12 @@ from backend.app.modules.auth.schemas.user import (
 )
 from backend.app.modules.auth.services.user_service import UserService
 from backend.app.modules.auth.services.auth_service import AuthService
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.dependencies import get_current_user, get_current_user_required
 
 router = APIRouter()
 auth_router = APIRouter(prefix="/auth", tags=["认证"])
 users_router = APIRouter(prefix="/users", tags=["用户"])
-
-# OAuth2 密码模式
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 # ==================== 认证路由 ====================
@@ -58,17 +55,8 @@ async def login(
     )
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-):
-    """获取当前登录用户（依赖注入）"""
-    auth_service = AuthService(db)
-    return auth_service.get_current_user(token)
-
-
 @auth_router.get("/me", response_model=UserResponse)
-async def get_me(current_user = Depends(get_current_user)):
+async def get_me(current_user = Depends(get_current_user_required)):
     """
     获取当前登录用户信息
 

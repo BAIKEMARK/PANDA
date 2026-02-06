@@ -5,7 +5,7 @@ Database Session Module
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker, declarative_base
 
-from backend.app.config.config import settings
+from backend.app.core.config.settings import settings
 
 # 创建ORM基类
 Base = declarative_base()

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from backend.app.db.database import get_db
-from backend.app.config.config import settings
+from backend.app.core.config.settings import settings
 
 router = APIRouter(tags=["系统"])
 

@@ -4,8 +4,8 @@ from uuid import uuid4
 
 from backend.app.models.user import User
 from backend.app.models.organization import UserOrganization
-from backend.app.config.security import get_password_hash
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.config.security import get_password_hash
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 from backend.app.modules.admin.services.permission_service import PermissionService
 
 

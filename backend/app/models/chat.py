@@ -2,7 +2,7 @@
 Chat ORM Models
 对话相关数据库模型
 """
-from sqlalchemy import Column, String, Text, Integer, DateTime, Enum as SQLEnum, JSON
+from sqlalchemy import Column, String, Text, Integer, DateTime, Enum as SQLEnum, JSON, Boolean
 from sqlalchemy.dialects.mysql import CHAR
 from datetime import datetime
 from backend.app.db.database import Base
@@ -20,6 +20,12 @@ class ChatSession(Base):
     end_time = Column(DateTime, comment="结束时间")
     final_score = Column(Integer, comment="最终得分")
     meta_data = Column(JSON, comment="会话元数据")
+
+    # ========== 自杀倾向检测 ==========
+    has_suicide_risk = Column(Boolean, default=False, comment="会话中是否检测到自杀倾向")
+    suicide_risk_alerted = Column(Boolean, default=False, comment="用户是否点击了报警按钮")
+    suicide_risk_alert_time = Column(DateTime, comment="报警时间")
+    suicide_risk_first_detected = Column(DateTime, comment="首次检测到自杀倾向的时间")
 
 
 class ChatMessage(Base):
