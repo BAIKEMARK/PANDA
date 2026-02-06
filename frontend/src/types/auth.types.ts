@@ -16,6 +16,14 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  org_id?: string;
+  phone?: string;
+  department?: string;
+  title?: string;
+  employee_id?: string;
+  roles: string[];
+  org_ids: string[];
+  permission_codes: string[];
   created_at: string;
 }
 
@@ -25,12 +33,22 @@ export interface UserCreate {
   name: string;
   password: string;
   role?: UserRole;
+  org_id?: string;
+  phone?: string;
+  department?: string;
+  title?: string;
+  employee_id?: string;
 }
 
 // 用户更新DTO
 export interface UserUpdate {
   name?: string;
   role?: UserRole;
+  org_id?: string;
+  phone?: string;
+  department?: string;
+  title?: string;
+  employee_id?: string;
 }
 
 // 用户登录DTO (后端需要补充)

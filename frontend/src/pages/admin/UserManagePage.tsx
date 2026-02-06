@@ -43,6 +43,9 @@ export function UserManagePage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个用户吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await userAdminService.delete(id);
@@ -144,6 +147,8 @@ export function UserManagePage() {
         title={editingUser ? '编辑用户' : '新建用户'}
         open={modalVisible}
         onOk={handleSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setModalVisible(false)}
         width={600}
       >

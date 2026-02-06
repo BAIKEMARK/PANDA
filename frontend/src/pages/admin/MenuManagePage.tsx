@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, message, Space, Switch, TreeSelect } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, message, Space, TreeSelect, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, EyeInvisibleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import menuService from '../../services/menu.service';
 import type { MenuItem } from '../../types/menu.types';
 
@@ -46,6 +46,9 @@ export function MenuManagePage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个菜单吗？删除后子菜单也会被删除。',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await menuService.deleteMenu(id);
@@ -61,21 +64,32 @@ export function MenuManagePage() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      const submitData = editingMenu ? values : { ...values, is_visible: true, is_enabled: true };
       if (editingMenu) {
-        await menuService.updateMenu(editingMenu.id, values);
+        await menuService.updateMenu(editingMenu.id, submitData);
         message.success('更新成功');
       } else {
         const id =
           typeof crypto !== 'undefined' && crypto.randomUUID
             ? crypto.randomUUID()
             : `m-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
-        await menuService.createMenu({ id, ...values });
+        await menuService.createMenu({ id, ...submitData });
         message.success('创建成功');
       }
       setModalVisible(false);
       loadMenus();
     } catch (error: any) {
       message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleToggleStatus = async (menu: MenuItem, field: 'is_visible' | 'is_enabled', value: boolean) => {
+    try {
+      await menuService.updateMenu(menu.id, { [field]: value });
+      message.success(field === 'is_visible' ? (value ? '已设为可见' : '已设为隐藏') : (value ? '已启用' : '已禁用'));
+      loadMenus();
+    } catch (error: any) {
+      message.error('更新失败: ' + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -104,13 +118,32 @@ export function MenuManagePage() {
       title: '可见',
       dataIndex: 'is_visible',
       key: 'is_visible',
-      render: (visible: boolean) => (visible ? '是' : '否'),
+      render: (visible: boolean, record: MenuItem) => (
+        <Tooltip title={visible ? '点击隐藏' : '点击显示'}>
+          <Button
+            type="text"
+            size="small"
+            icon={visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+            onClick={() => handleToggleStatus(record, 'is_visible', !visible)}
+          />
+        </Tooltip>
+      ),
     },
     {
       title: '启用',
       dataIndex: 'is_enabled',
       key: 'is_enabled',
-      render: (enabled: boolean) => (enabled ? '是' : '否'),
+      render: (enabled: boolean, record: MenuItem) => (
+        <Tooltip title={enabled ? '点击禁用' : '点击启用'}>
+          <Button
+            type="text"
+            size="small"
+            danger={!enabled}
+            icon={enabled ? <CheckOutlined /> : <CloseOutlined />}
+            onClick={() => handleToggleStatus(record, 'is_enabled', !enabled)}
+          />
+        </Tooltip>
+      ),
     },
     {
       title: '操作',
@@ -159,6 +192,8 @@ export function MenuManagePage() {
         title={editingMenu ? '编辑菜单' : '新建菜单'}
         open={modalVisible}
         onOk={handleSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setModalVisible(false)}
         width={600}
       >
@@ -184,12 +219,6 @@ export function MenuManagePage() {
           </Form.Item>
           <Form.Item name="sort_order" label="排序" initialValue={0}>
             <InputNumber min={0} />
-          </Form.Item>
-          <Form.Item name="is_visible" label="可见" valuePropName="checked" initialValue={true}>
-            <Switch />
-          </Form.Item>
-          <Form.Item name="is_enabled" label="启用" valuePropName="checked" initialValue={true}>
-            <Switch />
           </Form.Item>
         </Form>
       </Modal>

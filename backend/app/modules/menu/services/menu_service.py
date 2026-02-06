@@ -2,7 +2,7 @@
 菜单服务层
 """
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Set
 from backend.app.modules.menu.repositories.menu_repository import (
     MenuRepository,
     RoleMenuPermissionRepository
@@ -78,38 +78,56 @@ class MenuService:
 
         return root_menus
 
-    def get_user_menus(self, role: str) -> List[MenuResponse]:
+    def get_user_menus(self, menu_roles: List[str], permission_codes: List[str]) -> List[MenuResponse]:
         """
         根据用户角色获取可访问的菜单树
 
         Args:
-            role: 用户角色 (student/instructor/admin)
+            menu_roles: 用户角色列表
+            permission_codes: 用户权限编码列表
 
         Returns:
             菜单树形结构
         """
-        # 获取角色可访问的菜单
-        accessible_menus = self.permission_repo.get_menus_by_role(role)
-        if role == "admin" and not accessible_menus:
-            # 兜底：没有角色菜单权限数据时，管理员显示全部可见菜单
+        roles = [r for r in menu_roles if r]
+        accessible_menus: List[Menu] = []
+        for role in set(roles):
+            accessible_menus.extend(self.permission_repo.get_menus_by_role(role))
+        if "admin" in roles and not accessible_menus:
             accessible_menus = self.menu_repo.get_enabled_menus()
+        if not accessible_menus:
+            return []
 
-        # 构建菜单字典
-        menu_dict = {self._norm_id(m.id): MenuResponse.model_validate(m) for m in accessible_menus}
+        all_menus = self.menu_repo.get_enabled_menus()
+        menu_dict = {self._norm_id(m.id): MenuResponse.model_validate(m) for m in all_menus}
 
         # 先清空 children，避免后续排序覆盖
         for menu in menu_dict.values():
             menu.children = []
 
+        accessible_ids: Set[str] = set()
+        for menu in accessible_menus:
+            menu_id = self._norm_id(menu.id)
+            if not menu_id:
+                continue
+            accessible_ids.add(menu_id)
+            parent_id = self._norm_id(menu.parent_id)
+            while parent_id and parent_id in menu_dict:
+                accessible_ids.add(parent_id)
+                parent_id = self._norm_id(menu_dict[parent_id].parent_id)
+
         # 构建树形结构
         root_menus = []
         for menu in menu_dict.values():
+            menu_id = self._norm_id(menu.id)
+            if not menu_id or menu_id not in accessible_ids:
+                continue
             parent_id = self._norm_id(menu.parent_id)
-            if parent_id is None:
+            menu.permission_codes = self._get_menu_permission_codes(menu.path, permission_codes)
+            if parent_id is None or parent_id not in accessible_ids:
                 # 顶级菜单
                 root_menus.append(menu)
             elif parent_id in menu_dict:
-                # 子菜单（父菜单也在可访问列表中）
                 parent = menu_dict[parent_id]
                 parent.children.append(menu)
 
@@ -120,6 +138,24 @@ class MenuService:
                 menu.children.sort(key=lambda x: x.sort_order)
 
         return root_menus
+
+    def _get_menu_permission_codes(self, path: Optional[str], permission_codes: List[str]) -> List[str]:
+        if not path:
+            return []
+        mapping = {
+            "/admin/organizations": "org:",
+            "/admin/users": "user:",
+            "/admin/classes": "class:",
+            "/admin/questions": "question:",
+            "/admin/certificates": "certificate:",
+            "/courses": "course:",
+            "/scenarios": "scenario:",
+            "/evaluation": "evaluation:",
+        }
+        for prefix, perm_prefix in mapping.items():
+            if path.startswith(prefix):
+                return [code for code in permission_codes if code.startswith(perm_prefix)]
+        return []
 
     def create_menu(self, menu_data: MenuCreate) -> MenuResponse:
         """创建菜单"""

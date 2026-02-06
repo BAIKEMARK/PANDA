@@ -54,7 +54,7 @@ async def login(
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse.model_validate(user)
+        user=UserResponse.model_validate(auth_service.enrich_user(user))
     )
 
 

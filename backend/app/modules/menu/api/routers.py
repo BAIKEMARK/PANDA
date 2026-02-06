@@ -12,6 +12,8 @@ from backend.app.modules.menu.schemas.menu import (
 )
 from backend.app.modules.menu.services.menu_service import MenuService
 from backend.app.common.exceptions import NotFoundException
+from backend.app.common.middleware.permission import get_current_user_dependency
+from backend.app.models.user import User
 
 router = APIRouter(prefix="/menus", tags=["菜单管理"])
 
@@ -38,23 +40,19 @@ async def get_menu_tree(db: Session = Depends(get_db)):
 
 @router.get("/user", response_model=List[MenuResponse])
 async def get_user_menus(
-    role: str = Query(..., description="用户角色 (student/instructor/admin)"),
+    current_user: User = Depends(get_current_user_dependency),
     db: Session = Depends(get_db)
 ):
     """
     根据用户角色获取可访问的菜单树
 
     前端调用示例：
-    GET /api/menus/user?role=student
+    GET /api/menus/user
     """
-    if role not in ['student', 'instructor', 'admin']:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="无效的角色，必须是 student、instructor 或 admin"
-        )
-
     service = MenuService(db)
-    return service.get_user_menus(role)
+    roles = getattr(current_user, "roles", None) or []
+    permission_codes = getattr(current_user, "permission_codes", None) or []
+    return service.get_user_menus(roles, permission_codes)
 
 
 @router.get("/{menu_id}", response_model=MenuResponse)

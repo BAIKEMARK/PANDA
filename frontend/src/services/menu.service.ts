@@ -11,12 +11,9 @@ import type { MenuItem, MenuTreeNode } from '../types/menu.types';
 class MenuService {
   /**
    * 根据用户角色获取可访问的菜单树
-   * @param role 用户角色 (student/instructor/admin)
    */
-  async getUserMenus(role: string): Promise<MenuItem[]> {
-    const { data } = await apiClient.get<MenuItem[]>('/menus/user', {
-      params: { role }
-    });
+  async getUserMenus(): Promise<MenuItem[]> {
+    const { data } = await apiClient.get<MenuItem[]>('/menus/user');
     return data;
   }
 

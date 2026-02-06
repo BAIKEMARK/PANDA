@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space, Tag, Tabs } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space, Tag, Tabs, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { certificateService, certificateTemplateService } from '../../services/certificate.service';
 import type { Certificate, CertificateTemplate } from '../../types/admin.types';
 
@@ -61,6 +61,9 @@ export function CertificatePage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这张证书吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await certificateService.delete(id);
@@ -106,6 +109,9 @@ export function CertificatePage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个模板吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await certificateTemplateService.delete(id);
@@ -116,6 +122,16 @@ export function CertificatePage() {
         }
       },
     });
+  };
+
+  const handleToggleTemplateStatus = async (template: CertificateTemplate, value: boolean) => {
+    try {
+      await certificateTemplateService.update(template.id, { status: value ? 'active' : 'inactive' });
+      message.success(value ? '已启用' : '已禁用');
+      loadTemplates();
+    } catch (error: any) {
+      message.error('更新失败: ' + (error.response?.data?.detail || error.message));
+    }
   };
 
   const handleTemplateSubmit = async () => {
@@ -196,8 +212,16 @@ export function CertificatePage() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
-        <Tag color={status === 'active' ? 'green' : 'red'}>{status === 'active' ? '启用' : '禁用'}</Tag>
+      render: (status: string, record: CertificateTemplate) => (
+        <Tooltip title={status === 'active' ? '点击禁用' : '点击启用'}>
+          <Button
+            type="text"
+            size="small"
+            danger={status !== 'active'}
+            icon={status === 'active' ? <CheckOutlined /> : <CloseOutlined />}
+            onClick={() => handleToggleTemplateStatus(record, status !== 'active')}
+          />
+        </Tooltip>
       ),
     },
     {
@@ -269,6 +293,8 @@ export function CertificatePage() {
         title={editingCert ? '编辑证书' : '新建证书'}
         open={certModalVisible}
         onOk={handleCertSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setCertModalVisible(false)}
         width={600}
       >
@@ -304,6 +330,8 @@ export function CertificatePage() {
         title={editingTemplate ? '编辑模板' : '新建模板'}
         open={templateModalVisible}
         onOk={handleTemplateSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setTemplateModalVisible(false)}
         width={600}
       >
@@ -313,12 +341,6 @@ export function CertificatePage() {
           </Form.Item>
           <Form.Item name="name" label="模板名称" rules={[{ required: true }]}>
             <Input />
-          </Form.Item>
-          <Form.Item name="status" label="状态" initialValue="active">
-            <Select>
-              <Select.Option value="active">启用</Select.Option>
-              <Select.Option value="inactive">禁用</Select.Option>
-            </Select>
           </Form.Item>
         </Form>
       </Modal>

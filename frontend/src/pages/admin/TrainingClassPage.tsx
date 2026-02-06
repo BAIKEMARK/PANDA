@@ -54,6 +54,9 @@ export function TrainingClassPage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个班级吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await trainingService.delete(id);
@@ -160,6 +163,8 @@ export function TrainingClassPage() {
         title={editingClass ? '编辑班级' : '新建班级'}
         open={modalVisible}
         onOk={handleSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setModalVisible(false)}
         width={600}
       >

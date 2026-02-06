@@ -65,6 +65,9 @@ export function RoleManagePage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个角色吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await roleService.delete(id);
@@ -173,6 +176,8 @@ export function RoleManagePage() {
         title={editingRole ? '编辑角色' : '新建角色'}
         open={modalVisible}
         onOk={handleSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setModalVisible(false)}
         width={600}
       >
@@ -199,6 +204,8 @@ export function RoleManagePage() {
         title="分配权限"
         open={permissionModalVisible}
         onOk={handlePermissionSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setPermissionModalVisible(false)}
         width={600}
       >

@@ -13,6 +13,7 @@ export interface MenuItem {
   is_visible: boolean;
   is_enabled: boolean;
   children?: MenuItem[];
+  permission_codes?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +29,7 @@ export interface MenuResponse {
   is_visible: boolean;
   is_enabled: boolean;
   children?: MenuResponse[];
+  permission_codes?: string[];
   created_at: string;
   updated_at: string;
 }

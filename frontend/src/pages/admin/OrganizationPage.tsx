@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message, Space, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, message, Space, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import organizationService from '../../services/organization.service';
 import type { Organization } from '../../types/admin.types';
 
@@ -43,6 +43,9 @@ export function OrganizationPage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个机构吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await organizationService.delete(id);
@@ -53,6 +56,16 @@ export function OrganizationPage() {
         }
       },
     });
+  };
+
+  const handleToggleStatus = async (org: Organization, value: boolean) => {
+    try {
+      await organizationService.update(org.id, { status: value ? 'active' : 'inactive' });
+      message.success(value ? '已启用' : '已禁用');
+      loadOrganizations();
+    } catch (error: any) {
+      message.error('更新失败: ' + (error.response?.data?.detail || error.message));
+    }
   };
 
   const handleSubmit = async () => {
@@ -97,8 +110,16 @@ export function OrganizationPage() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
-        <Tag color={status === 'active' ? 'green' : 'red'}>{status === 'active' ? '启用' : '禁用'}</Tag>
+      render: (status: string, record: Organization) => (
+        <Tooltip title={status === 'active' ? '点击禁用' : '点击启用'}>
+          <Button
+            type="text"
+            size="small"
+            danger={status !== 'active'}
+            icon={status === 'active' ? <CheckOutlined /> : <CloseOutlined />}
+            onClick={() => handleToggleStatus(record, status !== 'active')}
+          />
+        </Tooltip>
       ),
     },
     {
@@ -139,6 +160,8 @@ export function OrganizationPage() {
         title={editingOrg ? '编辑机构' : '新建机构'}
         open={modalVisible}
         onOk={handleSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setModalVisible(false)}
         width={600}
       >
@@ -157,12 +180,6 @@ export function OrganizationPage() {
           </Form.Item>
           <Form.Item name="contact_email" label="联系邮箱">
             <Input type="email" />
-          </Form.Item>
-          <Form.Item name="status" label="状态" initialValue="active">
-            <Select>
-              <Select.Option value="active">启用</Select.Option>
-              <Select.Option value="inactive">禁用</Select.Option>
-            </Select>
           </Form.Item>
         </Form>
       </Modal>

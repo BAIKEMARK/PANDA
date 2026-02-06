@@ -48,6 +48,9 @@ export function QuestionBankPage() {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这道题目吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         try {
           await questionService.delete(id);
@@ -170,6 +173,8 @@ export function QuestionBankPage() {
         title={editingQuestion ? '编辑题目' : '新建题目'}
         open={modalVisible}
         onOk={handleSubmit}
+        okText="保存"
+        cancelText="取消"
         onCancel={() => setModalVisible(false)}
         width={800}
       >

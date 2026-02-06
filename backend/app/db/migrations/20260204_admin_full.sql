@@ -69,6 +69,202 @@ SET @sql := IF(@idx_exists = 0,
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ============================================
+-- 1.5) 扩展课程表字段（与 Course 模型对齐）
+-- ============================================
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'org_id'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `org_id` CHAR(36) NULL COMMENT ''机构ID''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'scope'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `scope` ENUM(''private'',''platform'',''shared'') DEFAULT ''private'' COMMENT ''发布范围''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'version'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `version` VARCHAR(50) DEFAULT ''1.0.0'' COMMENT ''版本号''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'version_notes'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `version_notes` TEXT NULL COMMENT ''版本说明''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'status'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `status` ENUM(''draft'',''pending'',''published'',''archived'') DEFAULT ''draft'' COMMENT ''状态''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'published_at'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `published_at` DATETIME NULL COMMENT ''发布时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'published_by'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `published_by` CHAR(36) NULL COMMENT ''发布人''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'video_url'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `video_url` TEXT NULL COMMENT ''视频URL''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND COLUMN_NAME = 'updated_at'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `courses` ADD COLUMN `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''更新时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courses' AND INDEX_NAME = 'idx_courses_org_id'
+);
+SET @sql := IF(@idx_exists = 0,
+  'ALTER TABLE `courses` ADD INDEX `idx_courses_org_id` (`org_id`)',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ============================================
+-- 1.6) 扩展场景表字段（与 Scenario 模型对齐）
+-- ============================================
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'org_id'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `org_id` CHAR(36) NULL COMMENT ''机构ID''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'scope'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `scope` ENUM(''private'',''platform'',''shared'') DEFAULT ''private'' COMMENT ''发布范围''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'version'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `version` VARCHAR(50) DEFAULT ''1.0.0'' COMMENT ''版本号''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'version_notes'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `version_notes` TEXT NULL COMMENT ''版本说明''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'status'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `status` ENUM(''draft'',''pending'',''published'',''archived'') DEFAULT ''draft'' COMMENT ''状态''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'published_at'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `published_at` DATETIME NULL COMMENT ''发布时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'published_by'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `published_by` CHAR(36) NULL COMMENT ''发布人''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND COLUMN_NAME = 'updated_at'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `scenarios` ADD COLUMN `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''更新时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'scenarios' AND INDEX_NAME = 'idx_scenarios_org_id'
+);
+SET @sql := IF(@idx_exists = 0,
+  'ALTER TABLE `scenarios` ADD INDEX `idx_scenarios_org_id` (`org_id`)',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ============================================
 -- 2) 管理后台表结构（如已存在会跳过）
 -- ============================================
 

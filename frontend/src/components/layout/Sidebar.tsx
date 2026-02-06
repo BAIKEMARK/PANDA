@@ -40,21 +40,23 @@ export const Sidebar = () => {
 
   // 加载用户菜单
   useEffect(() => {
-    if (user?.role) {
-      fetchUserMenus(user.role);
+    if (user?.id) {
+      fetchUserMenus();
     }
-  }, [user?.role, fetchUserMenus]);
+  }, [user?.id, fetchUserMenus]);
 
   // 将菜单数据转换为 Ant Design Menu 格式
   const menuItems = useMemo(() => {
     if (!menus || menus.length === 0) return undefined;
 
     return menus.map((menu) => {
+      const hasChildren = !!(menu.children && menu.children.length > 0);
+      const key = menu.path || menu.id;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const item: any = {
-        key: menu.path,
+        key,
         icon: iconMap[menu.icon] || <MenuOutlined />,
-        label: (
+        label: hasChildren ? menu.title : (
           <NavLink to={menu.path} style={{ color: 'inherit' }}>
             {menu.title}
           </NavLink>
@@ -62,9 +64,9 @@ export const Sidebar = () => {
       };
 
       // 处理子菜单
-      if (menu.children && menu.children.length > 0) {
+      if (hasChildren) {
         item.children = menu.children.map((child) => ({
-          key: child.path,
+          key: child.path || child.id,
           icon: iconMap[child.icon] || <MenuOutlined />,
           label: (
             <NavLink to={child.path} style={{ color: 'inherit' }}>
@@ -107,7 +109,7 @@ export const Sidebar = () => {
             letterSpacing: '2px',
           }}
         >
-          🐼 PANDA
+          PANDA
         </div>
         <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
           围产期抑郁管理培训系统
