@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, message, Space, TreeSelect, Tooltip, Select } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, message, Space, TreeSelect, Tooltip, Select, Col } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -19,11 +19,14 @@ import {
   BankOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import menuService from '../../services/menu.service';
+import { FilterForm } from '../../components/admin/FilterForm';
 import type { MenuItem } from '../../types/menu.types';
 
 export function MenuManagePage() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [filteredMenus, setFilteredMenus] = useState<MenuItem[]>([]);
   const [menuTree, setMenuTree] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -58,6 +61,7 @@ export function MenuManagePage() {
     try {
       const data = await menuService.getAllMenus();
       setMenus(data);
+      setFilteredMenus(data);
       const treeData = await menuService.getMenuTree();
       setMenuTree(treeData);
     } catch (error: any) {
@@ -65,6 +69,36 @@ export function MenuManagePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (values: any) => {
+    let filtered = [...menus];
+    
+    if (values.title) {
+      filtered = filtered.filter(menu => 
+        menu.title?.toLowerCase().includes(values.title.toLowerCase())
+      );
+    }
+    
+    if (values.path) {
+      filtered = filtered.filter(menu => 
+        menu.path?.toLowerCase().includes(values.path.toLowerCase())
+      );
+    }
+    
+    if (values.is_visible !== undefined) {
+      filtered = filtered.filter(menu => menu.is_visible === values.is_visible);
+    }
+    
+    if (values.is_enabled !== undefined) {
+      filtered = filtered.filter(menu => menu.is_enabled === values.is_enabled);
+    }
+    
+    setFilteredMenus(filtered);
+  };
+
+  const handleReset = () => {
+    setFilteredMenus(menus);
   };
 
   const handleCreate = () => {
@@ -210,20 +244,76 @@ export function MenuManagePage() {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
-        <h2>菜单管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          新建菜单
-        </Button>
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{ padding: '24px' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+        style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>菜单管理</h2>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+            }}
+          >
+            新建菜单
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="title" label="菜单标题">
+            <Input placeholder="请输入菜单标题" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="path" label="路径">
+            <Input placeholder="请输入路径" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="is_visible" label="可见性">
+            <Select placeholder="请选择可见性" allowClear>
+              <Select.Option value={true}>可见</Select.Option>
+              <Select.Option value={false}>隐藏</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="is_enabled" label="启用状态">
+            <Select placeholder="请选择启用状态" allowClear>
+              <Select.Option value={true}>启用</Select.Option>
+              <Select.Option value={false}>禁用</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </FilterForm>
 
       <Table
         columns={columns}
-        dataSource={menus}
+        dataSource={filteredMenus}
         loading={loading}
         rowKey="id"
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+        style={{
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}
       />
 
       <Modal
@@ -273,6 +363,6 @@ export function MenuManagePage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

@@ -4,7 +4,7 @@ User ORM Model
 """
 from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, Text
 from sqlalchemy.dialects.mysql import CHAR
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.app.db.database import Base
 
 
@@ -23,5 +23,14 @@ class User(Base):
     department = Column(String(100), comment="科室")
     title = Column(String(100), comment="职称")
     employee_id = Column(String(100), comment="工号")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    created_at = Column(
+        DateTime(timezone=True), 
+        default=lambda: datetime.now(timezone.utc), 
+        comment="创建时间"
+    )
+    updated_at = Column(
+        DateTime(timezone=True), 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc), 
+        comment="更新时间"
+    )

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message, Space, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, message, Space, Tag, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import questionService from '../../services/question.service';
+import { FilterForm } from '../../components/admin/FilterForm';
 import type { Question } from '../../types/admin.types';
 
 export function QuestionBankPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -20,11 +23,40 @@ export function QuestionBankPage() {
     try {
       const data = await questionService.list();
       setQuestions(data);
+      setFilteredQuestions(data);
     } catch (error: any) {
       message.error('加载题目列表失败: ' + (error.response?.data?.detail || error.message));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (values: any) => {
+    let filtered = [...questions];
+    
+    if (values.question_text) {
+      filtered = filtered.filter(q => 
+        q.question_text?.toLowerCase().includes(values.question_text.toLowerCase())
+      );
+    }
+    
+    if (values.question_type) {
+      filtered = filtered.filter(q => q.question_type === values.question_type);
+    }
+    
+    if (values.difficulty) {
+      filtered = filtered.filter(q => q.difficulty === values.difficulty);
+    }
+    
+    if (values.status) {
+      filtered = filtered.filter(q => q.status === values.status);
+    }
+    
+    setFilteredQuestions(filtered);
+  };
+
+  const handleReset = () => {
+    setFilteredQuestions(questions);
   };
 
   const handleCreate = () => {
@@ -153,20 +185,82 @@ export function QuestionBankPage() {
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
-        <h2>题库管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          新建题目
-        </Button>
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{ padding: '24px' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+        style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>题库管理</h2>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+            }}
+          >
+            新建题目
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="question_text" label="题干">
+            <Input placeholder="请输入题干关键词" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="question_type" label="题型">
+            <Select placeholder="请选择题型" allowClear>
+              <Select.Option value="single">单选题</Select.Option>
+              <Select.Option value="multiple">多选题</Select.Option>
+              <Select.Option value="judge">判断题</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="difficulty" label="难度">
+            <Select placeholder="请选择难度" allowClear>
+              <Select.Option value="easy">简单</Select.Option>
+              <Select.Option value="medium">中等</Select.Option>
+              <Select.Option value="hard">困难</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="status" label="状态">
+            <Select placeholder="请选择状态" allowClear>
+              <Select.Option value="draft">草稿</Select.Option>
+              <Select.Option value="active">启用</Select.Option>
+              <Select.Option value="disabled">禁用</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </FilterForm>
 
       <Table
         columns={columns}
-        dataSource={questions}
+        dataSource={filteredQuestions}
         loading={loading}
         rowKey="id"
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+        style={{
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}
       />
 
       <Modal
@@ -217,6 +311,6 @@ export function QuestionBankPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

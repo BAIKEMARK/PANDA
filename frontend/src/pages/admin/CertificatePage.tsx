@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space, Tag, Tabs, Tooltip } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space, Tag, Tabs, Tooltip, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import { certificateService, certificateTemplateService } from '../../services/certificate.service';
+import { FilterForm } from '../../components/admin/FilterForm';
 import type { Certificate, CertificateTemplate } from '../../types/admin.types';
 
 export function CertificatePage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [filteredCertificates, setFilteredCertificates] = useState<Certificate[]>([]);
   const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
+  const [filteredTemplates, setFilteredTemplates] = useState<CertificateTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [certModalVisible, setCertModalVisible] = useState(false);
@@ -26,6 +30,7 @@ export function CertificatePage() {
     try {
       const data = await certificateService.list();
       setCertificates(data);
+      setFilteredCertificates(data);
     } catch (error: any) {
       message.error('加载证书列表失败: ' + (error.response?.data?.detail || error.message));
     } finally {
@@ -38,11 +43,60 @@ export function CertificatePage() {
     try {
       const data = await certificateTemplateService.list();
       setTemplates(data);
+      setFilteredTemplates(data);
     } catch (error: any) {
       message.error('加载模板列表失败: ' + (error.response?.data?.detail || error.message));
     } finally {
       setTemplateLoading(false);
     }
+  };
+
+  const handleCertSearch = (values: any) => {
+    let filtered = [...certificates];
+    
+    if (values.certificate_number) {
+      filtered = filtered.filter(cert => 
+        cert.certificate_number?.toLowerCase().includes(values.certificate_number.toLowerCase())
+      );
+    }
+    
+    if (values.user_id) {
+      filtered = filtered.filter(cert => cert.user_id === values.user_id);
+    }
+    
+    if (values.status) {
+      filtered = filtered.filter(cert => cert.status === values.status);
+    }
+    
+    setFilteredCertificates(filtered);
+  };
+
+  const handleCertReset = () => {
+    setFilteredCertificates(certificates);
+  };
+
+  const handleTemplateSearch = (values: any) => {
+    let filtered = [...templates];
+    
+    if (values.name) {
+      filtered = filtered.filter(tpl => 
+        tpl.name?.toLowerCase().includes(values.name.toLowerCase())
+      );
+    }
+    
+    if (values.org_id) {
+      filtered = filtered.filter(tpl => tpl.org_id === values.org_id);
+    }
+    
+    if (values.status) {
+      filtered = filtered.filter(tpl => tpl.status === values.status);
+    }
+    
+    setFilteredTemplates(filtered);
+  };
+
+  const handleTemplateReset = () => {
+    setFilteredTemplates(templates);
   };
 
   const handleCreateCert = () => {
@@ -242,8 +296,19 @@ export function CertificatePage() {
   const templateColumns = baseTemplateColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <div style={{ padding: '24px' }}>
-      <h2>证书管理</h2>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{ padding: '24px' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+      >
+        <h2 style={{ margin: '0 0 20px 0', fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>证书管理</h2>
+      </motion.div>
       <Tabs
         items={[
           {
@@ -252,16 +317,53 @@ export function CertificatePage() {
             children: (
               <>
                 <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateCert}>
-                    新建证书
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={handleCreateCert}
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                      }}
+                    >
+                      新建证书
+                    </Button>
+                  </motion.div>
                 </div>
+                <FilterForm onSearch={handleCertSearch} onReset={handleCertReset} loading={loading}>
+                  <Col xs={24} sm={12} md={8} lg={6}>
+                    <Form.Item name="certificate_number" label="证书编号">
+                      <Input placeholder="请输入证书编号" allowClear />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} md={8} lg={6}>
+                    <Form.Item name="user_id" label="用户ID">
+                      <Input placeholder="请输入用户ID" allowClear />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} md={8} lg={6}>
+                    <Form.Item name="status" label="状态">
+                      <Select placeholder="请选择状态" allowClear>
+                        <Select.Option value="valid">有效</Select.Option>
+                        <Select.Option value="revoked">已撤销</Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                </FilterForm>
                 <Table
                   columns={certColumns}
-                  dataSource={certificates}
+                  dataSource={filteredCertificates}
                   loading={loading}
                   rowKey="id"
-                  pagination={{ pageSize: 10 }}
+                  pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+                  style={{
+                    background: '#fff',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                  }}
                 />
               </>
             ),
@@ -272,16 +374,53 @@ export function CertificatePage() {
             children: (
               <>
                 <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateTemplate}>
-                    新建模板
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={handleCreateTemplate}
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                      }}
+                    >
+                      新建模板
+                    </Button>
+                  </motion.div>
                 </div>
+                <FilterForm onSearch={handleTemplateSearch} onReset={handleTemplateReset} loading={templateLoading}>
+                  <Col xs={24} sm={12} md={8} lg={6}>
+                    <Form.Item name="name" label="模板名称">
+                      <Input placeholder="请输入模板名称" allowClear />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} md={8} lg={6}>
+                    <Form.Item name="org_id" label="机构ID">
+                      <Input placeholder="请输入机构ID" allowClear />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} md={8} lg={6}>
+                    <Form.Item name="status" label="状态">
+                      <Select placeholder="请选择状态" allowClear>
+                        <Select.Option value="active">启用</Select.Option>
+                        <Select.Option value="inactive">禁用</Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                </FilterForm>
                 <Table
                   columns={templateColumns}
-                  dataSource={templates}
+                  dataSource={filteredTemplates}
                   loading={templateLoading}
                   rowKey="id"
-                  pagination={{ pageSize: 10 }}
+                  pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+                  style={{
+                    background: '#fff',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                  }}
                 />
               </>
             ),
@@ -344,6 +483,6 @@ export function CertificatePage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

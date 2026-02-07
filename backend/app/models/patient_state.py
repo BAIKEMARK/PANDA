@@ -4,7 +4,7 @@ Patient State ORM Models
 """
 from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.dialects.mysql import CHAR
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.app.db.database import Base
 
 
@@ -18,4 +18,9 @@ class PatientStateORM(Base):
     depression_level = Column(Integer, default=50, comment="抑郁程度 (0-100)")
     rapport_score = Column(Integer, default=50, comment="信任度 (0-100)")
     message_count = Column(Integer, default=0, comment="对话轮次")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    updated_at = Column(
+        DateTime(timezone=True), 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc), 
+        comment="更新时间"
+    )

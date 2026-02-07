@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message, Space, Tag, Checkbox } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, message, Space, Tag, Checkbox, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import roleService from '../../services/role.service';
+import { FilterForm } from '../../components/admin/FilterForm';
 import type { Role, Permission } from '../../types/admin.types';
 
 export function RoleManagePage() {
   const [roles, setRoles] = useState<Role[]>([]);
+  const [filteredRoles, setFilteredRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -25,6 +28,7 @@ export function RoleManagePage() {
     try {
       const data = await roleService.list();
       setRoles(data);
+      setFilteredRoles(data);
     } catch (error: any) {
       message.error('加载角色列表失败: ' + (error.response?.data?.detail || error.message));
     } finally {
@@ -39,6 +43,32 @@ export function RoleManagePage() {
     } catch (error: any) {
       message.error('加载权限列表失败');
     }
+  };
+
+  const handleSearch = (values: any) => {
+    let filtered = [...roles];
+    
+    if (values.code) {
+      filtered = filtered.filter(role => 
+        role.code?.toLowerCase().includes(values.code.toLowerCase())
+      );
+    }
+    
+    if (values.name) {
+      filtered = filtered.filter(role => 
+        role.name?.toLowerCase().includes(values.name.toLowerCase())
+      );
+    }
+    
+    if (values.scope) {
+      filtered = filtered.filter(role => role.scope === values.scope);
+    }
+    
+    setFilteredRoles(filtered);
+  };
+
+  const handleReset = () => {
+    setFilteredRoles(roles);
   };
 
   const handleCreate = () => {
@@ -156,20 +186,68 @@ export function RoleManagePage() {
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
-        <h2>角色管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          新建角色
-        </Button>
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{ padding: '24px' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+        style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>角色管理</h2>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+            }}
+          >
+            新建角色
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="code" label="角色代码">
+            <Input placeholder="请输入角色代码" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="name" label="角色名称">
+            <Input placeholder="请输入角色名称" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="scope" label="作用域">
+            <Select placeholder="请选择作用域" allowClear>
+              <Select.Option value="system">系统</Select.Option>
+              <Select.Option value="org">机构</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </FilterForm>
 
       <Table
         columns={columns}
-        dataSource={roles}
+        dataSource={filteredRoles}
         loading={loading}
         rowKey="id"
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+        style={{
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}
       />
 
       <Modal
@@ -221,6 +299,6 @@ export function RoleManagePage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

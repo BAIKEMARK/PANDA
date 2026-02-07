@@ -150,6 +150,8 @@ DROP TABLE IF EXISTS `evaluation_reports`;
 CREATE TABLE `evaluation_reports` (
   `id` char(36) NOT NULL COMMENT '报告ID',
   `session_id` char(36) NOT NULL COMMENT '会话ID',
+  `status` enum('pending','generating','completed','failed') NOT NULL DEFAULT 'completed' COMMENT '报告生成状态: pending-待生成, generating-生成中, completed-已完成, failed-失败',
+  `error_message` text COMMENT '错误信息（生成失败时）',
   `total_score` int DEFAULT NULL COMMENT '总分 (0-100)',
   `level_assessment` varchar(20) DEFAULT NULL COMMENT '等级评定: 优秀/良好/合格/不合格',
   `radar_a_risk_identification` int DEFAULT NULL COMMENT 'A类-风险识别能力 (0-100)',
@@ -163,9 +165,11 @@ CREATE TABLE `evaluation_reports` (
   `meta_data` json DEFAULT NULL COMMENT '其他元数据',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `completed_at` datetime DEFAULT NULL COMMENT '完成时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `session_id` (`session_id`),
-  KEY `idx_session` (`session_id`)
+  KEY `idx_session` (`session_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='评估报告表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -38,7 +38,7 @@ class RedisStateManager:
         """初始化Redis连接池"""
         if not hasattr(self, '_initialized'):
             try:
-                self._redis_client = redis.ConnectionPool(
+                self._connection_pool = redis.ConnectionPool(
                     host=settings.REDIS_HOST,
                     port=settings.REDIS_PORT,
                     db=settings.REDIS_DB,
@@ -48,7 +48,7 @@ class RedisStateManager:
                     socket_timeout=settings.REDIS_SOCKET_TIMEOUT,
                     max_connections=settings.REDIS_MAX_CONNECTIONS
                 )
-                self._client = redis.Redis(connection_pool=self._redis_client)
+                self._client = redis.Redis(connection_pool=self._connection_pool)
                 self._initialized = True
                 print(f"✅ Redis连接池已初始化: {settings.REDIS_HOST}:{settings.REDIS_PORT}")
             except Exception as e:

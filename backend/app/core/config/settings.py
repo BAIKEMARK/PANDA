@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = "test0000"
     DB_NAME: str = "panda"
     DB_CHARSET: str = "utf8mb4"
+    
+    # 数据库连接池配置
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 3600
 
     @property
     def DATABASE_URL(self) -> str:

@@ -2,14 +2,17 @@
  * 主布局组件
  * 包含侧边栏和头部导航
  */
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Layout } from 'antd';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
 const { Content } = Layout;
 
 export const AppLayout = () => {
+  const location = useLocation();
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* 侧边栏 */}
@@ -33,11 +36,21 @@ export const AppLayout = () => {
           style={{
             marginTop: '64px',
             padding: '20px',
-            background: '#f5f7fa',
+            background: 'linear-gradient(180deg, #f5f7fa 0%, #e8ecf1 100%)',
             minHeight: 'calc(100vh - 64px)',
           }}
         >
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </Content>
       </Layout>
     </Layout>

@@ -13,9 +13,12 @@ Base = declarative_base()
 # 同步引擎
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-    echo=False,  # 关闭 SQL 日志，避免干扰调试输出
+    pool_pre_ping=True,                    # 连接前检查连接是否有效
+    pool_recycle=settings.DB_POOL_RECYCLE, # 连接回收时间（秒）
+    pool_size=settings.DB_POOL_SIZE,       # 连接池大小
+    max_overflow=settings.DB_MAX_OVERFLOW, # 最大溢出连接数
+    pool_timeout=settings.DB_POOL_TIMEOUT, # 获取连接超时时间（秒）
+    echo=False,                            # 关闭 SQL 日志，避免干扰调试输出
 )
 
 # 同步会话工厂

@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message, Space } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, message, Space, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import userAdminService from '../../services/user-admin.service';
 import roleService from '../../services/role.service';
 import organizationService from '../../services/organization.service';
+import { FilterForm } from '../../components/admin/FilterForm';
 import type { User, Role, Organization } from '../../types/admin.types';
 
 export function UserManagePage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -28,6 +31,7 @@ export function UserManagePage() {
         organizationService.list(),
       ]);
       setUsers(usersData.users);
+      setFilteredUsers(usersData.users);
       setRoles(rolesData);
       setOrganizations(orgsData);
     } catch (error: any) {
@@ -35,6 +39,42 @@ export function UserManagePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (values: any) => {
+    let filtered = [...users];
+    
+    if (values.name) {
+      filtered = filtered.filter(user => 
+        user.name?.toLowerCase().includes(values.name.toLowerCase())
+      );
+    }
+    
+    if (values.email) {
+      filtered = filtered.filter(user => 
+        user.email?.toLowerCase().includes(values.email.toLowerCase())
+      );
+    }
+    
+    if (values.role) {
+      filtered = filtered.filter(user => user.role === values.role);
+    }
+    
+    if (values.org_id) {
+      filtered = filtered.filter(user => user.org_id === values.org_id);
+    }
+    
+    if (values.department) {
+      filtered = filtered.filter(user => 
+        user.department?.toLowerCase().includes(values.department.toLowerCase())
+      );
+    }
+    
+    setFilteredUsers(filtered);
+  };
+
+  const handleReset = () => {
+    setFilteredUsers(users);
   };
 
   const handleCreate = () => {
@@ -139,20 +179,87 @@ export function UserManagePage() {
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
-        <h2>用户管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          新建用户
-        </Button>
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{ padding: '24px' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+        style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>用户管理</h2>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+            }}
+          >
+            新建用户
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="name" label="姓名">
+            <Input placeholder="请输入姓名" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="email" label="邮箱">
+            <Input placeholder="请输入邮箱" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="role" label="角色">
+            <Select placeholder="请选择角色" allowClear>
+              {roles.map((role) => (
+                <Select.Option key={role.code} value={role.code}>
+                  {role.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="org_id" label="机构">
+            <Select placeholder="请选择机构" allowClear>
+              {organizations.map((org) => (
+                <Select.Option key={org.id} value={org.id}>
+                  {org.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="department" label="科室">
+            <Input placeholder="请输入科室" allowClear />
+          </Form.Item>
+        </Col>
+      </FilterForm>
 
       <Table
         columns={columns}
-        dataSource={users}
+        dataSource={filteredUsers}
         loading={loading}
         rowKey="id"
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+        style={{
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}
       />
 
       <Modal
@@ -211,6 +318,6 @@ export function UserManagePage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

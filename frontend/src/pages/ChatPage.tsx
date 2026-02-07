@@ -13,6 +13,7 @@ import {
   ExclamationCircleOutlined,
   AlertOutlined as AlertIcon
 } from '@ant-design/icons';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '@/stores/chat.store';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -156,37 +157,49 @@ export const ChatPage = () => {
   };
 
   return (
-    <div style={{
-      height: 'calc(100vh - 64px - 40px)',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      margin: '-20px',
-      background: '#fff',
-      borderRadius: '8px',
-    }}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      style={{
+        height: 'calc(100vh - 64px - 40px)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        margin: '-20px',
+        background: '#fff',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      }}
+    >
       {/* Chat Header */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
         style={{
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          padding: '12px 24px',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          padding: '16px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
+          boxShadow: '0 2px 8px rgba(102, 126, 234, 0.15)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/scenarios')}
-            style={{ color: '#666' }}
-          >
-            返回
-          </Button>
-          <Title level={5} style={{ margin: 0 }}>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate('/scenarios')}
+              style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}
+            >
+              返回
+            </Button>
+          </motion.div>
+          <Title level={5} style={{ margin: 0, color: '#fff' }}>
             <CommentOutlined style={{ marginRight: '8px' }} />
             {currentSession?.scenario_title || '对话练习'}
           </Title>
@@ -194,54 +207,90 @@ export const ChatPage = () => {
 
         <Space>
           {currentSession && (
-            <Tag color="blue">{messages.length} 条消息</Tag>
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
+              <Tag color="blue" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff' }}>
+                {messages.length} 条消息
+              </Tag>
+            </motion.div>
           )}
-          {isReadOnly ? (
-            <Tag color="orange">只读模式</Tag>
-          ) : null}
-          {isReadOnly ? (
-            <Button
-              type="primary"
-              icon={<PlayCircleOutlined />}
-              onClick={handleContinueChat}
-            >
-              继续对话
-            </Button>
-          ) : (
-            <>
-              {/* 报警按钮 - 一直显示，让用户自己判断 */}
-              <Button
-                danger
-                icon={<AlertIcon />}
-                onClick={handleAlert}
-                style={{ marginRight: '8px' }}
+          <AnimatePresence mode="wait">
+            {isReadOnly ? (
+              <motion.div
+                key="readonly"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
-                报警
-              </Button>
-              <Button
-                type="primary"
-                icon={<StopOutlined />}
-                onClick={handleEndSession}
-                disabled={isEnding || isLoading}
+                <Tag color="orange" style={{ background: 'rgba(255,152,0,0.2)', border: 'none', color: '#fff' }}>
+                  只读模式
+                </Tag>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    type="primary"
+                    icon={<PlayCircleOutlined />}
+                    onClick={handleContinueChat}
+                    style={{ background: '#fff', color: '#667eea', border: 'none' }}
+                  >
+                    继续对话
+                  </Button>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="active"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                style={{ display: 'flex', gap: '8px' }}
               >
-                结束对话
-              </Button>
-            </>
-          )}
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    danger
+                    icon={<AlertIcon />}
+                    onClick={handleAlert}
+                    style={{ background: 'rgba(255,77,79,0.9)', border: 'none', color: '#fff' }}
+                  >
+                    报警
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    type="primary"
+                    icon={<StopOutlined />}
+                    onClick={handleEndSession}
+                    disabled={isEnding || isLoading}
+                    style={{ background: '#fff', color: '#667eea', border: 'none' }}
+                  >
+                    结束对话
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Space>
-      </div>
+      </motion.div>
 
       {/* 报警提示横幅 */}
-      {!isReadOnly && (
-        <Alert
-          message="提示"
-          description="如观察到患者存在自杀倾向，请及时点击「报警」按钮记录处理。"
-          type="info"
-          showIcon
-          closable
-          style={{ margin: '12px 24px', borderRadius: '4px' }}
-        />
-      )}
+      <AnimatePresence>
+        {!isReadOnly && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Alert
+              message="提示"
+              description="如观察到患者存在自杀倾向，请及时点击「报警」按钮记录处理。"
+              type="info"
+              showIcon
+              closable
+              style={{ margin: '12px 24px', borderRadius: '8px', background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)', border: 'none' }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Chat Window */}
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
@@ -254,23 +303,39 @@ export const ChatPage = () => {
 
       {/* Chat Input or Read-only Notice */}
       <div style={{ flexShrink: 0 }}>
-        {isReadOnly ? (
-          <Alert
-            message="您正在查看历史对话记录"
-            description="点击右上角「继续对话」按钮可继续与患者交流"
-            type="info"
-            showIcon
-            style={{ margin: '16px 24px' }}
-            action={
-              <Button type="primary" size="small" onClick={handleContinueChat}>
-                继续对话
-              </Button>
-            }
-          />
-        ) : (
-          <ChatInput onSend={handleSendMessage} disabled={isLoading} isLoading={isTyping} />
-        )}
+        <AnimatePresence mode="wait">
+          {isReadOnly ? (
+            <motion.div
+              key="readonly-notice"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Alert
+                message="您正在查看历史对话记录"
+                description="点击右上角「继续对话」按钮可继续与患者交流"
+                type="info"
+                showIcon
+                style={{ margin: '16px 24px', borderRadius: '8px' }}
+                action={
+                  <Button type="primary" size="small" onClick={handleContinueChat}>
+                    继续对话
+                  </Button>
+                }
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="chat-input"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <ChatInput onSend={handleSendMessage} disabled={isLoading} isLoading={isTyping} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 };

@@ -6,10 +6,30 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.app.core.config.settings import settings
 from backend.app.db.database import init_database, get_db
 from backend.app.core.config.logging import setup_logging, get_logger
+
+# 导入中间件和异常处理器
+from backend.app.core.middleware import (
+    RequestIDMiddleware,
+    global_exception_handler,
+    not_found_exception_handler,
+    unauthorized_exception_handler,
+    forbidden_exception_handler,
+    bad_request_exception_handler,
+    validation_exception_handler,
+    database_exception_handler
+)
+from backend.app.core.common.exceptions import (
+    NotFoundException,
+    UnauthorizedException,
+    ForbiddenException,
+    BadRequestException
+)
 
 # 初始化统一日志配置
 setup_logging()
@@ -67,15 +87,40 @@ app = FastAPI(
     redoc_url="/api/redoc",
 )
 
-# 配置 CORS
+# ================================================
+# 配置中间件
+# ================================================
+
+# 1. 请求ID追踪中间件（最先执行）
+app.add_middleware(RequestIDMiddleware)
+
+# 2. CORS中间件
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ================================================
+# 配置异常处理器
+# ================================================
+
+# 自定义业务异常
+app.add_exception_handler(NotFoundException, not_found_exception_handler)
+app.add_exception_handler(UnauthorizedException, unauthorized_exception_handler)
+app.add_exception_handler(ForbiddenException, forbidden_exception_handler)
+app.add_exception_handler(BadRequestException, bad_request_exception_handler)
+
+# 请求验证异常
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
+# 数据库异常
+app.add_exception_handler(SQLAlchemyError, database_exception_handler)
+
+# 全局异常处理器（兜底）
+app.add_exception_handler(Exception, global_exception_handler)
 
 # 注册所有路由（新的模块化架构）
 app.include_router(health_router, prefix="/api")

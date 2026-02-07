@@ -14,6 +14,7 @@ import {
   TeamOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMenuStore } from '@/stores/menu.store';
 
@@ -91,30 +92,37 @@ export const Sidebar = () => {
         top: 0,
         bottom: 0,
         background: 'linear-gradient(180deg, #1a365d 0%, #2d3748 100%)',
+        boxShadow: '2px 0 8px rgba(0,0,0,0.15)'
       }}
     >
       {/* Logo */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
         style={{
           padding: '20px 16px',
           textAlign: 'center',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        <div
+        <motion.div
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
           style={{
-            fontSize: '22px',
+            fontSize: '24px',
             fontWeight: 700,
             color: '#fff',
-            letterSpacing: '2px',
+            letterSpacing: '3px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}
         >
           PANDA
-        </div>
-        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
+        </motion.div>
+        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>
           围产期抑郁管理培训系统
         </Text>
-      </div>
+      </motion.div>
 
       {/* Navigation */}
       {isLoading ? (
@@ -122,21 +130,30 @@ export const Sidebar = () => {
           <Spin size="small" />
         </div>
       ) : (
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          style={{
-            background: 'transparent',
-            borderRight: 0,
-            marginTop: '8px',
-          }}
-        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={menuItems}
+            style={{
+              background: 'transparent',
+              borderRight: 0,
+              marginTop: '8px',
+            }}
+          />
+        </motion.div>
       )}
 
       {/* User Info */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
         style={{
           position: 'absolute',
           bottom: 0,
@@ -144,17 +161,19 @@ export const Sidebar = () => {
           right: 0,
           padding: '12px 16px',
           borderTop: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(0,0,0,0.15)',
+          background: 'rgba(0,0,0,0.2)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Avatar
-            size={36}
-            style={{ backgroundColor: '#667eea', flexShrink: 0 }}
-            icon={<UserOutlined />}
-          >
-            {user?.name?.[0] || 'U'}
-          </Avatar>
+          <motion.div whileHover={{ scale: 1.1 }} transition={{ type: 'spring', stiffness: 300 }}>
+            <Avatar
+              size={36}
+              style={{ backgroundColor: '#667eea', flexShrink: 0 }}
+              icon={<UserOutlined />}
+            >
+              {user?.name?.[0] || 'U'}
+            </Avatar>
+          </motion.div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ color: '#fff', fontSize: '13px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user?.name || '未登录'}
@@ -164,7 +183,7 @@ export const Sidebar = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </Sider>
   );
 };

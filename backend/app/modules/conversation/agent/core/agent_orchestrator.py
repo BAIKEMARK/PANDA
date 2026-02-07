@@ -57,79 +57,92 @@ class AgentOrchestrator:
         if conversation_history is None:
             conversation_history = []
 
-        # 1. 获取当前状态
-        current_state = self.state_service.get_state(session_id)
-        if current_state is None:
-            current_state = PatientState()
+        try:
+            # 1. 获取当前状态
+            current_state = self.state_service.get_state(session_id)
+            if current_state is None:
+                current_state = PatientState()
 
-        # 2. 调用StateUpdateChain分析状态变化
-        state_analysis: StateAnalysis = await self.state_update_chain.ainvoke(
-            nurse_input=user_input,
-            current_state=current_state.model_dump(),
-            conversation_history=conversation_history
-        )
+            # 2. 调用StateUpdateChain分析状态变化
+            state_analysis: StateAnalysis = await self.state_update_chain.ainvoke(
+                nurse_input=user_input,
+                current_state=current_state.model_dump(),
+                conversation_history=conversation_history
+            )
 
-        # 3. 处理自杀倾向检测
-        if state_analysis.suicide_risk is True:
-            self.chat_repository.update_suicide_risk(session_id, True)
+            # 3. 处理自杀倾向检测（数据库操作使用事务）
+            if state_analysis.suicide_risk is True:
+                try:
+                    self.chat_repository.update_suicide_risk(session_id, True)
+                    self.db.commit()
+                except Exception as e:
+                    self.db.rollback()
+                    # 记录错误但不中断流程
+                    print(f"❌ 更新自杀风险标记失败: {e}")
 
-        # 4. 应用状态更新，计算新状态
-        new_state = self._apply_state_update(current_state, state_analysis)
+            # 4. 应用状态更新，计算新状态
+            new_state = self._apply_state_update(current_state, state_analysis)
 
-        # 5. 保存新状态到Redis
-        self.state_service.update_state(
-            session_id=session_id,
-            mood_score=new_state.mood_score,
-            satisfaction_score=new_state.satisfaction_score,
-            depression_level=new_state.depression_level,
-            rapport_score=new_state.rapport_score
-        )
+            # 5. 保存新状态到Redis
+            self.state_service.update_state(
+                session_id=session_id,
+                mood_score=new_state.mood_score,
+                satisfaction_score=new_state.satisfaction_score,
+                depression_level=new_state.depression_level,
+                rapport_score=new_state.rapport_score
+            )
 
-        # 6. 增加消息计数
-        new_count = self.state_service.increment_message_count(session_id)
-        new_state.message_count = new_count
+            # 6. 增加消息计数
+            new_count = self.state_service.increment_message_count(session_id)
+            new_state.message_count = new_count
 
-        # 7. 调用PatientAgentChain生成患者回复（基于新状态）
-        agent_response = await self.patient_chain.ainvoke(
-            scenario_title=scenario_title,
-            patient_background=patient_background,
-            current_state=new_state.model_dump(),
-            conversation_history=conversation_history,
-            user_input=user_input
-        )
+            # 7. 调用PatientAgentChain生成患者回复（基于新状态）
+            agent_response = await self.patient_chain.ainvoke(
+                scenario_title=scenario_title,
+                patient_background=patient_background,
+                current_state=new_state.model_dump(),
+                conversation_history=conversation_history,
+                user_input=user_input
+            )
 
-        # 8. 检查是否患者离开 - 在生成回复后再处理
-        if state_analysis.patient_leaving is True:
-            # 患者说完告别话后，但不自动结束会话
-            # 让用户自己决定是评估还是继续对话
-            # 返回回复 + 离开标记
+            # 8. 检查是否患者离开 - 在生成回复后再处理
+            if state_analysis.patient_leaving is True:
+                # 患者说完告别话后，但不自动结束会话
+                # 让用户自己决定是评估还是继续对话
+                # 返回回复 + 离开标记
+                return {
+                    "response": agent_response,  # 返回告别消息
+                    "state": new_state.model_dump(),
+                    "force_end": False,  # 不强制结束，让用户选择
+                    "patient_leaving": True,  # 标记患者想离开
+                    "message": "患者表示要离开"
+                }
+
+            # 9. 返回正常结果
             return {
-                "response": agent_response,  # 返回告别消息
+                "response": agent_response,
                 "state": new_state.model_dump(),
-                "force_end": False,  # 不强制结束，让用户选择
-                "patient_leaving": True,  # 标记患者想离开
-                "message": "患者表示要离开"
+                "state_delta": {
+                    "mood_delta": state_analysis.mood_delta,
+                    "satisfaction_delta": state_analysis.satisfaction_delta,
+                    "depression_delta": state_analysis.depression_delta,
+                    "rapport_delta": state_analysis.rapport_delta,
+                },
+                "crisis_alert": {
+                    "suicide_risk": state_analysis.suicide_risk,
+                },
+                "meta_data": {
+                    "session_id": session_id,
+                    "message_count": new_count,
+                    "agent_type": "patient_agent"
+                }
             }
-
-        # 9. 返回正常结果
-        return {
-            "response": agent_response,
-            "state": new_state.model_dump(),
-            "state_delta": {
-                "mood_delta": state_analysis.mood_delta,
-                "satisfaction_delta": state_analysis.satisfaction_delta,
-                "depression_delta": state_analysis.depression_delta,
-                "rapport_delta": state_analysis.rapport_delta,
-            },
-            "crisis_alert": {
-                "suicide_risk": state_analysis.suicide_risk,
-            },
-            "meta_data": {
-                "session_id": session_id,
-                "message_count": new_count,
-                "agent_type": "patient_agent"
-            }
-        }
+        
+        except Exception as e:
+            # 发生异常时回滚数据库事务
+            self.db.rollback()
+            print(f"❌ 处理对话轮次失败: {e}")
+            raise
 
     def _apply_state_update(
         self,
