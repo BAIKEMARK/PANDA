@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 登录页面 - 优化版
  */
 import { useEffect, useRef } from 'react';
@@ -81,34 +81,42 @@ export const LoginPage = () => {
   }, []);
 
   useEffect(() => {
-    if (registeredEmail && registeredPassword) {
-      form.setFieldsValue({
-        email: registeredEmail,
-        password: registeredPassword,
-        remember: false,
-        autoLogin: false,
-      });
-      return;
-    }
-
-    const remember = localStorage.getItem(REMEMBER_KEY) === 'true';
-    const autoLogin = localStorage.getItem(AUTO_LOGIN_KEY) === 'true';
-    
-    if (remember) {
-      const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY) || '';
-      const savedPassword = localStorage.getItem(SAVED_PASSWORD_KEY) || '';
-      
-      form.setFieldsValue({
-        email: savedEmail,
-        password: savedPassword,
-        remember: true,
-        autoLogin: autoLogin,
-      });
-
-      if (autoLogin && savedEmail && savedPassword) {
-        handleAutoLogin(savedEmail, savedPassword);
+    // 延迟执行，确保登录页面先渲染出来
+    const timer = setTimeout(() => {
+      if (registeredEmail && registeredPassword) {
+        form.setFieldsValue({
+          email: registeredEmail,
+          password: registeredPassword,
+          remember: false,
+          autoLogin: false,
+        });
+        return;
       }
-    }
+
+      const remember = localStorage.getItem(REMEMBER_KEY) === 'true';
+      const autoLogin = localStorage.getItem(AUTO_LOGIN_KEY) === 'true';
+      
+      if (remember) {
+        const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY) || '';
+        const savedPassword = localStorage.getItem(SAVED_PASSWORD_KEY) || '';
+        
+        form.setFieldsValue({
+          email: savedEmail,
+          password: savedPassword,
+          remember: true,
+          autoLogin: autoLogin,
+        });
+
+        // 延迟自动登录，给用户看到登录页面的机会
+        if (autoLogin && savedEmail && savedPassword) {
+          setTimeout(() => {
+            handleAutoLogin(savedEmail, savedPassword);
+          }, 500);
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAutoLogin = async (email: string, password: string) => {

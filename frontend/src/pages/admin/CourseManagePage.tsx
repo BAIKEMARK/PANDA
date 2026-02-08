@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Card, Tabs, message } from 'antd';
 import { FileUpload } from '../../components/admin/FileUpload';
 import { FileList } from '../../components/admin/FileList';
@@ -24,7 +24,7 @@ export function CourseManagePage() {
 
   const handleFileSelect = (file: any) => {
     if (selectedCourseId) {
-      message.info(`已选择文件: ${file.filename}，可关联到课程`);
+      message.info(`已选择文件：${file.filename}`);
     }
   };
 
@@ -37,8 +37,8 @@ export function CourseManagePage() {
               key: 'upload',
               label: '上传课件',
               children: (
-                <div>
-                  <h3>上传新课件</h3>
+              <div>
+                <h3>上传新课件</h3>
                   <FileUpload
                     category="courseware"
                     resourceType="course"
@@ -74,3 +74,6 @@ export function CourseManagePage() {
     </div>
   );
 }
+
+
+

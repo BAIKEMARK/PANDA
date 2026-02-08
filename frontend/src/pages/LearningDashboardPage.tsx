@@ -1,8 +1,8 @@
-/**
+﻿/**
  * 学习仪表盘页面
  */
 import { useEffect, useState } from 'react';
-import { Typography, Row, Col, Card, List, Tag, Spin, Empty, Alert } from 'antd';
+import { Typography, Row, Col, Card, Tag, Spin, Empty, Alert } from 'antd';
 import {
     TrophyOutlined,
     ReadOutlined,
@@ -101,6 +101,9 @@ export const LearningDashboardPage = () => {
         }
     };
 
+    const recentActivities = stats?.recent_activities || [];
+    const scenarioHistory = stats?.scenario_history || [];
+
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             {/* 欢迎头部 */}
@@ -147,7 +150,7 @@ export const LearningDashboardPage = () => {
                 <Col xs={24} lg={14}>
                     <Card
                         title="THP 五维能力评估"
-                        bordered={false}
+                        variant="borderless"
                         style={{ borderRadius: '12px', height: '100%' }}
                     >
                         {stats?.radar_data && stats.radar_data.length > 0 ? (
@@ -178,18 +181,24 @@ export const LearningDashboardPage = () => {
                 <Col xs={24} lg={10}>
                     <Card
                         title="最近学习动态"
-                        bordered={false}
+                        variant="borderless"
                         extra={<Link to="/courses">全部课程 <ArrowRightOutlined /></Link>}
                         style={{ borderRadius: '12px', height: '100%' }}
                     >
-                        <List
-                            itemLayout="horizontal"
-                            dataSource={stats?.recent_activities || []}
-                            locale={{ emptyText: '暂无学习记录' }}
-                            renderItem={(item) => (
-                                <List.Item>
-                                    <List.Item.Meta
-                                        avatar={
+                        {recentActivities.length ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {recentActivities.map((item, index) => {
+                                    const isLast = index === recentActivities.length - 1;
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            style={{
+                                                display: 'flex',
+                                                gap: '12px',
+                                                padding: '8px 0',
+                                                borderBottom: isLast ? 'none' : '1px solid #f0f0f0',
+                                            }}
+                                        >
                                             <div style={{
                                                 width: '36px', height: '36px',
                                                 background: item.is_completed ? '#f6ffed' : '#e6f7ff',
@@ -199,27 +208,29 @@ export const LearningDashboardPage = () => {
                                             }}>
                                                 {item.is_completed ? <TrophyOutlined /> : <ClockCircleOutlined />}
                                             </div>
-                                        }
-                                        title={
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span style={{ fontWeight: 500 }}>课程 ID: {item.course_id.substring(0, 8)}...</span>
-                                                <Tag color={item.is_completed ? 'success' : 'processing'}>
-                                                    {item.is_completed ? '已完成' : '进行中'}
-                                                </Tag>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                                                    <span style={{ fontWeight: 500 }}>
+                                                        课程 ID: {item.course_id.substring(0, 8)}...
+                                                    </span>
+                                                    <Tag color={item.is_completed ? 'success' : 'processing'}>
+                                                        {item.is_completed ? '已完成' : '进行中'}
+                                                    </Tag>
+                                                </div>
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                    {item.completed_at
+                                                        ? `完成于 ${new Date(item.completed_at).toLocaleDateString()}`
+                                                        : `开始于 ${new Date(item.created_at).toLocaleDateString()}`
+                                                    }
+                                                </Text>
                                             </div>
-                                        }
-                                        description={
-                                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                                                {item.completed_at
-                                                    ? `完成于 ${new Date(item.completed_at).toLocaleDateString()}`
-                                                    : `开始于 ${new Date(item.created_at).toLocaleDateString()}`
-                                                }
-                                            </Text>
-                                        }
-                                    />
-                                </List.Item>
-                            )}
-                        />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <Empty description="暂无学习记录" />
+                        )}
                     </Card>
                 </Col>
             </Row>
@@ -229,65 +240,71 @@ export const LearningDashboardPage = () => {
                 <Col span={24}>
                     <Card
                         title="情景模拟历史记录"
-                        bordered={false}
+                        variant="borderless"
                         extra={<Link to="/scenarios">进入模拟训练 <ArrowRightOutlined /></Link>}
                         style={{ borderRadius: '12px' }}
                     >
-                        <List
-                            itemLayout="horizontal"
-                            dataSource={stats?.scenario_history || []}
-                            locale={{ emptyText: '暂无模拟训练记录，点击右上角开始您的第一次练习！' }}
-                            renderItem={(item) => (
-                                <List.Item
-                                    actions={[
-                                        <Link key="eval" to={`/evaluation/${item.session_id}`}>
-                                            查看评估
-                                        </Link>,
-                                        <Link key="chat" to={`/chat/${item.session_id}`} state={{ fromHistory: true }}>
-                                            查看对话
-                                        </Link>
-                                    ]}
-                                >
-                                    <List.Item.Meta
-                                        avatar={
-                                            <div style={{
-                                                width: '48px', height: '48px',
-                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                borderRadius: '12px',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: '#fff',
-                                                fontSize: '20px'
-                                            }}>
-                                                <ExperimentOutlined />
+                        {scenarioHistory.length ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {scenarioHistory.map((item, index) => {
+                                    const isLast = index === scenarioHistory.length - 1;
+                                    return (
+                                        <div
+                                            key={item.session_id}
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                gap: '16px',
+                                                paddingBottom: isLast ? 0 : '16px',
+                                                borderBottom: isLast ? 'none' : '1px solid #f0f0f0',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                <div style={{
+                                                    width: '48px', height: '48px',
+                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                    borderRadius: '12px',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: '#fff',
+                                                    fontSize: '20px'
+                                                }}>
+                                                    <ExperimentOutlined />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                        <span style={{ fontWeight: 600, fontSize: '15px' }}>{item.scenario_name}</span>
+                                                        {item.level_assessment && (
+                                                            <Tag color={getLevelColor(item.level_assessment)}>
+                                                                {item.level_assessment}
+                                                            </Tag>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
+                                                        {item.total_score !== null && (
+                                                            <Text strong style={{ color: '#1890ff' }}>
+                                                                得分：{item.total_score} 分
+                                                            </Text>
+                                                        )}
+                                                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                            <ClockCircleOutlined style={{ marginRight: '4px' }} />
+                                                            {new Date(item.created_at).toLocaleDateString()}
+                                                        </Text>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        }
-                                        title={
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <span style={{ fontWeight: 600, fontSize: '15px' }}>{item.scenario_name}</span>
-                                                {item.level_assessment && (
-                                                    <Tag color={getLevelColor(item.level_assessment)}>
-                                                        {item.level_assessment}
-                                                    </Tag>
-                                                )}
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                <Link to={`/evaluation/${item.session_id}`}>查看评估</Link>
+                                                <Link to={`/chat/${item.session_id}`} state={{ fromHistory: true }}>
+                                                    查看对话
+                                                </Link>
                                             </div>
-                                        }
-                                        description={
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
-                                                {item.total_score !== null && (
-                                                    <Text strong style={{ color: '#1890ff' }}>
-                                                        得分：{item.total_score} 分
-                                                    </Text>
-                                                )}
-                                                <Text type="secondary" style={{ fontSize: '12px' }}>
-                                                    <ClockCircleOutlined style={{ marginRight: '4px' }} />
-                                                    {new Date(item.created_at).toLocaleDateString()}
-                                                </Text>
-                                            </div>
-                                        }
-                                    />
-                                </List.Item>
-                            )}
-                        />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <Empty description="暂无模拟训练记录，点击右上角开始您的第一次练习！" />
+                        )}
                     </Card>
                 </Col>
             </Row>

@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Space, Tag, Checkbox, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { motion } from 'framer-motion';
 import roleService from '../../services/role.service';
 import { FilterForm } from '../../components/admin/FilterForm';
 import type { Role, Permission } from '../../types/admin.types';
@@ -71,6 +70,15 @@ export function RoleManagePage() {
     setFilteredRoles(roles);
   };
 
+  const rolesForOptions = filteredRoles.length ? filteredRoles : roles;
+  const availableScopes = new Set(
+    rolesForOptions.map((role) => role.scope).filter((scope): scope is string => Boolean(scope)),
+  );
+  const scopeOptions = [
+    { value: 'system', label: '系统' },
+    { value: 'org', label: '机构' },
+  ].filter((option) => !availableScopes.size || availableScopes.has(option.value));
+
   const handleCreate = () => {
     setEditingRole(null);
     form.resetFields();
@@ -94,7 +102,7 @@ export function RoleManagePage() {
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除这个角色吗？',
+      content: '确定要删除该角色吗？',
       okText: '删除',
       cancelText: '取消',
       okType: 'danger',
@@ -153,7 +161,7 @@ export function RoleManagePage() {
       key: 'name',
     },
     {
-      title: '作用域',
+      title: '范围',
       dataIndex: 'scope',
       key: 'scope',
       render: (scope: string) => (
@@ -186,20 +194,14 @@ export function RoleManagePage() {
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+    <div
       style={{ padding: '24px' }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
+      <div
         style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>角色管理</h2>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <div >
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -213,25 +215,28 @@ export function RoleManagePage() {
           >
             新建角色
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="code" label="角色代码">
-            <Input placeholder="请输入角色代码" allowClear />
+            <Input placeholder="请输入" allowClear />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="name" label="角色名称">
-            <Input placeholder="请输入角色名称" allowClear />
+            <Input placeholder="请输入" allowClear />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Form.Item name="scope" label="作用域">
-            <Select placeholder="请选择作用域" allowClear>
-              <Select.Option value="system">系统</Select.Option>
-              <Select.Option value="org">机构</Select.Option>
+          <Form.Item name="scope" label="范围">
+            <Select placeholder="请选择" allowClear>
+              {scopeOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
@@ -269,7 +274,7 @@ export function RoleManagePage() {
           <Form.Item name="description" label="描述">
             <Input.TextArea />
           </Form.Item>
-          <Form.Item name="scope" label="作用域" initialValue="org">
+          <Form.Item name="scope" label="范围">
             <Select>
               <Select.Option value="system">系统</Select.Option>
               <Select.Option value="org">机构</Select.Option>
@@ -299,6 +304,9 @@ export function RoleManagePage() {
           </Form.Item>
         </Form>
       </Modal>
-    </motion.div>
+    </div>
   );
 }
+
+
+

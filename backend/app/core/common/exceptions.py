@@ -33,3 +33,9 @@ class UnauthorizedException(BaseAPIException):
     """未授权异常"""
     def __init__(self, detail: str = "未授权访问"):
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
+
+
+class ForbiddenException(BaseAPIException):
+    """禁止访问异常"""
+    def __init__(self, detail: str = "权限不足"):
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)

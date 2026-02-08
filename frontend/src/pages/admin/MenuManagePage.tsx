@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, message, Space, TreeSelect, Tooltip, Select, Col } from 'antd';
 import {
   PlusOutlined,
@@ -19,10 +19,35 @@ import {
   BankOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';
-import { motion } from 'framer-motion';
 import menuService from '../../services/menu.service';
 import { FilterForm } from '../../components/admin/FilterForm';
 import type { MenuItem } from '../../types/menu.types';
+
+const applyMenuFilters = (list: MenuItem[], values: Record<string, any>) => {
+  let filtered = [...list];
+
+  if (values.title) {
+    filtered = filtered.filter((menu) =>
+      menu.title?.toLowerCase().includes(values.title.toLowerCase()),
+    );
+  }
+
+  if (values.path) {
+    filtered = filtered.filter((menu) =>
+      menu.path?.toLowerCase().includes(values.path.toLowerCase()),
+    );
+  }
+
+  if (values.is_visible !== undefined) {
+    filtered = filtered.filter((menu) => menu.is_visible === values.is_visible);
+  }
+
+  if (values.is_enabled !== undefined) {
+    filtered = filtered.filter((menu) => menu.is_enabled === values.is_enabled);
+  }
+
+  return filtered;
+};
 
 export function MenuManagePage() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
@@ -32,19 +57,20 @@ export function MenuManagePage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [form] = Form.useForm();
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
 
   const iconOptions: { value: string; label: string; icon: React.ReactNode }[] = [
-    { value: 'BookOutlined', label: '课程（BookOutlined）', icon: <BookOutlined /> },
-    { value: 'SimulationOutlined', label: '情景模拟（SimulationOutlined）', icon: <ExperimentOutlined /> },
-    { value: 'ExperimentOutlined', label: '实验（ExperimentOutlined）', icon: <ExperimentOutlined /> },
-    { value: 'MessageOutlined', label: '消息（MessageOutlined）', icon: <MessageOutlined /> },
-    { value: 'LineChartOutlined', label: '统计（LineChartOutlined）', icon: <LineChartOutlined /> },
-    { value: 'SettingOutlined', label: '设置（SettingOutlined）', icon: <SettingOutlined /> },
-    { value: 'UserOutlined', label: '用户（UserOutlined）', icon: <UserOutlined /> },
-    { value: 'TeamOutlined', label: '团队（TeamOutlined）', icon: <TeamOutlined /> },
-    { value: 'MenuOutlined', label: '菜单（MenuOutlined）', icon: <MenuOutlined /> },
-    { value: 'BankOutlined', label: '机构（BankOutlined）', icon: <BankOutlined /> },
-    { value: 'TrophyOutlined', label: '证书（TrophyOutlined）', icon: <TrophyOutlined /> },
+    { value: 'BookOutlined', label: '课程', icon: <BookOutlined /> },
+    { value: 'SimulationOutlined', label: '仿真', icon: <ExperimentOutlined /> },
+    { value: 'ExperimentOutlined', label: '实验', icon: <ExperimentOutlined /> },
+    { value: 'MessageOutlined', label: '消息', icon: <MessageOutlined /> },
+    { value: 'LineChartOutlined', label: '统计', icon: <LineChartOutlined /> },
+    { value: 'SettingOutlined', label: '设置', icon: <SettingOutlined /> },
+    { value: 'UserOutlined', label: '用户', icon: <UserOutlined /> },
+    { value: 'TeamOutlined', label: '团队', icon: <TeamOutlined /> },
+    { value: 'MenuOutlined', label: '菜单', icon: <MenuOutlined /> },
+    { value: 'BankOutlined', label: '机构', icon: <BankOutlined /> },
+    { value: 'TrophyOutlined', label: '证书', icon: <TrophyOutlined /> },
   ];
 
   const iconMap: Record<string, React.ReactNode> = iconOptions.reduce(
@@ -72,34 +98,40 @@ export function MenuManagePage() {
   };
 
   const handleSearch = (values: any) => {
-    let filtered = [...menus];
-    
-    if (values.title) {
-      filtered = filtered.filter(menu => 
-        menu.title?.toLowerCase().includes(values.title.toLowerCase())
-      );
-    }
-    
-    if (values.path) {
-      filtered = filtered.filter(menu => 
-        menu.path?.toLowerCase().includes(values.path.toLowerCase())
-      );
-    }
-    
-    if (values.is_visible !== undefined) {
-      filtered = filtered.filter(menu => menu.is_visible === values.is_visible);
-    }
-    
-    if (values.is_enabled !== undefined) {
-      filtered = filtered.filter(menu => menu.is_enabled === values.is_enabled);
-    }
-    
-    setFilteredMenus(filtered);
+    setFilterValues(values);
+    setFilteredMenus(applyMenuFilters(menus, values));
   };
 
   const handleReset = () => {
+    setFilterValues({});
     setFilteredMenus(menus);
   };
+
+  const valuesForVisibilityOptions = { ...filterValues };
+  delete valuesForVisibilityOptions.is_visible;
+  const menusForVisibilityOptions = applyMenuFilters(menus, valuesForVisibilityOptions);
+  const availableVisibility = new Set(
+    menusForVisibilityOptions
+      .map((menu) => menu.is_visible)
+      .filter((value): value is boolean => typeof value === 'boolean'),
+  );
+  const visibilityOptions = [
+    { value: true, label: '可见' },
+    { value: false, label: '隐藏' },
+  ].filter((option) => !availableVisibility.size || availableVisibility.has(option.value));
+
+  const valuesForEnabledOptions = { ...filterValues };
+  delete valuesForEnabledOptions.is_enabled;
+  const menusForEnabledOptions = applyMenuFilters(menus, valuesForEnabledOptions);
+  const availableEnabled = new Set(
+    menusForEnabledOptions
+      .map((menu) => menu.is_enabled)
+      .filter((value): value is boolean => typeof value === 'boolean'),
+  );
+  const enabledOptions = [
+    { value: true, label: '启用' },
+    { value: false, label: '禁用' },
+  ].filter((option) => !availableEnabled.size || availableEnabled.has(option.value));
 
   const handleCreate = () => {
     setEditingMenu(null);
@@ -116,7 +148,7 @@ export function MenuManagePage() {
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除这个菜单吗？删除后子菜单也会被删除。',
+      content: '确定要删除该菜单吗？',
       okText: '删除',
       cancelText: '取消',
       okType: 'danger',
@@ -157,7 +189,9 @@ export function MenuManagePage() {
   const handleToggleStatus = async (menu: MenuItem, field: 'is_visible' | 'is_enabled', value: boolean) => {
     try {
       await menuService.updateMenu(menu.id, { [field]: value });
-      message.success(field === 'is_visible' ? (value ? '已设为可见' : '已设为隐藏') : (value ? '已启用' : '已禁用'));
+      message.success(
+        field === 'is_visible' ? (value ? '已显示' : '已隐藏') : value ? '已启用' : '已禁用',
+      );
       loadMenus();
     } catch (error: any) {
       message.error('更新失败: ' + (error.response?.data?.detail || error.message));
@@ -244,20 +278,14 @@ export function MenuManagePage() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+    <div
       style={{ padding: '24px' }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
+      <div
         style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>菜单管理</h2>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <div >
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -271,33 +299,39 @@ export function MenuManagePage() {
           >
             新建菜单
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="title" label="菜单标题">
-            <Input placeholder="请输入菜单标题" allowClear />
+            <Input placeholder="请输入" allowClear />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="path" label="路径">
-            <Input placeholder="请输入路径" allowClear />
+            <Input placeholder="请输入" allowClear />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Form.Item name="is_visible" label="可见性">
-            <Select placeholder="请选择可见性" allowClear>
-              <Select.Option value={true}>可见</Select.Option>
-              <Select.Option value={false}>隐藏</Select.Option>
+          <Form.Item name="is_visible" label="是否可见">
+            <Select placeholder="请选择" allowClear>
+              {visibilityOptions.map((option) => (
+                <Select.Option key={String(option.value)} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Form.Item name="is_enabled" label="启用状态">
-            <Select placeholder="请选择启用状态" allowClear>
-              <Select.Option value={true}>启用</Select.Option>
-              <Select.Option value={false}>禁用</Select.Option>
+          <Form.Item name="is_enabled" label="是否启用">
+            <Select placeholder="请选择" allowClear>
+              {enabledOptions.map((option) => (
+                <Select.Option key={String(option.value)} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
@@ -326,7 +360,7 @@ export function MenuManagePage() {
         width={600}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="parent_id" label="父菜单">
+          <Form.Item name="parent_id" label="父级菜单">
             <TreeSelect
               treeData={buildTreeData(menuTree)}
               placeholder="选择父菜单（留空为顶级菜单）"
@@ -363,6 +397,10 @@ export function MenuManagePage() {
           </Form.Item>
         </Form>
       </Modal>
-    </motion.div>
+    </div>
   );
 }
+
+
+
+

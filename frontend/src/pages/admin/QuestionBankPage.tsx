@@ -1,10 +1,33 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Space, Tag, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { motion } from 'framer-motion';
 import questionService from '../../services/question.service';
 import { FilterForm } from '../../components/admin/FilterForm';
 import type { Question } from '../../types/admin.types';
+
+const applyQuestionFilters = (list: Question[], values: Record<string, any>) => {
+  let filtered = [...list];
+
+  if (values.question_text) {
+    filtered = filtered.filter((question) =>
+      question.question_text?.toLowerCase().includes(values.question_text.toLowerCase()),
+    );
+  }
+
+  if (values.question_type) {
+    filtered = filtered.filter((question) => question.question_type === values.question_type);
+  }
+
+  if (values.difficulty) {
+    filtered = filtered.filter((question) => question.difficulty === values.difficulty);
+  }
+
+  if (values.status) {
+    filtered = filtered.filter((question) => question.status === values.status);
+  }
+
+  return filtered;
+};
 
 export function QuestionBankPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -13,6 +36,7 @@ export function QuestionBankPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [form] = Form.useForm();
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadQuestions();
@@ -32,32 +56,64 @@ export function QuestionBankPage() {
   };
 
   const handleSearch = (values: any) => {
-    let filtered = [...questions];
-    
-    if (values.question_text) {
-      filtered = filtered.filter(q => 
-        q.question_text?.toLowerCase().includes(values.question_text.toLowerCase())
-      );
-    }
-    
-    if (values.question_type) {
-      filtered = filtered.filter(q => q.question_type === values.question_type);
-    }
-    
-    if (values.difficulty) {
-      filtered = filtered.filter(q => q.difficulty === values.difficulty);
-    }
-    
-    if (values.status) {
-      filtered = filtered.filter(q => q.status === values.status);
-    }
-    
-    setFilteredQuestions(filtered);
+    setFilterValues(values);
+    setFilteredQuestions(applyQuestionFilters(questions, values));
   };
 
   const handleReset = () => {
+    setFilterValues({});
     setFilteredQuestions(questions);
   };
+
+  const valuesForTypeOptions = { ...filterValues };
+  delete valuesForTypeOptions.question_type;
+  const questionsForTypeOptions = applyQuestionFilters(questions, valuesForTypeOptions);
+  const availableTypes = new Set(
+    questionsForTypeOptions
+      .map((question) => question.question_type)
+      .filter((value): value is string => Boolean(value)),
+  );
+  const valuesForDifficultyOptions = { ...filterValues };
+  delete valuesForDifficultyOptions.difficulty;
+  const questionsForDifficultyOptions = applyQuestionFilters(questions, valuesForDifficultyOptions);
+  const availableDifficulties = new Set(
+    questionsForDifficultyOptions
+      .map((question) => question.difficulty)
+      .filter((value): value is string => Boolean(value)),
+  );
+  const valuesForStatusOptions = { ...filterValues };
+  delete valuesForStatusOptions.status;
+  const questionsForStatusOptions = applyQuestionFilters(questions, valuesForStatusOptions);
+  const availableStatuses = new Set(
+    questionsForStatusOptions.map((question) => question.status).filter((value): value is string => Boolean(value)),
+  );
+  const typeOptions = [
+    { value: 'single', label: '单选' },
+    { value: 'multiple', label: '多选' },
+    { value: 'judge', label: '判断' },
+  ].filter((option) => !availableTypes.size || availableTypes.has(option.value));
+  const difficultyOptions = [
+    { value: 'easy', label: '简单' },
+    { value: 'medium', label: '中等' },
+    { value: 'hard', label: '困难' },
+  ].filter((option) => !availableDifficulties.size || availableDifficulties.has(option.value));
+  const statusOptions = [
+    { value: 'draft', label: '草稿' },
+    { value: 'active', label: '启用' },
+    { value: 'disabled', label: '禁用' },
+  ].filter((option) => !availableStatuses.size || availableStatuses.has(option.value));
+
+  const normalizeLines = (value?: string) =>
+    (value || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+  const normalizeTags = (value?: string) =>
+    (value || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
 
   const handleCreate = () => {
     setEditingQuestion(null);
@@ -69,9 +125,9 @@ export function QuestionBankPage() {
     setEditingQuestion(question);
     form.setFieldsValue({
       ...question,
-      options: question.options?.join('\n') || '',
-      correct_answer: question.correct_answer?.join('\n') || '',
-      knowledge_tags: question.knowledge_tags?.join(',') || '',
+      options: (question.options || []).join('\n'),
+      correct_answer: (question.correct_answer || []).join('\n'),
+      knowledge_tags: (question.knowledge_tags || []).join(','),
     });
     setModalVisible(true);
   };
@@ -79,7 +135,7 @@ export function QuestionBankPage() {
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除这道题目吗？',
+      content: '确定要删除该题目吗？',
       okText: '删除',
       cancelText: '取消',
       okType: 'danger',
@@ -98,18 +154,17 @@ export function QuestionBankPage() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const submitData = {
+      const payload = {
         ...values,
-        options: values.options.split('\n').filter((s: string) => s.trim()),
-        correct_answer: values.correct_answer.split('\n').filter((s: string) => s.trim()),
-        knowledge_tags: values.knowledge_tags ? values.knowledge_tags.split(',').map((s: string) => s.trim()) : [],
+        options: normalizeLines(values.options),
+        correct_answer: normalizeLines(values.correct_answer),
+        knowledge_tags: values.knowledge_tags ? normalizeTags(values.knowledge_tags) : undefined,
       };
-      
       if (editingQuestion) {
-        await questionService.update(editingQuestion.id, submitData);
+        await questionService.update(editingQuestion.id, payload);
         message.success('更新成功');
       } else {
-        await questionService.create(submitData);
+        await questionService.create(payload);
         message.success('创建成功');
       }
       setModalVisible(false);
@@ -118,21 +173,7 @@ export function QuestionBankPage() {
       message.error('操作失败: ' + (error.response?.data?.detail || error.message));
     }
   };
-
   const baseColumns = [
-    {
-      title: '题型',
-      dataIndex: 'question_type',
-      key: 'question_type',
-      render: (type: string) => {
-        const typeMap: Record<string, string> = {
-          single: '单选题',
-          multiple: '多选题',
-          judge: '判断题',
-        };
-        return <Tag>{typeMap[type] || type}</Tag>;
-      },
-    },
     {
       title: '题干',
       dataIndex: 'question_text',
@@ -140,32 +181,32 @@ export function QuestionBankPage() {
       ellipsis: true,
     },
     {
+      title: '题型',
+      dataIndex: 'question_type',
+      key: 'question_type',
+      render: (value: string) => {
+        const map: Record<string, string> = { single: '单选', multiple: '多选', judge: '判断' };
+        return map[value] || value;
+      },
+    },
+    {
       title: '难度',
       dataIndex: 'difficulty',
       key: 'difficulty',
-      render: (difficulty: string) => {
-        const colorMap: Record<string, string> = {
-          easy: 'green',
-          medium: 'orange',
-          hard: 'red',
-        };
-        const textMap: Record<string, string> = {
-          easy: '简单',
-          medium: '中等',
-          hard: '困难',
-        };
-        return <Tag color={colorMap[difficulty]}>{textMap[difficulty] || difficulty}</Tag>;
+      render: (value: string) => {
+        const map: Record<string, string> = { easy: '简单', medium: '中等', hard: '困难' };
+        return map[value] || value;
       },
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
-        <Tag color={status === 'active' ? 'green' : 'default'}>
-          {status === 'active' ? '启用' : status === 'draft' ? '草稿' : '禁用'}
-        </Tag>
-      ),
+      render: (value: string) => {
+        const map: Record<string, string> = { draft: '草稿', active: '启用', disabled: '禁用' };
+        const colorMap: Record<string, string> = { draft: 'orange', active: 'green', disabled: 'red' };
+        return <Tag color={colorMap[value] || 'default'}>{map[value] || value}</Tag>;
+      },
     },
     {
       title: '操作',
@@ -185,20 +226,14 @@ export function QuestionBankPage() {
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+    <div
       style={{ padding: '24px' }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
+      <div
         style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>题库管理</h2>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <div >
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -212,8 +247,8 @@ export function QuestionBankPage() {
           >
             新建题目
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
         <Col xs={24} sm={12} md={8} lg={6}>
@@ -224,27 +259,33 @@ export function QuestionBankPage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="question_type" label="题型">
             <Select placeholder="请选择题型" allowClear>
-              <Select.Option value="single">单选题</Select.Option>
-              <Select.Option value="multiple">多选题</Select.Option>
-              <Select.Option value="judge">判断题</Select.Option>
+              {typeOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="difficulty" label="难度">
             <Select placeholder="请选择难度" allowClear>
-              <Select.Option value="easy">简单</Select.Option>
-              <Select.Option value="medium">中等</Select.Option>
-              <Select.Option value="hard">困难</Select.Option>
+              {difficultyOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="status" label="状态">
-            <Select placeholder="请选择状态" allowClear>
-              <Select.Option value="draft">草稿</Select.Option>
-              <Select.Option value="active">启用</Select.Option>
-              <Select.Option value="disabled">禁用</Select.Option>
+            <Select placeholder="请选择" allowClear>
+              {statusOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
@@ -275,9 +316,9 @@ export function QuestionBankPage() {
         <Form form={form} layout="vertical">
           <Form.Item name="question_type" label="题型" rules={[{ required: true }]}>
             <Select>
-              <Select.Option value="single">单选题</Select.Option>
-              <Select.Option value="multiple">多选题</Select.Option>
-              <Select.Option value="judge">判断题</Select.Option>
+              <Select.Option value="single">单选</Select.Option>
+              <Select.Option value="multiple">多选</Select.Option>
+              <Select.Option value="judge">判断</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item name="question_text" label="题干" rules={[{ required: true }]}>
@@ -299,10 +340,10 @@ export function QuestionBankPage() {
               <Select.Option value="hard">困难</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="knowledge_tags" label="知识点标签（逗号分隔）">
+          <Form.Item name="knowledge_tags" label="知识点标签">
             <Input placeholder="标签1,标签2,标签3" />
           </Form.Item>
-          <Form.Item name="status" label="状态" initialValue="draft">
+          <Form.Item name="status" label="状态">
             <Select>
               <Select.Option value="draft">草稿</Select.Option>
               <Select.Option value="active">启用</Select.Option>
@@ -311,6 +352,10 @@ export function QuestionBankPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </motion.div>
+    </div>
   );
 }
+
+
+
+

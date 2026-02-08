@@ -71,15 +71,15 @@ ON DUPLICATE KEY UPDATE `name`=VALUES(`name`);
 -- ============================================
 -- 4) 角色权限分配
 -- ============================================
-INSERT INTO `role_permissions` (`id`, `role_id`, `permission_id`)
-SELECT UUID(), r.id, p.id
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id
 FROM `roles` r
 JOIN `permissions` p ON 1=1
 WHERE r.code = 'super_admin'
 ON DUPLICATE KEY UPDATE `role_id`=`role_id`;
 
-INSERT INTO `role_permissions` (`id`, `role_id`, `permission_id`)
-SELECT UUID(), r.id, p.id
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id
 FROM `roles` r
 JOIN `permissions` p ON p.code IN (
   'org:view', 'org:edit',
@@ -95,8 +95,8 @@ JOIN `permissions` p ON p.code IN (
 WHERE r.code = 'org_admin'
 ON DUPLICATE KEY UPDATE `role_id`=`role_id`;
 
-INSERT INTO `role_permissions` (`id`, `role_id`, `permission_id`)
-SELECT UUID(), r.id, p.id
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id
 FROM `roles` r
 JOIN `permissions` p ON p.code IN (
   'course:view', 'course:create', 'course:edit',
@@ -106,8 +106,8 @@ JOIN `permissions` p ON p.code IN (
 WHERE r.code = 'content_editor'
 ON DUPLICATE KEY UPDATE `role_id`=`role_id`;
 
-INSERT INTO `role_permissions` (`id`, `role_id`, `permission_id`)
-SELECT UUID(), r.id, p.id
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id
 FROM `roles` r
 JOIN `permissions` p ON p.code IN (
   'class:view', 'class:create', 'class:edit', 'class:publish',
@@ -118,8 +118,8 @@ JOIN `permissions` p ON p.code IN (
 WHERE r.code = 'trainer'
 ON DUPLICATE KEY UPDATE `role_id`=`role_id`;
 
-INSERT INTO `role_permissions` (`id`, `role_id`, `permission_id`)
-SELECT UUID(), r.id, p.id
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id
 FROM `roles` r
 JOIN `permissions` p ON p.code IN (
   'audit:view', 'audit:export',
@@ -245,6 +245,6 @@ ON DUPLICATE KEY UPDATE `resource_id`=VALUES(`resource_id`);
 -- ============================================
 -- 10) 审计日志示例
 -- ============================================
-INSERT INTO `audit_logs` (`id`, `actor_id`, `org_id`, `action`, `resource_type`, `resource_id`, `detail`, `ip_address`) VALUES
+INSERT INTO `audit_logs` (`id`, `user_id`, `org_id`, `action`, `resource_type`, `resource_id`, `changes`, `ip_address`) VALUES
 ('audit-001', 'u-org-admin-001', 'org-hospital-001', 'create_class', 'training_class', 'class-001', '{"name": "2025年第一季度围产期护理培训"}', '192.168.1.100')
 ON DUPLICATE KEY UPDATE `action`=`action`;

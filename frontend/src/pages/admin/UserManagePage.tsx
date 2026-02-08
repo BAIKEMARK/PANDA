@@ -1,12 +1,52 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Space, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { motion } from 'framer-motion';
 import userAdminService from '../../services/user-admin.service';
-import roleService from '../../services/role.service';
 import organizationService from '../../services/organization.service';
 import { FilterForm } from '../../components/admin/FilterForm';
-import type { User, Role, Organization } from '../../types/admin.types';
+import type { User, Organization } from '../../types/admin.types';
+
+const applyUserFilters = (
+  list: User[],
+  values: Record<string, any>,
+) => {
+  let filtered = [...list];
+
+  if (values.name) {
+    filtered = filtered.filter((user) =>
+      user.name?.toLowerCase().includes(values.name.toLowerCase()),
+    );
+  }
+
+  if (values.email) {
+    filtered = filtered.filter((user) =>
+      user.email?.toLowerCase().includes(values.email.toLowerCase()),
+    );
+  }
+
+  if (values.role) {
+    const selectedRole = values.role as string;
+    filtered = filtered.filter((user) => user.role === selectedRole);
+  }
+
+  if (values.org_id) {
+    filtered = filtered.filter((user) => user.org_id === values.org_id);
+  }
+
+  if (values.department) {
+    filtered = filtered.filter((user) =>
+      user.department?.toLowerCase().includes(values.department.toLowerCase()),
+    );
+  }
+
+  return filtered;
+};
+
+const baseRoleOptions = [
+  { value: 'student', label: '学员' },
+  { value: 'instructor', label: '讲师' },
+  { value: 'admin', label: '管理员' },
+];
 
 export function UserManagePage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -14,9 +54,17 @@ export function UserManagePage() {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [form] = Form.useForm();
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const roleLabelByValue = useMemo(
+    () => new Map(baseRoleOptions.map((role) => [role.value, role.label])),
+    [],
+  );
+  const userRoleValues = useMemo(
+    () => new Set(users.map((user) => user.role).filter((role): role is string => Boolean(role))),
+    [users],
+  );
 
   useEffect(() => {
     loadData();
@@ -25,14 +73,12 @@ export function UserManagePage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersData, rolesData, orgsData] = await Promise.all([
+      const [usersData, orgsData] = await Promise.all([
         userAdminService.list(),
-        roleService.list(),
         organizationService.list(),
       ]);
       setUsers(usersData.users);
       setFilteredUsers(usersData.users);
-      setRoles(rolesData);
       setOrganizations(orgsData);
     } catch (error: any) {
       message.error('加载数据失败: ' + (error.response?.data?.detail || error.message));
@@ -42,40 +88,53 @@ export function UserManagePage() {
   };
 
   const handleSearch = (values: any) => {
-    let filtered = [...users];
-    
-    if (values.name) {
-      filtered = filtered.filter(user => 
-        user.name?.toLowerCase().includes(values.name.toLowerCase())
-      );
-    }
-    
-    if (values.email) {
-      filtered = filtered.filter(user => 
-        user.email?.toLowerCase().includes(values.email.toLowerCase())
-      );
-    }
-    
-    if (values.role) {
-      filtered = filtered.filter(user => user.role === values.role);
-    }
-    
-    if (values.org_id) {
-      filtered = filtered.filter(user => user.org_id === values.org_id);
-    }
-    
-    if (values.department) {
-      filtered = filtered.filter(user => 
-        user.department?.toLowerCase().includes(values.department.toLowerCase())
-      );
-    }
-    
-    setFilteredUsers(filtered);
+    setFilterValues(values);
+    setFilteredUsers(applyUserFilters(users, values));
   };
 
   const handleReset = () => {
+    setFilterValues({});
     setFilteredUsers(users);
   };
+
+  const roleOptions = useMemo(() => {
+    const values = { ...filterValues };
+    delete values.role;
+    const candidates = applyUserFilters(users, values);
+    const availableRoleValues = new Set(
+      candidates.map((user) => user.role).filter((role): role is string => Boolean(role)),
+    );
+    const options = baseRoleOptions.map((role) => ({
+      key: role.value,
+      value: role.value,
+      label: role.label,
+      isAvailable: !availableRoleValues.size || availableRoleValues.has(role.value),
+    }));
+
+    // 如果存在非标准角色，保留展示（便于排查数据问题）
+    userRoleValues.forEach((value) => {
+      if (roleLabelByValue.has(value)) return;
+      const isAvailable = !availableRoleValues.size || availableRoleValues.has(value);
+      options.push({ key: value, value, label: value, isAvailable });
+    });
+
+    return options.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
+  }, [users, filterValues, userRoleValues, roleLabelByValue]);
+
+  const organizationOptions = useMemo(() => {
+    const values = { ...filterValues };
+    delete values.org_id;
+    const candidates = applyUserFilters(users, values);
+    const availableOrgIds = new Set(
+      candidates.map((user) => user.org_id).filter((orgId): orgId is string => Boolean(orgId)),
+    );
+    return organizations
+      .map((org) => ({
+        org,
+        isAvailable: !availableOrgIds.size || availableOrgIds.has(org.id),
+      }))
+      .sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
+  }, [users, organizations, filterValues]);
 
   const handleCreate = () => {
     setEditingUser(null);
@@ -92,7 +151,7 @@ export function UserManagePage() {
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除这个用户吗？',
+      content: '确定要删除该用户吗？',
       okText: '删除',
       cancelText: '取消',
       okType: 'danger',
@@ -141,14 +200,7 @@ export function UserManagePage() {
       dataIndex: 'role',
       key: 'role',
       render: (role: string) => {
-        const found = roles.find((r) => r.code === role);
-        if (found) return found.name;
-        const fallbackMap: Record<string, string> = {
-          student: '学员',
-          instructor: '讲师',
-          admin: '管理员',
-        };
-        return fallbackMap[role] || role;
+        return roleLabelByValue.get(role) || role;
       },
     },
     {
@@ -179,20 +231,14 @@ export function UserManagePage() {
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+    <div
       style={{ padding: '24px' }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
+      <div
         style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>用户管理</h2>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <div >
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -206,8 +252,8 @@ export function UserManagePage() {
           >
             新建用户
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
         <Col xs={24} sm={12} md={8} lg={6}>
@@ -223,9 +269,9 @@ export function UserManagePage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="role" label="角色">
             <Select placeholder="请选择角色" allowClear>
-              {roles.map((role) => (
-                <Select.Option key={role.code} value={role.code}>
-                  {role.name}
+              {roleOptions.map(({ key, value, label, isAvailable }) => (
+                <Select.Option key={key} value={value} disabled={!isAvailable}>
+                  {label}
                 </Select.Option>
               ))}
             </Select>
@@ -234,7 +280,7 @@ export function UserManagePage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="org_id" label="机构">
             <Select placeholder="请选择机构" allowClear>
-              {organizations.map((org) => (
+              {organizationOptions.map(({ org }) => (
                 <Select.Option key={org.id} value={org.id}>
                   {org.name}
                 </Select.Option>
@@ -273,12 +319,12 @@ export function UserManagePage() {
       >
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="姓名" rules={[{ required: true }]}>
-            <Input />
+            <Input placeholder="请输入姓名" allowClear />
           </Form.Item>
           {!editingUser && (
             <>
               <Form.Item name="email" label="邮箱" rules={[{ required: true, type: 'email' }]}>
-                <Input type="email" />
+            <Input placeholder="请输入邮箱" allowClear />
               </Form.Item>
               <Form.Item name="password" label="密码" rules={[{ required: true, min: 6 }]}>
                 <Input.Password />
@@ -298,17 +344,14 @@ export function UserManagePage() {
           <Form.Item name="role" label="角色" rules={[{ required: true }]}>
             <Select
               placeholder="请选择角色"
-              options={roles.map((role) => ({
-                label: role.name,
-                value: role.code,
-              }))}
+              options={baseRoleOptions}
             />
           </Form.Item>
-          <Form.Item name="phone" label="手机号">
+          <Form.Item name="phone" label="Phone">
             <Input />
           </Form.Item>
           <Form.Item name="department" label="科室">
-            <Input />
+            <Input placeholder="请输入科室" allowClear />
           </Form.Item>
           <Form.Item name="title" label="职称">
             <Input />
@@ -318,6 +361,11 @@ export function UserManagePage() {
           </Form.Item>
         </Form>
       </Modal>
-    </motion.div>
+    </div>
   );
 }
+
+
+
+
+

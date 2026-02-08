@@ -77,6 +77,10 @@ class Settings(BaseSettings):
     REDIS_SOCKET_TIMEOUT: int = 5
     REDIS_MAX_CONNECTIONS: int = 50
 
+    # ==================== 缓存配置 ====================
+    CACHE_ENABLED: bool = True
+    CACHE_DEFAULT_TTL: int = 300
+
     @property
     def REDIS_URL(self) -> str:
         """获取Redis连接URL"""

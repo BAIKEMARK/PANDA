@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 消息气泡组件
  */
 import { Avatar, Typography } from 'antd';

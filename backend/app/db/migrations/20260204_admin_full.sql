@@ -705,3 +705,313 @@ SET @sql := IF(@col_exists = 0,
   'SELECT 1'
 );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ============================================
+-- 4) 核心表对齐（学习进度/评估/患者状态）
+--    仅新增字段与修正枚举，不删除任何列
+-- ============================================
+
+-- users: updated_at
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'updated_at'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `users` ADD COLUMN `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''更新时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- evaluation_reports: add new columns
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'error_message'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `error_message` TEXT COMMENT ''错误信息（生成失败时）''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'total_score'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `total_score` INT DEFAULT NULL COMMENT ''总分 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'level_assessment'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `level_assessment` VARCHAR(20) DEFAULT NULL COMMENT ''等级评定: 优秀/良好/合格/不合格''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'radar_a_risk_identification'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `radar_a_risk_identification` INT DEFAULT NULL COMMENT ''A类-风险识别能力 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'radar_b_communication'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `radar_b_communication` INT DEFAULT NULL COMMENT ''B类-沟通支持能力 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'radar_c_skill_application'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `radar_c_skill_application` INT DEFAULT NULL COMMENT ''C类-THP技能应用 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'radar_d_safety_management'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `radar_d_safety_management` INT DEFAULT NULL COMMENT ''D类-安全管理能力 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'radar_e_self_efficacy'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `radar_e_self_efficacy` INT DEFAULT NULL COMMENT ''E类-自我效能感 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'state_analysis'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `state_analysis` JSON DEFAULT NULL COMMENT ''状态变化分析数据''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'technical_guidance'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `technical_guidance` TEXT COMMENT ''技术指导建议''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'meta_data'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `meta_data` JSON DEFAULT NULL COMMENT ''其他元数据''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'completed_at'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `evaluation_reports` ADD COLUMN `completed_at` DATETIME DEFAULT NULL COMMENT ''完成时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 扩展 status 枚举，兼容 processing/generating
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'evaluation_reports' AND COLUMN_NAME = 'status'
+);
+SET @sql := IF(@col_exists = 1,
+  'ALTER TABLE `evaluation_reports` MODIFY COLUMN `status` ENUM(''pending'',''processing'',''generating'',''completed'',''failed'') NOT NULL DEFAULT ''pending'' COMMENT ''报告生成状态: pending-待生成, generating-生成中, completed-已完成, failed-失败''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- patient_states: add new columns
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patient_states' AND COLUMN_NAME = 'satisfaction_score'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `patient_states` ADD COLUMN `satisfaction_score` INT DEFAULT 50 COMMENT ''满意度 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patient_states' AND COLUMN_NAME = 'depression_level'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `patient_states` ADD COLUMN `depression_level` INT DEFAULT 50 COMMENT ''抑郁程度 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patient_states' AND COLUMN_NAME = 'rapport_score'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `patient_states` ADD COLUMN `rapport_score` INT DEFAULT 50 COMMENT ''信任度 (0-100)''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patient_states' AND COLUMN_NAME = 'message_count'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `patient_states` ADD COLUMN `message_count` INT DEFAULT 0 COMMENT ''对话轮次''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 兼容旧字段 trust_level -> rapport_score
+SET @col_trust := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patient_states' AND COLUMN_NAME = 'trust_level'
+);
+SET @col_rapport := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patient_states' AND COLUMN_NAME = 'rapport_score'
+);
+SET @sql := IF(@col_trust = 1 AND @col_rapport = 1,
+  'UPDATE `patient_states` SET `rapport_score` = `trust_level` WHERE `rapport_score` IS NULL',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- user_progress: add new columns
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_progress' AND COLUMN_NAME = 'course_id'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `user_progress` ADD COLUMN `course_id` CHAR(36) NULL COMMENT ''课程ID''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_progress' AND COLUMN_NAME = 'is_completed'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `user_progress` ADD COLUMN `is_completed` TINYINT(1) DEFAULT 0 COMMENT ''是否完成''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_progress' AND COLUMN_NAME = 'created_at'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `user_progress` ADD COLUMN `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT ''创建时间''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 兼容旧字段 resource_id -> course_id
+SET @col_res := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_progress' AND COLUMN_NAME = 'resource_id'
+);
+SET @col_course := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_progress' AND COLUMN_NAME = 'course_id'
+);
+SET @sql := IF(@col_res = 1 AND @col_course = 1,
+  'UPDATE `user_progress` SET `course_id` = `resource_id` WHERE `course_id` IS NULL OR `course_id` = ''''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 兼容旧字段 status -> is_completed
+SET @col_status := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_progress' AND COLUMN_NAME = 'status'
+);
+SET @col_done := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_progress' AND COLUMN_NAME = 'is_completed'
+);
+SET @sql := IF(@col_status = 1 AND @col_done = 1,
+  'UPDATE `user_progress` SET `is_completed` = CASE WHEN `status` = ''completed'' THEN 1 ELSE 0 END WHERE `is_completed` IS NULL OR `is_completed` = 0',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- role_menu_permissions: add role column, keep role_code
+SET @col_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_menu_permissions' AND COLUMN_NAME = 'role'
+);
+SET @sql := IF(@col_exists = 0,
+  'ALTER TABLE `role_menu_permissions` ADD COLUMN `role` ENUM(''student'',''instructor'',''admin'') NULL COMMENT ''角色''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_role := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_menu_permissions' AND COLUMN_NAME = 'role'
+);
+SET @col_role_code := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_menu_permissions' AND COLUMN_NAME = 'role_code'
+);
+SET @sql := IF(@col_role = 1 AND @col_role_code = 1,
+  'UPDATE `role_menu_permissions` SET `role` = `role_code` WHERE `role` IS NULL',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_role := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_menu_permissions' AND COLUMN_NAME = 'role'
+);
+SET @sql := IF(@col_role = 1,
+  'UPDATE `role_menu_permissions` SET `role` = ''student'' WHERE `role` IS NULL',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_role := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_menu_permissions' AND COLUMN_NAME = 'role'
+);
+SET @sql := IF(@col_role = 1,
+  'ALTER TABLE `role_menu_permissions` MODIFY COLUMN `role` ENUM(''student'',''instructor'',''admin'') NOT NULL COMMENT ''角色''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

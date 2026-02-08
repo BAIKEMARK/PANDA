@@ -1,13 +1,32 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Tag, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { format, parseISO } from 'date-fns';
 import dayjs from 'dayjs';
-import { motion } from 'framer-motion';
 import trainingService from '../../services/training.service';
 import organizationService from '../../services/organization.service';
 import { FilterForm } from '../../components/admin/FilterForm';
 import type { TrainingClass } from '../../types/admin.types';
+
+const applyClassFilters = (list: TrainingClass[], values: Record<string, any>) => {
+  let filtered = [...list];
+
+  if (values.name) {
+    filtered = filtered.filter((cls) =>
+      cls.name?.toLowerCase().includes(values.name.toLowerCase()),
+    );
+  }
+
+  if (values.org_id) {
+    filtered = filtered.filter((cls) => cls.org_id === values.org_id);
+  }
+
+  if (values.status) {
+    filtered = filtered.filter((cls) => cls.status === values.status);
+  }
+
+  return filtered;
+};
 
 export function TrainingClassPage() {
   const [classes, setClasses] = useState<TrainingClass[]>([]);
@@ -17,6 +36,7 @@ export function TrainingClassPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingClass, setEditingClass] = useState<TrainingClass | null>(null);
   const [form] = Form.useForm();
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadData();
@@ -40,26 +60,12 @@ export function TrainingClassPage() {
   };
 
   const handleSearch = (values: any) => {
-    let filtered = [...classes];
-    
-    if (values.name) {
-      filtered = filtered.filter(cls => 
-        cls.name?.toLowerCase().includes(values.name.toLowerCase())
-      );
-    }
-    
-    if (values.org_id) {
-      filtered = filtered.filter(cls => cls.org_id === values.org_id);
-    }
-    
-    if (values.status) {
-      filtered = filtered.filter(cls => cls.status === values.status);
-    }
-    
-    setFilteredClasses(filtered);
+    setFilterValues(values);
+    setFilteredClasses(applyClassFilters(classes, values));
   };
 
   const handleReset = () => {
+    setFilterValues({});
     setFilteredClasses(classes);
   };
 
@@ -83,7 +89,7 @@ export function TrainingClassPage() {
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除这个班级吗？',
+      content: '确定要删除该班级吗？',
       okText: '删除',
       cancelText: '取消',
       okType: 'danger',
@@ -128,6 +134,26 @@ export function TrainingClassPage() {
     archived: { text: '已归档', color: 'default' },
   };
 
+  const valuesForOrgOptions = { ...filterValues };
+  delete valuesForOrgOptions.org_id;
+  const classesForOrgOptions = applyClassFilters(classes, valuesForOrgOptions);
+  const availableOrgIds = new Set(
+    classesForOrgOptions.map((cls) => cls.org_id).filter((orgId): orgId is string => Boolean(orgId)),
+  );
+  const organizationOptions = availableOrgIds.size
+    ? organizations.filter((org) => availableOrgIds.has(org.id))
+    : organizations;
+
+  const valuesForStatusOptions = { ...filterValues };
+  delete valuesForStatusOptions.status;
+  const classesForStatusOptions = applyClassFilters(classes, valuesForStatusOptions);
+  const availableStatuses = new Set(
+    classesForStatusOptions.map((cls) => cls.status).filter((status): status is string => Boolean(status)),
+  );
+  const statusOptions = Object.entries(statusMap)
+    .filter(([value]) => !availableStatuses.size || availableStatuses.has(value))
+    .map(([value, info]) => ({ value, label: info.text }));
+
   const baseColumns = [
     {
       title: '班级名称',
@@ -135,7 +161,7 @@ export function TrainingClassPage() {
       key: 'name',
     },
     {
-      title: '开始时间',
+      title: '开始日期',
       dataIndex: 'start_date',
       key: 'start_date',
       render: (date: string) => format(parseISO(date), 'yyyy-MM-dd'),
@@ -173,20 +199,14 @@ export function TrainingClassPage() {
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+    <div
       style={{ padding: '24px' }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
+      <div
         style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>班级管理</h2>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <div >
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -200,19 +220,19 @@ export function TrainingClassPage() {
           >
             新建班级
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="name" label="班级名称">
-            <Input placeholder="请输入班级名称" allowClear />
+            <Input placeholder="请输入" allowClear />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="org_id" label="机构">
             <Select placeholder="请选择机构" allowClear>
-              {organizations.map((org) => (
+              {organizationOptions.map((org) => (
                 <Select.Option key={org.id} value={org.id}>
                   {org.name}
                 </Select.Option>
@@ -222,11 +242,12 @@ export function TrainingClassPage() {
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="status" label="状态">
-            <Select placeholder="请选择状态" allowClear>
-              <Select.Option value="draft">草稿</Select.Option>
-              <Select.Option value="active">进行中</Select.Option>
-              <Select.Option value="completed">已完成</Select.Option>
-              <Select.Option value="archived">已归档</Select.Option>
+            <Select placeholder="请选择" allowClear>
+              {statusOptions.map((opt) => (
+                <Select.Option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
@@ -270,13 +291,13 @@ export function TrainingClassPage() {
           <Form.Item name="description" label="描述">
             <Input.TextArea rows={3} />
           </Form.Item>
-          <Form.Item name="start_date" label="开始时间" rules={[{ required: true }]}>
+          <Form.Item name="start_date" label="开始日期">
             <DatePicker style={{ width: '100%' }} showTime />
           </Form.Item>
           <Form.Item name="end_date" label="结束时间" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} showTime />
           </Form.Item>
-          <Form.Item name="status" label="状态" initialValue="draft">
+          <Form.Item name="status" label="状态">
             <Select>
               <Select.Option value="draft">草稿</Select.Option>
               <Select.Option value="active">进行中</Select.Option>
@@ -286,6 +307,10 @@ export function TrainingClassPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </motion.div>
+    </div>
   );
 }
+
+
+
+

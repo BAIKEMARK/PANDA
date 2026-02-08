@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 聊天窗口组件 - 优化版
  */
 import { useEffect, useRef } from 'react';

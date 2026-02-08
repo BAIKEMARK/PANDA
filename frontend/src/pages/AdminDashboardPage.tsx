@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Card, Table, message, Spin } from 'antd';
 import { adminService } from '../services/admin.service';
 import type { Organization } from '../types';

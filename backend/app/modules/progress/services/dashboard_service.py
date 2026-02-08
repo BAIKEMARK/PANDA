@@ -12,16 +12,26 @@ from backend.app.models.chat import ChatSession
 from backend.app.models.scenario import Scenario
 from backend.app.modules.progress.schemas.dashboard import DashboardStatsResponse, RadarChartData, ScenarioHistoryItem
 from backend.app.modules.progress.schemas.progress import UserProgressResponse
+from backend.app.core.config.settings import settings
+from backend.app.core.services.redis_cache import redis_cache
 
 
 class DashboardService:
     """仪表盘服务类"""
+
+    CACHE_KEY_PREFIX = "dashboard:"
 
     def __init__(self, db: Session):
         self.db = db
 
     def get_user_dashboard_stats(self, user_id: str) -> DashboardStatsResponse:
         """获取用户仪表盘聚合统计数据"""
+
+        cache_key = f"{self.CACHE_KEY_PREFIX}{user_id}"
+        if settings.CACHE_ENABLED:
+            cached = redis_cache.get_json(cache_key)
+            if cached:
+                return DashboardStatsResponse.model_validate(cached)
         
         # 1. 课程统计
         total_courses = self.db.query(func.count(UserProgress.id)).filter(
@@ -130,7 +140,7 @@ class DashboardService:
             ) for e in evaluations
         ]
 
-        return DashboardStatsResponse(
+        response = DashboardStatsResponse(
             total_courses=total_courses,
             completed_courses=completed_courses,
             total_scenarios=total_scenarios,
@@ -139,3 +149,10 @@ class DashboardService:
             recent_activities=recent_activities,
             scenario_history=scenario_history
         )
+        if settings.CACHE_ENABLED:
+            redis_cache.set_json(
+                cache_key,
+                response.model_dump(mode="json"),
+                ttl_seconds=settings.CACHE_DEFAULT_TTL
+            )
+        return response
