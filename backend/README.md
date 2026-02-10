@@ -21,14 +21,14 @@
 | **LangChain OpenAI** | 1.1.7 | OpenAI 兼容接口 |
 | **Pydantic** | 2.7+ | 数据验证和结构化输出 |
 | **Redis** | 5.0.1 | 实时状态缓存 |
-| **通义千问** | - | LLM 提供商 |
+| **通义千问** | qwen-max | LLM 提供商（阿里百炼） |
 
 ### 架构设计原则
 
 1. **按业务领域垂直切分**：每个业务域独立成一个完整模块
 2. **保持分层架构**：每个模块内部保持 API → Service → Repository → Model
 3. **依赖倒置**：模块间通过抽象接口通信，而非直接依赖具体实现
-4. **共享基础设施**：config、db、common、infrastructure 作为独立的基础层
+4. **共享基础设施**：core、db、common 作为独立的基础层
 5. **单向依赖**：业务模块只能依赖共享层，不能横向依赖其他业务模块
 6. **LangChain 集成**：AI 能力通过 LangChain 统一管理和调用
 7. **Agent 智能体**：患者 Agent 通过规则引擎实现动态状态更新
@@ -43,49 +43,40 @@ backend/
 ├── app/                              # 应用主目录
 │   ├── main.py                       # 应用入口
 │   │
-│   ├── core/                         # 共享核心层（重构）
+│   ├── core/                         # 共享核心层
 │   │   ├── ai/                       # AI 基础设施
 │   │   │   └── langchain_manager.py  # LLM 统一管理器（单例）
-│   │   │
 │   │   ├── common/                   # 通用模块
 │   │   │   ├── constants.py          # 枚举常量
 │   │   │   └── exceptions.py         # 自定义异常
-│   │   │
 │   │   ├── services/                 # 基础设施服务
 │   │   │   ├── ai_service.py         # AI 服务统一接口
 │   │   │   ├── event_bus.py          # 事件总线（模块间通信）
 │   │   │   └── redis_state_manager.py # Redis 状态管理器
-│   │   │
 │   │   ├── config/                   # 配置管理
-│   │   │   └── config.py             # 全局配置类
-│   │   │
-│   │   └── models/                   # ORM 模型引用
-│   │
-│   ├── config/                       # 配置层
-│   │   └── security.py               # 安全相关配置
+│   │   │   ├── settings.py           # 全局配置类
+│   │   │   ├── security.py           # 安全相关配置
+│   │   │   └── logging.py            # 日志配置
+│   │   └── middleware/               # 中间件
 │   │
 │   ├── interfaces/                   # 模块间接口定义层
-│   │   ├── __init__.py
 │   │   └── scenario_interface.py     # 场景模块对外接口
 │   │
-│   ├── modules/                      # 业务模块层
-│   │   ├── auth/                     # 模块1: 认证与用户管理
+│   ├── modules/                      # 业务模块层（10个模块）
+│   │   ├── auth/                     # 认证与用户管理
 │   │   │   ├── api/                  # Controller 层
 │   │   │   ├── services/             # Service 层
 │   │   │   ├── repositories/         # Repository 层
 │   │   │   └── schemas/              # DTO 层
 │   │   │
-│   │   ├── course/                   # 模块2: 课程管理
-│   │   ├── scenario/                 # 模块3: 情景模拟
+│   │   ├── course/                   # 课程管理
+│   │   ├── scenario/                 # 情景模拟
 │   │   │
-│   │   ├── conversation/             # 模块4: 对话交互（重构：chat + agent）
+│   │   ├── conversation/             # 对话交互（含 Agent）
 │   │   │   ├── api/                  # Controller 层
 │   │   │   ├── services/             # Service 层
-│   │   │   │   └── chat_service.py
 │   │   │   ├── repositories/         # Repository 层
-│   │   │   │   └── chat_repository.py
 │   │   │   ├── schemas/              # DTO 层
-│   │   │   │   └── chat.py
 │   │   │   │
 │   │   │   ├── agent/                # Agent 智能体子模块
 │   │   │   │   ├── core/             # 核心组件
@@ -94,15 +85,13 @@ backend/
 │   │   │   │   │   └── patient_agent_chain.py   # 患者 Agent 链
 │   │   │   │   ├── prompts/          # Agent 提示词
 │   │   │   │   │   └── patient_agent_prompt.py  # 患者 Agent 提示词
-│   │   │   │   ├── services/         # Service 层
-│   │   │   │   ├── repositories/     # Repository 层
-│   │   │   │   ├── models/           # 数据模型
-│   │   │   │   │   ├── patient_state.py  # 患者状态模型
-│   │   │   │   │   └── agent_response.py # Agent 响应模型
+│   │   │   │   ├── services/         # Agent 服务层
+│   │   │   │   ├── repositories/     # Agent 仓储层
+│   │   │   │   ├── models/           # Agent 数据模型
 │   │   │   │   └── config/           # Agent 配置
 │   │   │   │       └── skill_config.json     # 技能配置文件
 │   │   │   │
-│   │   ├── evaluation/               # 模块5: 评估系统
+│   │   ├── evaluation/               # 评估系统
 │   │   │   ├── api/                  # Controller 层
 │   │   │   ├── services/             # Service 层
 │   │   │   ├── agents/               # Agent 层
@@ -113,13 +102,33 @@ backend/
 │   │   │   └── chains/               # 评估链模块
 │   │   │       └── evaluation_chain.py
 │   │   │
-│   │   ├── progress/                 # 模块7: 学习进度
-│   │   └── menu/                     # 模块8: 菜单权限
+│   │   ├── progress/                 # 学习进度
+│   │   ├── menu/                     # 菜单权限
+│   │   ├── admin/                    # 后台管理
+│   │   │   ├── api/                  # 组织、角色、用户、培训、文件管理
+│   │   │   ├── services/
+│   │   │   └── repositories/
+│   │   ├── certificate/              # 证书管理
+│   │   └── question/                 # 题库管理
 │   │
 │   ├── models/                       # ORM 模型层（共享）
+│   │   ├── user.py                   # 用户模型
+│   │   ├── course.py                 # 课程模型
+│   │   ├── scenario.py               # 场景模型
+│   │   ├── chat.py                   # 对话模型（ChatSession, ChatMessage）
+│   │   ├── evaluation.py             # 评估模型
+│   │   ├── patient_state.py          # 患者状态模型
+│   │   ├── progress.py               # 进度模型
+│   │   ├── organization.py           # 组织/角色/权限模型
+│   │   ├── training.py               # 培训班级模型
+│   │   ├── menu.py                   # 菜单模型
+│   │   ├── certificate.py            # 证书模型
+│   │   ├── question.py               # 题库模型
+│   │   └── audit.py                  # 审计日志模型
+│   │
 │   ├── schemas/                      # Pydantic 模型层（共享）
 │   ├── common/                       # 通用模块
-│   └── db/                           # 数据库
+│   └── db/                           # 数据库会话
 │
 ├── .env                              # 环境变量
 ├── .env.example                      # 环境变量示例
@@ -143,7 +152,6 @@ backend/
 ```
 core/ai/
 └── langchain_manager.py       # LLM 统一管理（单例模式）
-    └── 职责：创建和管理 ChatOpenAI 实例
 
 modules/conversation/agent/
 ├── prompts/
@@ -159,37 +167,11 @@ modules/evaluation/
 
 core/services/
 ├── ai_service.py              # AI 服务统一接口
-│   └── 职责：提供对话和评估的统一 API
-│
 ├── event_bus.py               # 事件总线（发布-订阅）
-│   └── 职责：模块间解耦通信
-│
 └── redis_state_manager.py     # Redis 状态管理器
-    └── 职责：患者状态的 Redis 缓存管理
 
 modules/conversation/agent/config/
 └── skill_config.json          # 技能配置文件
-    └── 职责：全局对话技能配置和状态更新规则
-```
-
-### LCEL 链式调用
-
-**患者 Agent 链** (modules/conversation/agent/chains/patient_agent_chain.py):
-```python
-self.chain = (
-    self.prompt_template      # ChatPromptTemplate (包含动态状态)
-    | self.llm                # ChatOpenAI (通义千问/DeepSeek)
-    | StrOutputParser()       # 字符串输出解析器
-)
-```
-
-**评估链** (modules/evaluation/chains/evaluation_chain.py):
-```python
-self.chain = (
-    self.prompt_template
-    | llm.with_retry(stop_after_attempt=3)
-    | PydanticOutputParser()  # 结构化输出
-)
 ```
 
 ---
@@ -234,7 +216,7 @@ self.chain = (
 
 ### 核心组件
 
-#### 1. Agent Orchestrator (agent_orchestrator.py)
+#### 1. Agent Orchestrator
 
 **职责**：协调所有 Agent 组件，处理每轮对话
 
@@ -247,7 +229,7 @@ self.chain = (
 6. 更新 Redis 状态
 7. 持久化到 MySQL
 
-#### 2. Patient Agent Chain (patient_agent_chain.py)
+#### 2. Patient Agent Chain
 
 **职责**：生成符合患者角色设定的回复
 
@@ -256,7 +238,7 @@ self.chain = (
 - Prompt 包含动态状态（心情、满意度、抑郁程度、信任度）
 - 根据场景配置（system_prompt）和患者背景生成回复
 
-#### 3. State Update Engine (state_update_engine.py)
+#### 3. State Update Engine
 
 **职责**：基于 skill_config.json 规则计算状态变化
 
@@ -266,27 +248,7 @@ self.chain = (
 - `depression_level` (抑郁程度): 0-100
 - `rapport_score` (信任度): 0-100
 
-**规则匹配示例**：
-```json
-{
-  "indicator_rules": {
-    "mood_score": {
-      "change_rules": [
-        "护士表现出同理心 (+5~10)",
-        "共情回应 (+3~8)",
-        "说教打断 (-5~-10)"
-      ]
-    }
-  },
-  "cris_thresholds": {
-    "mood_too_low": 15,
-    "depression_too_high": 85,
-    "rapport_broken": 10
-  }
-}
-```
-
-#### 4. Crisis Detector (crisis_detector.py)
+#### 4. Crisis Detector
 
 **职责**：检测患者状态是否触发危机阈值
 
@@ -319,27 +281,6 @@ Fields:
   - crisis_type: null       # 危机类型
 ```
 
-#### 对话历史 (patient:history:{session_id})
-
-```
-Key: patient:history:{session_id}
-Type: List
-Max Length: 50轮
-
-[
-  {
-    "role": "user",
-    "content": "护士的消息",
-    "state_snapshot": { "mood_score": 45, ... }
-  },
-  {
-    "role": "assistant",
-    "content": "患者的回复",
-    "state_snapshot": { "mood_score": 50, ... }
-  }
-]
-```
-
 ### Redis + MySQL 混合存储
 
 | 操作 | Redis | MySQL |
@@ -348,167 +289,6 @@ Max Length: 50轮
 | 更新状态 | ✅ 立即更新 | ✅ 异步持久化 |
 | 状态历史 | - | ✅ 每次变更记录 |
 | 会话快照 | ✅ 快速恢复 | ✅ 长期存储 |
-
----
-
-## 模块说明
-
-### 1. 共享核心层 (core/)
-
-#### core/services/redis_state_manager.py
-- **功能**：Redis 状态管理器（单例）
-- **方法**：
-  - `get_patient_state(session_id)` - 获取患者状态
-  - `update_patient_state(session_id, updates)` - 更新患者状态
-  - `save_state_snapshot(session_id)` - 保存状态快照
-  - `restore_state_snapshot(session_id, snapshot_id)` - 恢复状态快照
-
-#### core/services/ai_service.py
-- **功能**：AI 服务统一接口
-- **方法**：
-  - `generate_conversation_response(system_prompt, user_message, conversation_history)` - 生成对话回复
-  - `generate_evaluation_report(conversation_text, evaluation_criteria)` - 生成评估报告
-
-#### core/services/event_bus.py
-- **功能**：事件总线（发布-订阅模式）
-- **事件类型**：
-  - `CHAT_SESSION_ENDED` - 会话结束
-  - `EVALUATION_GENERATED` - 评估生成完成
-
-#### core/ai/langchain_manager.py
-- **功能**：LLM 统一管理器（单例）
-- **职责**：创建和管理 ChatOpenAI 实例
-
-### 2. 对话交互模块 (modules/conversation/)
-
-该模块整合了原有的 chat 和 agent 模块，提供完整的对话交互和 Agent 智能体功能。
-
-**API端点**：
-- `POST /api/chat/sessions` - 创建会话
-- `POST /api/chat/messages` - 发送消息并获取 AI 回复
-- `PUT /api/chat/sessions/{id}/end` - 结束会话（触发评估）
-
-**核心组件**：
-- `services/chat_service.py` - 对话服务
-  - 会话管理
-  - 消息处理
-  - 对话历史记录
-
-- `repositories/chat_repository.py` - 对话仓储
-  - 会话和消息的 CRUD 操作
-
-#### Agent 智能体子模块 (modules/conversation/agent/)
-
-**核心组件**：
-- `core/agent_orchestrator.py` - Agent 编排器
-  - 协调 Patient Agent、State Engine、Crisis Detector
-  - 处理每轮对话的完整流程
-  - 管理 Redis 状态更新和 MySQL 持久化
-
-- `chains/patient_agent_chain.py` - 患者 Agent 链
-  - 使用 LCEL 构建：prompt | llm | StrOutputParser
-  - Prompt 包含动态状态和场景配置
-
-- `prompts/patient_agent_prompt.py` - 患者 Agent 提示词
-  - ChatPromptTemplate 模板
-  - 包含动态状态、场景配置、患者背景
-
-- `services/` - Agent 服务层
-  - 患者状态管理服务
-
-- `repositories/` - Agent 仓储层
-  - 患者状态数据访问
-
-- `models/` - Agent 数据模型
-  - `patient_state.py` - 患者状态模型
-  - `agent_response.py` - Agent 响应模型
-
-- `config/skill_config.json` - 技能配置文件
-  - 全局对话技能配置
-  - 状态更新规则
-  - 危机阈值配置
-
-### 3. 评估系统模块 (modules/evaluation/)
-
-**API端点**：
-- `GET /api/evaluation/reports/{id}` - 获取评估报告
-
-**核心组件**：
-- `agents/mentor_agent.py` - AI 评估智能体
-  - 订阅 `CHAT_SESSION_ENDED` 事件
-  - 使用 LangChain 评估链生成报告
-  - 基于 THP 五维评分体系
-
-- `chains/evaluation_chain.py` - 评估链
-  - 使用 LCEL 构建：prompt | llm.with_retry | PydanticOutputParser
-  - 结构化输出评估报告
-
-### 4. 其他模块
-
-- **auth/** - 认证与用户管理
-- **course/** - 课程管理
-- **scenario/** - 情景模拟
-- **progress/** - 学习进度
-- **menu/** - 菜单权限
-
----
-
-## 技能配置系统
-
-### 配置文件：modules/conversation/agent/config/skill_config.json
-
-技能配置定义了全局对话行为准则，包括：
-
-```json
-{
-  "global_skill": {
-    "enabled": true,
-    "role_definition": "角色定义",
-    "core_principles": ["核心原则1", "核心原则2"],
-    "behavior_guidelines": {
-      "language_style": "语言风格",
-      "emotional_response": "情绪响应",
-      "rapport_building": "信任建立"
-    },
-    "indicator_rules": {
-      "mood_score": {
-        "change_rules": [
-          "护士表现出同理心 (+5~10)",
-          "共情回应 (+3~8)"
-        ],
-        "tone_mapping": {
-          "<30": "极度低落",
-          "30-50": "焦虑",
-          "50-70": "谨慎",
-          ">70": "开放"
-        }
-      }
-    },
-    "cris_thresholds": {
-      "mood_too_low": 15,
-      "depression_too_high": 85
-    },
-    "crisis_responses": {
-      "extreme_low_mood": "（沉默不语）"
-    },
-    "system_prompt_template": "包含占位符的模板"
-  }
-}
-```
-
-### 状态更新规则
-
-**规则格式**：`"描述 (+X~Y)"` 或 `"描述 (-X~-Y)"`
-
-**匹配策略**：
-1. **积极行为**：同理心、共情、关心、倾听、支持、鼓励、认同
-2. **消极行为**：说教、否定、打断、评判、冷漠、敷衍
-3. **提问行为**：疑问词、问号
-4. **默认匹配**：长文本（>15字符）且无明显负面词
-
-**边界衰减**：
-- 接近 0 时，负面变化减缓 (×0.5)
-- 接近 100 时，正面变化减缓 (×0.5)
 
 ---
 
@@ -537,7 +317,7 @@ AI_TEXT_MODEL=qwen-max
 AI_TIMEOUT=30
 
 # CORS配置
-CORS_ORIGINS_STR=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175
+CORS_ORIGINS_STR=http://localhost:3000,http://localhost:5173
 
 # Redis 配置
 REDIS_URL=redis://localhost:6379/0
@@ -564,7 +344,7 @@ cd backend
 pip install -r requirements.txt
 ```
 
-### 2. 启动 Redis
+### 2. 启动 Redis (可选)
 
 ```bash
 # Windows
@@ -572,8 +352,6 @@ redis-server
 
 # Linux/Mac
 sudo service redis-server start
-# 或
-redis-server
 ```
 
 ### 3. 配置环境变量
@@ -586,8 +364,7 @@ cp .env.example .env
 ### 4. 初始化数据库
 
 ```bash
-# 使用 SQL 文件初始化
-mysql -u root -p panda < docs/项目文档/resources/panda.sql
+mysql -u root -p panda < app/db/panda.sql
 ```
 
 ### 5. 启动应用
@@ -597,7 +374,7 @@ mysql -u root -p panda < docs/项目文档/resources/panda.sql
 python start.py
 
 # 方式2：直接使用 uvicorn
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ### 6. 访问 API 文档
@@ -607,28 +384,96 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
+## API 路由结构
+
+### 系统路由
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/` | GET | 系统信息 |
+| `/api/health` | GET | 健康检查 |
+
+### 认证与用户
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/register` | POST | 用户注册 |
+| `/api/login` | POST | 用户登录 |
+| `/api/users/me` | GET | 获取当前用户 |
+| `/api/users/me` | PUT | 更新当前用户 |
+
+### 课程管理
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/courses` | GET | 课程列表 |
+| `/api/courses` | POST | 创建课程 |
+| `/api/courses/{id}` | GET | 课程详情 |
+| `/api/courses/{id}` | PUT | 更新课程 |
+| `/api/courses/{id}` | DELETE | 删除课程 |
+
+### 场景管理
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/scenarios` | GET | 场景列表 |
+| `/api/scenarios` | POST | 创建场景 |
+| `/api/scenarios/{id}` | GET | 场景详情 |
+| `/api/scenarios/{id}` | PUT | 更新场景 |
+| `/api/scenarios/{id}` | DELETE | 删除场景 |
+
+### 对话交互
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/chat/sessions` | POST | 创建会话 |
+| `/api/chat/sessions/{id}` | GET | 获取会话 |
+| `/api/chat/sessions/{id}/messages` | GET | 获取消息列表 |
+| `/api/chat/messages` | POST | 发送消息 |
+| `/api/chat/sessions/{id}/end` | PUT | 结束会话 |
+| `/api/chat/sessions/{id}/alert` | POST | 自杀风险报警 |
+
+### 评估系统
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/evaluation/sessions/{id}/evaluate` | POST | 生成评估报告 |
+| `/api/evaluation/sessions/{id}/status` | GET | 获取评估状态 |
+| `/api/evaluation/sessions/{id}/report` | GET | 获取评估报告 |
+| `/api/evaluation/reports` | GET | 报告列表 |
+
+### 学习进度
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/progress/dashboard` | GET | 学习仪表板 |
+| `/api/progress` | GET | 学习进度列表 |
+| `/api/progress` | POST | 记录学习进度 |
+
+### 菜单权限
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/menus` | GET | 菜单列表 |
+| `/api/menus/user` | GET | 用户菜单（动态） |
+| `/api/menus` | POST | 创建菜单 |
+| `/api/menus/{id}` | PUT | 更新菜单 |
+| `/api/menus/{id}` | DELETE | 删除菜单 |
+
+### 后台管理
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/admin/organizations` | GET/POST | 机构管理 |
+| `/api/admin/roles` | GET/POST | 角色管理 |
+| `/api/admin/users` | GET/POST | 用户管理 |
+| `/api/admin/classes` | GET/POST | 班级管理 |
+| `/api/admin/certificates` | GET/POST | 证书管理 |
+| `/api/admin/questions` | GET/POST | 题库管理 |
+
+---
+
 ## 开发指南
-
-### AI 模块开发
-
-#### 添加新的 AI 能力
-
-1. **在对应模块创建 chains/**：例如 `modules/new_feature/chains/`
-2. **创建 prompts/**：例如 `modules/new_feature/prompts/`
-3. **扩展 AIService**：在 `core/services/ai_service.py` 添加新方法
-
-#### 示例：添加新的对话链
-
-```python
-# modules/new_feature/chains/my_chain.py
-from langchain_core.output_parsers import StrOutputParser
-from backend.app.core.ai.langchain_manager import langchain_manager
-
-class MyChain:
-    def __init__(self):
-        self.llm = langchain_manager.get_llm()
-        self.chain = self.prompt_template | self.llm | StrOutputParser()
-```
 
 ### 代码规范
 
@@ -670,21 +515,6 @@ feat(agent): 实现患者 Agent 智能体系统
 
 ---
 
-## 测试
-
-```bash
-# 运行所有测试
-pytest
-
-# 运行特定模块测试
-pytest tests/modules/test_agent.py
-
-# 查看测试覆盖率
-pytest --cov=app --cov-report=html
-```
-
----
-
 ## 故障排查
 
 ### 常见问题
@@ -699,29 +529,11 @@ pytest --cov=app --cov-report=html
 
 3. **AI 调用失败**
    - 检查 `AI_TEXT_KEY` 是否正确配置
-   - 确认模型名称（`qwen-max` 或 `deepseek-v3.2`）
+   - 确认模型名称（`qwen-max`）
    - 检查网络连接
 
 4. **模块导入错误**
    - 使用 `python start.py` 启动（自动设置 PYTHONPATH）
-   - 或从项目根目录运行：`PYTHONPATH=E:/project/PANDA python backend/start.py`
-
-5. **技能配置未加载**
-   - 检查 `modules/conversation/agent/config/skill_config.json` 是否存在
-   - 确认 `enabled` 字段为 `true`
-   - 查看控制台是否有配置加载日志
-
----
-
-## 项目文档
-
-| 文档 | 说明 |
-|------|------|
-| [AI 模块架构](../docs/ai_module_architecture.md) | LangChain 集成详细文档 |
-| [开发规则](../docs/开发规则.md) | 6A 工作流和开发规范 |
-| [项目介绍](../docs/项目介绍.md) | 项目背景和目标 |
-| [数据库设计](../docs/项目文档/resources/数据库设计.md) | 数据库结构和 ER 图 |
-| [SQL 脚本](../docs/项目文档/resources/panda.sql) | 完整建表脚本 |
 
 ---
 
@@ -729,53 +541,28 @@ pytest --cov=app --cov-report=html
 
 ### v0.4.0 (2026-02-05)
 - ✅ 架构重构：优化项目结构
-  - 重构 `shared/` 目录为 `core/`（包含 core/ai, core/services, core/common, core/config）
-  - 合并 `chat/` 和 `agent/` 模块为 `conversation/` 统一模块
-  - 将 `skill_config.json` 从 `config/` 移至 `modules/conversation/agent/config/`
-- ✅ 更新导入路径：
-  - `shared/ai/` → `core/ai/`
-  - `shared/infrastructure/` → `core/services/`
-  - `shared/db/` 功能整合到 `db/` 目录
-- ✅ 优化模块组织：
-  - 对话功能整合为 `modules/conversation/` 模块
-  - Agent 功能作为 `modules/conversation/agent/` 子模块
-  - 技能配置文件移至模块内部便于管理
-- ✅ 文档更新：同步更新项目文档以反映新架构
+  - 重构 `shared/` 目录为 `core/`
+  - 合并 `chat/` 和 `agent/` 模块为 `conversation/`
+  - 将 `skill_config.json` 移至模块内部
 
 ### v0.3.0 (2026-01-31)
 - ✅ 升级 LangChain 到 1.2.7
 - ✅ 升级 Pydantic 到 2.7+
 - ✅ 实现 Agent 智能体系统
-  - AgentOrchestrator 编排器
-  - PatientAgentChain 患者链
-  - StateUpdateEngine 状态更新引擎
-  - CrisisDetector 危机检测器
 - ✅ 集成 Redis 实时状态管理
-  - RedisStateManager 状态管理器
-  - Redis + MySQL 混合存储
-- ✅ 实现动态患者状态更新
-  - 四项指标（心情/满意度/抑郁程度/信任度）
-  - 基于 skill_config.json 规则匹配
-- ✅ 添加 patient_states 表和状态历史记录
 
 ### v0.2.0 (2024-01-29)
 - ✅ 重构 AI 模块架构
-  - prompts 和 chains 移至各模块内部
-  - 重命名 `core/` → `config/`
-  - 重命名 `shared/core/` → `shared/ai/`
 - ✅ 修复技能配置加载路径
 - ✅ 简化 AIService 调用接口
-- ✅ 删除重复代码和旧实现
-- ✅ 统一导入路径为 `backend.app.*`
 
 ### v0.1.0 (2024-01-15)
 - ✅ 迁移到 LangChain 框架
 - ✅ 实现分层模块化架构
 - ✅ 集成事件总线
-- ✅ 实现 THP 五维评估体系
 
 ---
 
 ## 许可证
 
-Copyright © 2024 PANDA Team. All rights reserved.
+Copyright © 2026 PANDA Team. All rights reserved.
