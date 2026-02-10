@@ -67,6 +67,7 @@ htmlcov/
 .pytest_cache/
 
 # 测试文件
+/backend/tests/
 test_*.py
 *_test.py
 

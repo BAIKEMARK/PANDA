@@ -4,9 +4,6 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
-import { useAuthStore } from './stores/auth.store';
 
-// 初始化认证状态（从localStorage恢复）
-useAuthStore.getState().loadUser();
-
+// Zustand persist 会自动处理状态恢复，无需手动调用 loadUser()
 createRoot(document.getElementById('root')!).render(<App />);
