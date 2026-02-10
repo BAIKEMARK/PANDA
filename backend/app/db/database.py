@@ -5,7 +5,7 @@ Database Session Module
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker, declarative_base
 
-from backend.app.config.config import settings
+from backend.app.core.config.settings import settings
 
 # 创建ORM基类
 Base = declarative_base()
@@ -13,9 +13,12 @@ Base = declarative_base()
 # 同步引擎
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-    echo=False,  # 关闭 SQL 日志，避免干扰调试输出
+    pool_pre_ping=True,                    # 连接前检查连接是否有效
+    pool_recycle=settings.DB_POOL_RECYCLE, # 连接回收时间（秒）
+    pool_size=settings.DB_POOL_SIZE,       # 连接池大小
+    max_overflow=settings.DB_MAX_OVERFLOW, # 最大溢出连接数
+    pool_timeout=settings.DB_POOL_TIMEOUT, # 获取连接超时时间（秒）
+    echo=False,                            # 关闭 SQL 日志，避免干扰调试输出
 )
 
 # 同步会话工厂
@@ -42,8 +45,8 @@ def init_database():
         from sqlalchemy import text
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        print("✅ 数据库连接成功！")
+        print("[OK] 数据库连接成功！")
         return True
     except Exception as e:
-        print(f"❌ 数据库连接失败: {e}")
+        print(f"[ERROR] 数据库连接失败: {e}")
         return False

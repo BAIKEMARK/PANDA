@@ -1,11 +1,9 @@
 """
 API Package
-API路由包 - Controller层（仅保留未迁移的路由）
+API路由包 - 系统级端点
 """
 from .health import router as health_router
-from .agent import router as agent_router
 
 __all__ = [
     "health_router",
-    "agent_router",
 ]

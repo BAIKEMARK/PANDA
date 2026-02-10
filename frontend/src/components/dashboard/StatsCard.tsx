@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 仪表盘统计卡片
  */
 import { Card, Statistic } from 'antd';
@@ -14,13 +14,13 @@ interface StatsCardProps {
 
 export const StatsCard = ({ title, value, icon, suffix, color = '#1890ff' }: StatsCardProps) => {
     return (
-        <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <Card variant="borderless" style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Statistic
                     title={<span style={{ fontSize: '14px', color: '#8c8c8c' }}>{title}</span>}
                     value={value}
                     suffix={<span style={{ fontSize: '14px' }}>{suffix}</span>}
-                    valueStyle={{ fontWeight: 600, color: '#262626' }}
+                    styles={{ content: { fontWeight: 600, color: '#262626' } }}
                 />
                 {icon && (
                     <div style={{

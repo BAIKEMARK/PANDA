@@ -5,6 +5,17 @@
 import api from './api';
 import type { EvaluationReport, EPDSScale } from '../types/evaluation.types';
 
+// 报告生成状态
+export interface ReportStatus {
+  report_id: string;
+  session_id: string;
+  status: 'pending' | 'generating' | 'completed' | 'failed';
+  error_message?: string;
+  created_at?: string;
+  completed_at?: string;
+  total_score?: number;
+}
+
 class EvaluationService {
   /**
    * 获取会话的评估报告
@@ -31,8 +42,77 @@ class EvaluationService {
   }
 
   /**
-   * 生成评估报告
-   * TODO: 后端需要实现此接口
+   * 异步生成评估报告
+   * 返回202 Accepted，报告在后台生成
+   */
+  async generateReportAsync(sessionId: string): Promise<{
+    message: string;
+    session_id: string;
+    report_id: string;
+    status: string;
+  }> {
+    const response = await api.post(
+      `/evaluation/sessions/${sessionId}/evaluate`
+    );
+    return response.data;
+  }
+
+  /**
+   * 查询评估报告生成状态
+   */
+  async getReportStatus(sessionId: string): Promise<ReportStatus> {
+    const response = await api.get<ReportStatus>(
+      `/evaluation/sessions/${sessionId}/status`
+    );
+    return response.data;
+  }
+
+  /**
+   * 轮询等待报告生成完成
+   * @param sessionId 会话ID
+   * @param onProgress 进度回调
+   * @param maxAttempts 最大轮询次数（默认60次，即5分钟）
+   * @param interval 轮询间隔（毫秒，默认5秒）
+   */
+  async waitForReportCompletion(
+    sessionId: string,
+    onProgress?: (status: ReportStatus) => void,
+    maxAttempts: number = 60,
+    interval: number = 5000
+  ): Promise<EvaluationReport> {
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const status = await this.getReportStatus(sessionId);
+        
+        // 调用进度回调
+        if (onProgress) {
+          onProgress(status);
+        }
+
+        if (status.status === 'completed') {
+          // 生成完成，获取完整报告
+          return await this.getReport(sessionId);
+        } else if (status.status === 'failed') {
+          throw new Error(status.error_message || '评估报告生成失败');
+        }
+
+        // 等待后继续轮询
+        await new Promise(resolve => setTimeout(resolve, interval));
+        attempts++;
+      } catch (error) {
+        console.error('轮询报告状态失败:', error);
+        throw error;
+      }
+    }
+
+    throw new Error('评估报告生成超时，请稍后重试');
+  }
+
+  /**
+   * 生成评估报告（旧版本，同步等待）
+   * 已废弃，建议使用 generateReportAsync + waitForReportCompletion
    */
   async generateReport(sessionId: string): Promise<EvaluationReport> {
     const response = await api.post<EvaluationReport>(

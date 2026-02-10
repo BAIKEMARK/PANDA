@@ -41,6 +41,7 @@ class MenuResponse(MenuBase):
     created_at: datetime
     updated_at: datetime
     children: Optional[List['MenuResponse']] = []
+    permission_codes: Optional[List[str]] = []
 
     class Config:
         from_attributes = True

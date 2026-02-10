@@ -2,12 +2,14 @@
 认证服务 - 处理登录、JWT等认证逻辑
 """
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 
 from backend.app.models.user import User
+from backend.app.models.organization import Role, UserOrganization
 from backend.app.modules.auth.services.user_service import UserService
-from backend.app.config.security import verify_password, create_access_token, decode_access_token
-from backend.app.common.exceptions import UnauthorizedException
+from backend.app.core.config.security import verify_password, create_access_token, decode_access_token
+from backend.app.core.common.exceptions import UnauthorizedException
+from backend.app.modules.admin.services.permission_service import PermissionService
 
 
 class AuthService:
@@ -76,4 +78,26 @@ class AuthService:
         if user is None:
             raise UnauthorizedException("用户不存在")
 
+        return self._enrich_user(user)
+
+    def enrich_user(self, user: User) -> User:
+        return self._enrich_user(user)
+
+    def _enrich_user(self, user: User) -> User:
+        permission_service = PermissionService(self.db)
+        roles = self._get_user_roles(user.id)
+        if user.role and user.role not in roles:
+            roles.append(user.role)
+        user.roles = roles
+        user.org_ids = permission_service.get_user_orgs(user.id)
+        user.permission_codes = list(permission_service.get_user_permissions(user.id))
         return user
+
+    def _get_user_roles(self, user_id: str) -> List[str]:
+        rows = self.db.query(Role.code).join(
+            UserOrganization, Role.id == UserOrganization.role_id
+        ).filter(
+            UserOrganization.user_id == user_id,
+            UserOrganization.status == "active"
+        ).all()
+        return [row[0] for row in rows]

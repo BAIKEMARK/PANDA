@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 场景卡片组件
  */
 import { Card, Tag, Typography, Button, Space } from 'antd';
@@ -20,6 +20,8 @@ const difficultyStars = {
   4: '⭐⭐⭐⭐',
   5: '⭐⭐⭐⭐⭐',
 };
+
+const CARD_HEIGHT = 560;
 
 export const ScenarioCard = ({ scenario, onStartPractice, isLoading }: ScenarioCardProps) => {
   const stars = difficultyStars[scenario.difficulty as keyof typeof difficultyStars] || '⭐';
@@ -60,75 +62,88 @@ export const ScenarioCard = ({ scenario, onStartPractice, isLoading }: ScenarioC
           </div>
         </div>
       }
-      style={{ borderRadius: '12px', overflow: 'hidden' }}
-      bodyStyle={{ padding: '20px' }}
+      style={{
+        borderRadius: '12px',
+        overflow: 'hidden',
+        height: CARD_HEIGHT,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      bodyStyle={{
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+      }}
     >
-      <Title level={5} style={{ marginBottom: '12px' }}>
-        {scenario.title}
-      </Title>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflow: 'hidden' }}>
+        <Title level={5} ellipsis={{ rows: 1 }} style={{ marginBottom: 0 }}>
+          {scenario.title}
+        </Title>
 
-      {scenario.description && (
-        <Paragraph
-          type="secondary"
-          ellipsis={{ rows: 2 }}
-          style={{ marginBottom: '16px' }}
-        >
-          {scenario.description}
-        </Paragraph>
-      )}
-
-      {/* Patient Background */}
-      {scenario.patient_background && (
-        <div style={{ marginBottom: '16px' }}>
-          <Space size="small" style={{ marginBottom: '8px' }}>
-            <UserOutlined style={{ color: '#8c8c8c' }} />
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              患者背景
-            </Text>
-          </Space>
+        {scenario.description && (
           <Paragraph
+            type="secondary"
             ellipsis={{ rows: 2 }}
-            style={{
-              marginBottom: 0,
-              paddingLeft: '20px',
-              color: '#595959',
-              fontSize: '13px',
-            }}
+            style={{ marginBottom: 0 }}
           >
-            {scenario.patient_background}
+            {scenario.description}
           </Paragraph>
-        </div>
-      )}
+        )}
 
-      {/* Knowledge Tags */}
-      {knowledgeTags.length > 0 && (
-        <div style={{ marginBottom: '12px' }}>
-          <Space wrap size="small">
-            {knowledgeTags.slice(0, 3).map((tag, index) => (
-              <Tag key={index} color="blue" style={{ fontSize: '12px' }}>
-                {tag}
-              </Tag>
-            ))}
-            {knowledgeTags.length > 3 && (
-              <Tag color="default" style={{ fontSize: '12px' }}>
-                +{knowledgeTags.length - 3}
-              </Tag>
-            )}
-          </Space>
-        </div>
-      )}
+        {/* Patient Background */}
+        {scenario.patient_background && (
+          <div>
+            <Space size="small" style={{ marginBottom: '6px' }}>
+              <UserOutlined style={{ color: '#8c8c8c' }} />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                患者背景
+              </Text>
+            </Space>
+            <Paragraph
+              ellipsis={{ rows: 2 }}
+              style={{
+                marginBottom: 0,
+                paddingLeft: '20px',
+                color: '#595959',
+                fontSize: '13px',
+              }}
+            >
+              {scenario.patient_background}
+            </Paragraph>
+          </div>
+        )}
 
-      {/* Time Period */}
-      {scenario.time_period && (
-        <div style={{ marginBottom: '16px' }}>
-          <Space size="small">
-            <CalendarOutlined style={{ color: '#8c8c8c' }} />
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {scenario.time_period}
-            </Text>
-          </Space>
-        </div>
-      )}
+        {/* Knowledge Tags */}
+        {knowledgeTags.length > 0 && (
+          <div style={{ maxHeight: '24px', overflow: 'hidden' }}>
+            <Space size="small" wrap={false} style={{ overflow: 'hidden' }}>
+              {knowledgeTags.slice(0, 3).map((tag, index) => (
+                <Tag key={index} color="blue" style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
+                  {tag}
+                </Tag>
+              ))}
+              {knowledgeTags.length > 3 && (
+                <Tag color="default" style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
+                  +{knowledgeTags.length - 3}
+                </Tag>
+              )}
+            </Space>
+          </div>
+        )}
+
+        {/* Time Period */}
+        {scenario.time_period && (
+          <div>
+            <Space size="small">
+              <CalendarOutlined style={{ color: '#8c8c8c' }} />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                {scenario.time_period}
+              </Text>
+            </Space>
+          </div>
+        )}
+      </div>
 
       {/* Start Button */}
       <Button
@@ -137,7 +152,7 @@ export const ScenarioCard = ({ scenario, onStartPractice, isLoading }: ScenarioC
         size="large"
         loading={isLoading}
         onClick={() => onStartPractice(scenario.id)}
-        style={{ borderRadius: '8px' }}
+        style={{ borderRadius: '8px', marginTop: '12px' }}
       >
         开始练习
       </Button>

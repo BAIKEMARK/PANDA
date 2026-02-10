@@ -38,7 +38,12 @@ class UserRepository:
             email=user_data.email,
             password_hash=hashed_password,
             name=user_data.name,
-            role=user_data.role
+            role=user_data.role,
+            org_id=user_data.org_id,
+            phone=user_data.phone,
+            department=user_data.department,
+            title=user_data.title,
+            employee_id=user_data.employee_id
         )
         self.db.add(db_user)
         self.db.commit()

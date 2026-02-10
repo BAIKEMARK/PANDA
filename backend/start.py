@@ -9,7 +9,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 import uvicorn
-from backend.app.config.config import settings
+from backend.app.core.config import settings
 
 if __name__ == "__main__":
     uvicorn.run(

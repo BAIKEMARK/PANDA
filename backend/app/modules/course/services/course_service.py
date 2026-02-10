@@ -7,7 +7,7 @@ from typing import List, Optional
 from backend.app.models.course import Course
 from backend.app.modules.course.schemas.course import CourseCreate, CourseUpdate
 from backend.app.modules.course.repositories.course_repository import CourseRepository
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 
 
 class CourseService:

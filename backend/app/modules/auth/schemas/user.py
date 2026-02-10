@@ -2,7 +2,7 @@
 用户相关的 Pydantic 模型
 """
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -18,6 +18,11 @@ class UserBase(BaseModel):
     email: EmailStr
     name: str = Field(..., min_length=1, max_length=100)
     role: str = UserRole.STUDENT
+    org_id: Optional[str] = None
+    phone: Optional[str] = None
+    department: Optional[str] = None
+    title: Optional[str] = None
+    employee_id: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -35,12 +40,20 @@ class UserUpdate(BaseModel):
     """用户更新模型"""
     name: Optional[str] = None
     role: Optional[str] = None
+    org_id: Optional[str] = None
+    phone: Optional[str] = None
+    department: Optional[str] = None
+    title: Optional[str] = None
+    employee_id: Optional[str] = None
 
 
 class UserResponse(UserBase):
     """用户响应模型"""
     id: str
     created_at: datetime
+    roles: List[str] = []
+    org_ids: List[str] = []
+    permission_codes: List[str] = []
 
     class Config:
         from_attributes = True

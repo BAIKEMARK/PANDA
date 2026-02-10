@@ -1,73 +1,80 @@
-# 基于THP的围产期抑郁管理智能培训系统 (PANDA)
+# PANDA - 围产期抑郁管理智能培训系统
 
-## 📋 项目简介
+基于 **THP (Timely Care for Perinatal Depression)** 理论框架，结合 **AI Agent 智能体**技术的护理人员智能培训系统。
 
-针对护理人员在围产期抑郁（PND）管理中规范化能力不足的问题，基于健康思维计划（THP）结合AI技术，研发智能培训系统。通过标准化操作流程与智能化培训方案，提升护理人员对PND的识别、沟通支持及初步干预能力。
+---
 
-**核心功能**：
-- **内容学习模块**：基于THP框架的在线多媒体课程
-- **虚拟情景模拟**：AI驱动的PND案例互动演练
-- **Agent智能体系统**：动态患者状态模拟，实时响应护士沟通方式
-- **实训考核模块**：理论与实践结合的综合性评估
-- **能力评估系统**：THP五维评分（风险识别、沟通支持、技能应用、安全管理、自我效能）
+## 项目简介
 
-## 🛠️ 技术栈
+针对护理人员在围产期抑郁（PND）管理中规范化能力不足的问题，通过标准化操作流程与智能化培训方案，提升护理人员对 PND 的识别、沟通支持及初步干预能力。
+
+### 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| **内容学习** | 基于 THP 框架的在线多媒体课程（L1-L4 分层） |
+| **虚拟情景模拟** | AI 驱动的 PND 案例互动演练 |
+| **Agent 智能体系统** | 动态患者状态模拟，实时响应护士沟通方式 |
+| **智能评估** | THP 五维能力评估（风险识别、沟通支持、技能应用、安全管理、自我效能） |
+| **后台管理** | 用户、机构、班级、角色、题库、证书管理 |
+
+### 技术亮点
+
+- **LangChain 1.x** - LLM 应用开发框架
+- **Agent 编排器** - 统一管理多个智能体
+- **Redis + MySQL** - 实时状态缓存 + 持久化
+- **事件驱动架构** - 模块间解耦通信
+- **动态患者状态** - 四项指标实时更新
+- **自杀风险检测** - 实时监测和报警机制
+
+---
+
+## 技术栈
 
 ### 后端
-- **框架**：FastAPI 0.109.0 + SQLAlchemy 2.0.25
-- **数据库**：MySQL 8.0+ + Redis 5.0+
-- **AI框架**：LangChain 1.2.7 + LangChain Core 1.2.7 + LangChain OpenAI 1.1.7
-- **数据验证**：Pydantic 2.7+
-- **LLM提供商**：阿里百炼（通义千问）/ DeepSeek
-- **认证**：JWT
-- **架构**：分层模块化架构 + Agent智能体系统
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **FastAPI** | 0.109.0 | 现代异步 Web 框架 |
+| **SQLAlchemy** | 2.0.25 | ORM 数据库操作 |
+| **Pydantic** | 2.7+ | 数据验证和结构化输出 |
+| **LangChain** | 1.2.7 | LLM 应用开发框架 |
+| **Redis** | 5.0.1 | 实时状态缓存 |
+| **通义千问** | qwen-max | LLM 提供商（阿里百炼） |
 
 ### 前端
-- **框架**：React 18 + TypeScript 5
-- **构建工具**：Vite 5
-- **UI库**：Ant Design 5.x
-- **状态管理**：Zustand
-- **图表**：Recharts
 
-## 🔧 环境要求
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **React** | 19.2.0 | UI 框架 |
+| **TypeScript** | 5.9.3 | 类型安全 |
+| **Vite** | 7.2.4 | 构建工具 |
+| **Ant Design** | 6.2.0 | 企业级 UI 组件库 |
+| **Tailwind CSS** | 4.1.18 | 原子化 CSS 框架 |
+| **Zustand** | 5.0.10 | 轻量级状态管理 |
+| **Recharts** | 3.6.0 | 数据可视化（雷达图） |
+
+---
+
+## 快速开始
+
+### 环境要求
 
 - **Python**: 3.12+
 - **Node.js**: v20+
 - **MySQL**: 8.0+
-- **Redis**: 5.0+ (用于实时状态管理)
+- **Redis**: 5.0+ (可选)
 
-## 📦 部署方案
-
-### 1. 克隆项目
+### 一、数据库初始化
 
 ```bash
-git clone <repository-url>
-cd PANDA
-```
-
-### 2. 数据库初始化
-
-```bash
-# 登录MySQL
 mysql -u root -p
-
-# 执行初始化脚本
-source docs/项目文档/resources/panda.sql
+CREATE DATABASE panda CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE panda;
+SOURCE backend/app/db/panda.sql;
 ```
 
-### 3. 启动 Redis
-
-```bash
-# Windows
-redis-server
-
-# Linux/Mac
-sudo service redis-server start
-# 或
-redis-server
-```
-
-### 4. 后端部署
+### 二、后端启动
 
 ```bash
 cd backend
@@ -77,13 +84,15 @@ pip install -r requirements.txt
 
 # 配置环境变量
 cp .env.example .env
-# 编辑 .env，配置数据库密码、Redis和AI密钥
+# 编辑 .env 文件，填入数据库和 AI 配置
 
 # 启动服务
 python start.py
 ```
 
-### 5. 前端部署
+访问：http://localhost:8000/api/docs
+
+### 三、前端启动
 
 ```bash
 cd frontend
@@ -91,186 +100,214 @@ cd frontend
 # 安装依赖
 npm install
 
-# 开发环境
-npm run dev
+# 配置环境变量
+cp .env.example .env
 
-# 生产构建
-npm run build
+# 启动服务
+npm run dev
 ```
 
-### 6. 环境变量配置
+访问：http://localhost:5173
 
-**后端** (`backend/.env`):
+### 四、测试账号
+
+| 角色 | 邮箱 | 密码 |
+|------|------|------|
+| 管理员 | admin@panda.com | admin123 |
+| 讲师 | teacher@panda.com | admin123 |
+| 学员 | nurse1@hospital.com | admin123 |
+
+---
+
+## 项目结构
+
+```
+PANDA/
+├── backend/                          # 后端服务
+│   ├── app/
+│   │   ├── main.py                   # 应用入口
+│   │   ├── core/                     # 核心基础层
+│   │   │   ├── ai/                   # AI 基础设施
+│   │   │   ├── services/             # 基础服务（AI、事件总线、Redis）
+│   │   │   ├── config/               # 配置管理
+│   │   │   ├── common/               # 通用工具
+│   │   │   └── middleware/           # 中间件
+│   │   ├── modules/                  # 业务模块层
+│   │   │   ├── auth/                 # 认证与用户管理
+│   │   │   ├── course/               # 课程管理
+│   │   │   ├── scenario/             # 场景管理
+│   │   │   ├── conversation/         # 对话交互 + Agent
+│   │   │   ├── evaluation/           # 评估系统
+│   │   │   ├── progress/             # 学习进度
+│   │   │   ├── menu/                 # 菜单权限
+│   │   │   ├── admin/                # 后台管理
+│   │   │   ├── certificate/          # 证书管理
+│   │   │   └── question/             # 题库管理
+│   │   ├── models/                   # SQLAlchemy ORM 模型
+│   │   ├── schemas/                  # Pydantic 数据模型
+│   │   └── db/                       # 数据库会话
+│   ├── requirements.txt              # Python 依赖
+│   └── start.py                      # 启动脚本
+│
+├── frontend/                         # 前端应用
+│   ├── src/
+│   │   ├── pages/                    # 页面组件
+│   │   ├── components/               # UI 组件
+│   │   ├── services/                 # API 服务层
+│   │   ├── stores/                   # Zustand 状态管理
+│   │   ├── types/                    # TypeScript 类型
+│   │   ├── router/                   # 路由配置
+│   │   └── main.tsx                  # 应用入口
+│   └── package.json                  # Node 依赖
+│
+├── docs/                             # 项目文档
+│   ├── 项目介绍.md
+│   ├── 开发规则.md
+│   └── 项目文档/
+│
+├── quick_start.bat                   # Windows 快速启动
+├── quick_start.sh                    # Linux/Mac 快速启动
+└── README.md                         # 本文件
+```
+
+---
+
+## 核心业务模块
+
+### 1. Agent 智能体系统
+
+```
+┌─────────────────────────────────────────┐
+│         Agent Orchestrator (编排器)      │
+└──────────────────┬──────────────────────┘
+                   │
+        ┌──────────┼──────────┐
+        ▼          ▼          ▼
+┌──────────┐ ┌──────────┐ ┌──────────────┐
+│ Patient  │ │  State   │ │  Crisis      │
+│  Agent   │ │  Engine  │ │  Detector    │
+│ (患者回复)│ │(状态更新) │ │  (危机检测)  │
+└──────────┘ └──────────┘ └──────────────┘
+        │             │             │
+        └─────────────┴─────────────┘
+                      │
+                      ▼
+              ┌──────────────┐
+              │   Redis      │
+              │  状态缓存    │
+              └──────────────┘
+```
+
+**四项动态指标**：
+- `mood_score` - 心情指数 (0-100)
+- `satisfaction_score` - 满意度 (0-100)
+- `depression_level` - 抑郁程度 (0-100)
+- `rapport_score` - 信任度 (0-100)
+
+### 2. THP 五维评估系统
+
+- **A 类** - 风险识别能力
+- **B 类** - 沟通支持能力
+- **C 类** - THP 技能应用
+- **D 类** - 安全管理能力
+- **E 类** - 自我效能感
+
+### 3. 业务模块清单
+
+| 模块 | 功能 |
+|------|------|
+| `auth` | 用户注册/登录、JWT 认证 |
+| `course` | THP 分层课程管理 (L1-L4) |
+| `scenario` | 情景模拟训练场景 |
+| `conversation` | AI 对话交互、Agent 智能体 |
+| `evaluation` | THP 五维评估、AI 报告生成 |
+| `progress` | 学习进度跟踪 |
+| `menu` | 动态菜单权限管理 |
+| `admin` | 后台管理（用户/机构/班级/角色） |
+| `certificate` | 证书管理 |
+| `question` | 题库管理 |
+
+---
+
+## 环境配置
+
+### 后端环境变量 (`backend/.env`)
+
 ```bash
-# 数据库配置
+# 数据库
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=panda
+DB_CHARSET=utf8mb4
 
-# Redis配置
-REDIS_URL=redis://localhost:6379/0
-REDIS_TTL_STATE=86400  # 状态24小时过期
-REDIS_MAX_HISTORY=50   # 对话历史保留50轮
+# JWT 认证
+SECRET_KEY=your-secret-key-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
 
-# AI模型配置 - 阿里百炼平台
-# 获取地址: https://bailian.console.aliyun.com/
+# AI 模型 - 阿里百炼平台
 AI_TEXT_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-AI_TEXT_KEY=your_ai_api_key
+AI_TEXT_KEY=sk-your-api-key
 AI_TEXT_MODEL=qwen-max
 
-# LLM 高级配置
-LLM_MAX_RETRIES=3
-LLM_TIMEOUT=120
-LLM_TEMPERATURE=0.7
-LLM_STREAMING=false
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
 
-# CORS 配置
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+# CORS
+CORS_ORIGINS_STR=http://localhost:5173
 ```
 
-**前端** (`frontend/.env`):
+### 前端环境变量 (`frontend/.env`)
+
 ```bash
 VITE_API_URL=http://localhost:8000/api
+VITE_APP_NAME=PANDA
+VITE_ENABLE_STREAMING=true
 ```
 
-## 🚀 快速验证
+---
 
-启动后访问：
-- **前端**：http://localhost:5173
-- **API文档**：http://localhost:8000/api/docs
-- **测试账号**：admin@panda.com / 123456
+## 文档
 
-## 📂 项目结构
+| 文档 | 说明 |
+|------|------|
+| [项目介绍](docs/项目介绍.md) | 项目背景和目标 |
+| [开发规则](docs/开发规则.md) | 6A 工作流和开发规范 |
+| [后端文档](backend/README.md) | 后端架构、AI 模块、开发指南 |
+| [前端文档](frontend/README.md) | 前端架构、组件库、开发规范 |
 
-```
-PANDA/
-├── backend/              # FastAPI后端
-│   ├── app/
-│   │   ├── modules/      # 业务模块（分层模块化架构）
-│   │   │   ├── auth/     # 认证与用户
-│   │   │   ├── course/   # 课程管理
-│   │   │   ├── scenario/ # 情景模拟
-│   │   │   ├── chat/     # 对话交互
-│   │   │   ├── agent/    # Agent智能体系统
-│   │   │   │   ├── core/ # 核心组件
-│   │   │   │   │   ├── agent_orchestrator.py    # Agent编排器
-│   │   │   │   │   ├── state_update_engine.py   # 状态更新引擎
-│   │   │   │   │   └── crisis_detector.py       # 危机检测器
-│   │   │   │   ├── chains/     # Agent链
-│   │   │   │   ├── prompts/    # Agent提示词
-│   │   │   │   ├── services/   # 状态服务
-│   │   │   │   └── repositories/# 状态仓储
-│   │   │   ├── evaluation/# 评估系统
-│   │   │   ├── progress/ # 学习进度
-│   │   │   └── menu/     # 菜单管理
-│   │   ├── shared/       # 共享基础设施
-│   │   │   ├── ai/       # LangChain核心
-│   │   │   ├── db/       # 数据库
-│   │   │   ├── common/   # 通用工具
-│   │   │   └── infrastructure/ # 基础服务
-│   │   │       └── redis_state_manager.py # Redis状态管理
-│   │   ├── config/       # 配置层
-│   │   │   └── skill_config.json # 技能配置
-│   │   ├── interfaces/   # 模块间接口
-│   │   ├── models/       # ORM模型
-│   │   ├── schemas/      # Pydantic模型
-│   │   └── main.py       # 应用入口
-│   └── requirements.txt  # Python依赖
-├── frontend/             # React前端
-│   └── src/
-│       ├── pages/        # 页面组件
-│       ├── components/   # UI组件
-│       └── services/     # API调用
-├── docs/                 # 项目文档
-│   ├── THP.md           # THP框架说明
-│   ├── 项目介绍.md       # 项目详细介绍
-│   ├── 开发规则.md       # 开发规范
-│   └── 项目文档/         # 详细文档
-│       └── resources/    # 资源文件
-│           ├── 数据库设计.md  # 数据库设计
-│           └── panda.sql     # SQL脚本
-└── README.md             # 项目说明
-```
+---
 
-## 🏗️ 后端架构说明
+## 更新日志
 
-### 分层模块化架构
-
-项目采用**分层模块化架构**，每个业务模块包含完整的层次结构：
-
-```
-modules/{module_name}/
-├── api/          # API路由层
-├── schemas/      # 数据模型层
-├── services/     # 业务逻辑层
-└── repositories/ # 数据访问层
-```
-
-## 📚 文档
-
-- [项目介绍](docs/项目介绍.md) - 项目背景和目标
-- [开发规则](docs/开发规则.md) - 开发规范和最佳实践
-- [数据库设计](docs/项目文档/resources/数据库设计.md) - 数据库设计和ER图
-- [后端文档](backend/README.md) - 后端架构详细说明
-- [AI模块架构](docs/ai_module_architecture.md) - LangChain集成详细文档
-- [管理端对接文档](docs/管理端对接文档.md) - 管理端开发交付指南
-- [后续开发任务清单](docs/后续开发任务清单.md) - 后续开发任务
-
-## 🗄️ 数据库迁移
-
-项目使用增量迁移脚本管理数据库变更，位于 `backend/app/db/migrations/` 目录。
-
-### 首次部署
-
-```bash
-# 1. 登录 MySQL 并创建数据库
-mysql -u root -p
-CREATE DATABASE panda CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE panda;
-
-# 2. 执行主初始化脚本
-SOURCE backend/app/db/panda.sql;
-
-# 3. 执行增量迁移（如有）
-SOURCE backend/app/db/migrations/add_video_url.sql;
-```
-
-### 迁移文件清单
-
-| 文件名 | 说明 | 新增字段 |
-|--------|------|----------|
-| `add_video_url.sql` | 课程视频支持 | `courses.video_url` |
-
-## 🔄 更新日志
+### v0.4.0 (2026-02-05)
+- ✅ 核心基础层重构 (`core/config/`, `core/ai/`, `core/services/`, `core/common/`)
+- ✅ 对话模块统一 (`conversation/` 合并 chat + agent)
+- ✅ 统一日志系统（按大小切割，1MB/文件）
+- ✅ 自杀风险检测集成评估系统
 
 ### v0.3.0 (2026-01-31)
-- ✅ 升级 LangChain 到 1.2.7
-- ✅ 升级 Pydantic 到 2.7+
-- ✅ 实现 Agent 智能体系统
-  - AgentOrchestrator 编排器
-  - PatientAgentChain 患者链
-  - StateUpdateEngine 状态更新引擎
-  - CrisisDetector 危机检测器
-- ✅ 集成 Redis 实时状态管理
-  - RedisStateManager 状态管理器
-  - Redis + MySQL 混合存储
-- ✅ 实现动态患者状态更新
-  - 四项指标（心情/满意度/抑郁程度/信任度）
-  - 基于 skill_config.json 规则匹配
-- ✅ 添加 patient_states 表和状态历史记录
+- ✅ Agent 智能体系统实现
+- ✅ Redis 实时状态管理
+- ✅ 动态患者状态更新（四项指标）
 
 ### v0.2.0 (2024-01-29)
-- ✅ 重构 AI 模块架构
+- ✅ AI 模块架构重构
 - ✅ 技能配置系统
 - ✅ 事件总线集成
 
 ### v0.1.0 (2024-01-15)
 - ✅ 基础框架搭建
 - ✅ THP 五维评估体系
-- ✅ 分层模块化架构
 
-## 📄 许可证
+---
+
+## 许可证
 
 本项目仅供学习和研究使用。
+
+Copyright © 2026 PANDA Team. All rights reserved.

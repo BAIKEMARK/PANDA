@@ -8,7 +8,7 @@ from typing import List
 from backend.app.db.database import get_db
 from backend.app.modules.course.schemas.course import CourseCreate, CourseResponse, CourseUpdate
 from backend.app.modules.course.services.course_service import CourseService
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 
 router = APIRouter(prefix="/courses", tags=["课程"])
 

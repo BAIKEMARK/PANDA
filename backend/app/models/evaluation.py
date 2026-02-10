@@ -2,9 +2,9 @@
 Evaluation Report ORM Model
 评估报告数据库模型 - THP五维评分系统
 """
-from sqlalchemy import Column, String, Text, Integer, DateTime, JSON, Float, func
+from sqlalchemy import Column, String, Text, Integer, DateTime, JSON, Float, Enum as SQLEnum, func
 from sqlalchemy.dialects.mysql import CHAR
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.app.db.database import Base
 
 
@@ -14,6 +14,16 @@ class EvaluationReport(Base):
 
     id = Column(CHAR(36), primary_key=True, comment="报告ID")
     session_id = Column(CHAR(36), nullable=False, unique=True, index=True, comment="会话ID")
+
+    # 生成状态
+    status = Column(
+        SQLEnum("pending", "generating", "completed", "failed", name="report_status"),
+        default="pending",
+        nullable=False,
+        index=True,
+        comment="报告生成状态: pending-待生成, generating-生成中, completed-已完成, failed-失败"
+    )
+    error_message = Column(Text, comment="错误信息（生成失败时）")
 
     # 总体评分
     total_score = Column(Integer, comment="总分 (0-100)")
@@ -38,5 +48,18 @@ class EvaluationReport(Base):
     # 元数据（使用meta_data避免与SQLAlchemy的metadata冲突）
     meta_data = Column(JSON, comment="其他元数据")
 
-    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    created_at = Column(
+        DateTime(timezone=True), 
+        server_default=func.now(), 
+        comment="创建时间"
+    )
+    updated_at = Column(
+        DateTime(timezone=True), 
+        server_default=func.now(), 
+        onupdate=func.now(), 
+        comment="更新时间"
+    )
+    completed_at = Column(
+        DateTime(timezone=True), 
+        comment="完成时间"
+    )
