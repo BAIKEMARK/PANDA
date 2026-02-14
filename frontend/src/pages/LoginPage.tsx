@@ -6,7 +6,6 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Form, Input, Button, Card, Checkbox, Typography, Space } from 'antd';
 import { UserOutlined, LockOutlined, RocketOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
-import gsap from 'gsap';
 import { useAuthStore } from '@/stores/auth.store';
 import type { FormProps } from 'antd';
 
@@ -31,54 +30,12 @@ export const LoginPage = () => {
   const { login, isLoading } = useAuthStore();
   const [form] = Form.useForm<LoginFormValues>();
   
-  const logoRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
   const from = (location.state as { from?: string })?.from || '/courses';
   const registeredEmail = (location.state as { registeredEmail?: string })?.registeredEmail;
   const registeredPassword = (location.state as { registeredPassword?: string })?.registeredPassword;
 
-  // GSAP 动画
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Logo 动画
-      gsap.from(logoRef.current, {
-        y: -50,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-      });
-
-      // 卡片动画
-      gsap.from(cardRef.current, {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.2,
-        ease: 'power3.out',
-      });
-
-      // 粒子动画
-      if (particlesRef.current) {
-        const particles = particlesRef.current.children;
-        gsap.to(particles, {
-          y: 'random(-20, 20)',
-          x: 'random(-20, 20)',
-          duration: 'random(2, 4)',
-          repeat: -1,
-          yoyo: true,
-          ease: 'sine.inOut',
-          stagger: {
-            amount: 1,
-            from: 'random',
-          },
-        });
-      }
-    });
-
-    return () => ctx.revert();
-  }, []);
 
   useEffect(() => {
     // 延迟执行，确保登录页面先渲染出来
@@ -183,28 +140,44 @@ export const LoginPage = () => {
         pointerEvents: 'none',
         opacity: 0.3,
       }}>
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              width: Math.random() * 10 + 5 + 'px',
-              height: Math.random() * 10 + 5 + 'px',
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.5)',
-              left: Math.random() * 100 + '%',
-              top: Math.random() * 100 + '%',
-            }}
-          />
-        ))}
+        {[...Array(20)].map((_, i) => {
+          const duration = 2 + (i % 3) * 0.5;
+          const delay = (i % 4) * 0.5;
+          const offsetX = (i % 5) * 4 - 8;
+          const offsetY = ((i % 7) * 3 - 9);
+          return (
+            <motion.div
+              key={i}
+              style={{
+                position: 'absolute',
+                width: 5 + (i % 5) + 'px',
+                height: 5 + (i % 5) + 'px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.5)',
+                left: (i * 5) % 100 + '%',
+                top: (i * 7) % 100 + '%',
+              }}
+              animate={{
+                x: [0, offsetX, -offsetX, 0],
+                y: [0, offsetY, -offsetY, 0],
+              }}
+              transition={{
+                duration: duration,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                ease: 'easeInOut',
+                delay: delay,
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Logo */}
       <motion.div
-        ref={logoRef}
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
       >
         <Space direction="vertical" align="center" size={8} style={{ marginBottom: 32 }}>
           <motion.div
@@ -241,10 +214,9 @@ export const LoginPage = () => {
 
       {/* Login Card */}
       <motion.div
-        ref={cardRef}
-        initial={{ y: 20, opacity: 0 }}
+        initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
         style={{ width: '100%', maxWidth: 420 }}
       >
         <Card
