@@ -14,7 +14,10 @@ from backend.app.modules.auth.services.user_service import UserService
 from backend.app.modules.auth.services.auth_service import AuthService
 from backend.app.core.common.exceptions import NotFoundException, ConflictException
 from backend.app.core.dependencies import get_current_user, get_current_user_required
+from backend.app.core.config.logging import get_logger
+from fastapi import Request
 
+logger = get_logger(__name__)
 router = APIRouter()
 auth_router = APIRouter(prefix="/auth", tags=["认证"])
 users_router = APIRouter(prefix="/users", tags=["用户"])
@@ -79,6 +82,7 @@ async def logout():
 
 @users_router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
+    request: Request,
     user_data: UserCreate,
     db: Session = Depends(get_db)
 ):
@@ -90,12 +94,42 @@ async def create_user(
     - **password**: 密码
     - **role**: 角色 (student/instructor/admin)
     """
+    request_id = getattr(request.state, "request_id", "unknown")
+    logger.info(f"用户注册请求 | request_id={request_id} | email={user_data.email} | name={user_data.name}")
+    
     service = UserService(db)
+    auth_service = AuthService(db)
+    
     try:
+        logger.debug(f"开始创建用户 | request_id={request_id} | email={user_data.email}")
         db_user = service.create_user(user_data)
-        return db_user
+        logger.debug(f"用户创建完成，开始丰富用户信息 | request_id={request_id} | user_id={db_user.id}")
+        
+        try:
+            enriched_user = auth_service.enrich_user(db_user)
+            logger.debug(f"用户信息丰富完成 | request_id={request_id} | roles={getattr(enriched_user, 'roles', [])} | org_ids={getattr(enriched_user, 'org_ids', [])}")
+        except Exception as enrich_error:
+            logger.warning(f"丰富用户信息失败，使用基础信息 | request_id={request_id} | error={str(enrich_error)}")
+            enriched_user = db_user
+            enriched_user.roles = [db_user.role] if db_user.role else []
+            enriched_user.org_ids = []
+            enriched_user.permission_codes = []
+        
+        try:
+            response_data = UserResponse.model_validate(enriched_user)
+            logger.info(f"用户注册成功 | request_id={request_id} | user_id={enriched_user.id} | email={enriched_user.email}")
+            return response_data
+        except Exception as validate_error:
+            logger.error(f"用户响应序列化失败 | request_id={request_id} | error={str(validate_error)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"响应序列化失败: {str(validate_error)}")
     except ConflictException as e:
+        logger.warning(f"用户注册失败-冲突 | request_id={request_id} | error={str(e)} | email={user_data.email}")
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"用户注册失败-异常 | request_id={request_id} | error={str(e)} | email={user_data.email}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"注册失败: {str(e)}")
 
 
 @users_router.get("/", response_model=List[UserResponse])
@@ -144,7 +178,7 @@ async def change_password(
     db: Session = Depends(get_db)
 ):
     """修改用户密码"""
-    from backend.app.core.security import verify_password, get_password_hash
+    from backend.app.core.config.security import verify_password, get_password_hash
 
     service = UserService(db)
     user = service.get_user(user_id)

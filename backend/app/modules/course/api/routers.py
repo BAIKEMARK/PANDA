@@ -9,6 +9,8 @@ from backend.app.db.database import get_db
 from backend.app.modules.course.schemas.course import CourseCreate, CourseResponse, CourseUpdate
 from backend.app.modules.course.services.course_service import CourseService
 from backend.app.core.common.exceptions import NotFoundException
+from backend.app.core.dependencies import get_current_user
+from backend.app.models.user import User
 
 router = APIRouter(prefix="/courses", tags=["课程"])
 
@@ -34,11 +36,21 @@ async def create_course(
 @router.get("/", response_model=List[CourseResponse])
 async def get_courses(
     level: str = None,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取课程列表，可按层级筛选"""
+    """获取课程列表，可按层级筛选
+    
+    学生角色只显示已发布的课程，其他角色显示所有状态的课程
+    根据scope进行权限过滤：
+    - private: 只有创建者可见
+    - platform: 该平台内用户可见
+    - shared: 全平台可见
+    """
     service = CourseService(db)
-    return service.get_courses(level)
+    user_role = current_user.role if current_user else None
+    user_id = current_user.id if current_user else None
+    return service.get_courses(level, user_role=user_role, user_id=user_id)
 
 
 @router.get("/{course_id}", response_model=CourseResponse)

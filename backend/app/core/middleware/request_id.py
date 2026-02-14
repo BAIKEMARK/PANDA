@@ -6,7 +6,9 @@ import uuid
 import time
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request, Response
-from loguru import logger
+from backend.app.core.config.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -33,10 +35,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         
         # 记录请求日志
+        client_host = request.client.host if request.client else 'unknown'
         logger.info(
-            f"请求开始 | request_id={request_id} | "
-            f"method={request.method} | path={request.url.path} | "
-            f"client={request.client.host if request.client else 'unknown'}"
+            f"请求开始 | request_id={request_id} | method={request.method} | path={request.url.path} | client={client_host}"
         )
         
         # 处理请求
@@ -51,9 +52,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             
             # 记录响应日志
             logger.info(
-                f"请求完成 | request_id={request_id} | "
-                f"status={response.status_code} | "
-                f"duration={duration:.3f}s"
+                f"请求完成 | request_id={request_id} | status={response.status_code} | duration={duration:.3f}s"
             )
             
             return response
@@ -64,8 +63,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             
             # 记录异常日志
             logger.error(
-                f"请求异常 | request_id={request_id} | "
-                f"duration={duration:.3f}s | error={str(e)}",
+                f"请求异常 | request_id={request_id} | duration={duration:.3f}s | error={str(e)}",
                 exc_info=True
             )
             
