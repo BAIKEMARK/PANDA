@@ -59,6 +59,10 @@ export const router = createBrowserRouter([
         element: <ScenarioListPage />,
       },
       {
+        path: 'chat',
+        element: <Navigate to="/scenarios" replace />,
+      },
+      {
         path: 'chat/:sessionId',
         element: <ChatPage />,
       },
