@@ -10,7 +10,6 @@ import type { Organization } from '../../types/admin.types';
 const { TextArea } = Input;
 
 export function CourseManagePage() {
-  const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -27,14 +26,20 @@ export function CourseManagePage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      // 构建查询参数，包含分页和筛选条件
+      const params: Record<string, any> = {
+        skip: (pagination.current - 1) * pagination.pageSize,
+        limit: pagination.pageSize,
+      };
+      // 添加筛选条件（后端支持的参数：level, scope, status）
+      if (filterValues.level) params.level = filterValues.level;
+      if (filterValues.scope) params.scope = filterValues.scope;
+      if (filterValues.status) params.status = filterValues.status;
+
       const [coursesData, orgsData] = await Promise.all([
-        courseAdminService.list({
-          skip: (pagination.current - 1) * pagination.pageSize,
-          limit: pagination.pageSize,
-        }),
+        courseAdminService.list(params),
         organizationService.list(),
       ]);
-      setCourses(coursesData.courses);
       setFilteredCourses(coursesData.courses);
       setOrganizations(orgsData);
       setPagination(prev => ({ ...prev, total: coursesData.total }));
@@ -229,11 +234,6 @@ export function CourseManagePage() {
       </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Form.Item name="title" label="课程标题">
-            <Input placeholder="请输入课程标题" allowClear />
-          </Form.Item>
-        </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="level" label="THP层级">
             <Select placeholder="请选择层级" allowClear>

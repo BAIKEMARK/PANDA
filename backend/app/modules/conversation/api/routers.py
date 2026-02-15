@@ -135,9 +135,8 @@ async def end_session(
 
     流程：
     1. 更新会话状态为已结束
-    2. 返回会话信息
-    
-    注意：评估报告生成由前端单独调用异步接口处理，不再在此处同步生成
+    2. 发布会话结束事件，触发评估Agent生成报告
+    3. 返回会话信息
     """
     service = ChatService(db)
 
@@ -146,7 +145,7 @@ async def end_session(
     if not session:
         raise NotFoundException(f"会话不存在: {session_id}")
 
-    # 使用服务层更新会话状态
+    # 使用服务层更新会话状态（会发布事件，触发评估Agent）
     service.end_session(session_id, final_score)
 
     return service.get_session(session_id)
@@ -179,8 +178,9 @@ async def alert_suicide_risk(
     """
     from backend.app.modules.conversation.repositories.chat_repository import ChatRepository
 
-    # 检查会话是否存在
     service = ChatService(db)
+
+    # 检查会话是否存在
     session = service.get_session(session_id)
     if not session:
         raise NotFoundException(f"会话不存在: {session_id}")

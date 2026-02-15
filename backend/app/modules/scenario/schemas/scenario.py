@@ -37,6 +37,7 @@ class ScenarioResponse(ScenarioBase):
     """场景响应模型"""
     id: str
     created_at: datetime
+    status: str  # draft, pending, published, archived
 
     class Config:
         from_attributes = True

@@ -20,6 +20,7 @@ export interface Course {
   sort_order: number;
   level: CourseLevel;
   description: string | null;
+  status: string;  // draft, pending, published, archived
   created_at: string;
 }
 

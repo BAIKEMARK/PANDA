@@ -36,16 +36,16 @@ def generate_evaluation_async(session_id: str, report_id: Optional[str] = None):
 def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
     """
     评估报告生成任务（在后台线程中执行）
-    
+
     Args:
         session_id: 会话ID
         report_id: 报告ID
     """
     db: Session = SessionLocal()
-    
+
     try:
         logger.info(f"开始生成评估报告 | session_id={session_id}")
-        
+
         # 1. 获取或创建报告记录
         if report_id:
             report = db.query(EvaluationReport).filter(
@@ -55,7 +55,7 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
             report = db.query(EvaluationReport).filter(
                 EvaluationReport.session_id == session_id
             ).first()
-        
+
         if not report:
             # 创建新报告记录
             report = EvaluationReport(
@@ -72,19 +72,18 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
             report.error_message = None
             db.commit()
             logger.info(f"更新报告状态为生成中 | report_id={report.id}")
-        
+
         # 2. 调用MentorAgent生成评估
         mentor_agent = MentorAgent(db)
-        
+
         try:
             # 生成评估报告（这是耗时操作）
             generated_report = mentor_agent.generate_evaluation(session_id)
-            
-            # 3. 更新报告状态为完成
+
+            # 3. 更新报告数据（不替换已存在的报告，而是更新其数据）
             report.status = "completed"
             report.completed_at = datetime.now(timezone.utc)
-            
-            # 复制生成的数据到报告记录
+
             report.total_score = generated_report.total_score
             report.level_assessment = generated_report.level_assessment
             report.radar_a_risk_identification = generated_report.radar_a_risk_identification
@@ -96,34 +95,34 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
             report.detailed_feedback = generated_report.detailed_feedback
             report.technical_guidance = generated_report.technical_guidance
             report.meta_data = generated_report.meta_data
-            
+
             db.commit()
-            
+
             logger.info(
                 f"评估报告生成成功 | session_id={session_id} | "
                 f"report_id={report.id} | score={report.total_score}"
             )
-            
+
             return report
-            
+
         except Exception as e:
             # 生成失败，更新状态
             report.status = "failed"
             report.error_message = str(e)
             db.commit()
-            
+
             logger.error(
                 f"评估报告生成失败 | session_id={session_id} | "
                 f"report_id={report.id} | error={str(e)}",
                 exc_info=True
             )
             raise
-    
+
     except Exception as e:
         logger.error(f"评估任务执行失败 | session_id={session_id} | error={str(e)}", exc_info=True)
         db.rollback()
         raise
-    
+
     finally:
         db.close()
 

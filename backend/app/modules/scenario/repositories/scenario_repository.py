@@ -21,9 +21,9 @@ class ScenarioRepository:
         return self.db.query(Scenario).filter(Scenario.id == scenario_id).first()
 
     def get_scenarios(
-        self, 
-        skip: int = 0, 
-        limit: int = 100, 
+        self,
+        skip: int = 0,
+        limit: int = 100,
         status: Optional[str] = None,
         user_id: Optional[str] = None,
         user_orgs: Optional[List[str]] = None,
@@ -31,38 +31,38 @@ class ScenarioRepository:
     ) -> List[Scenario]:
         """获取场景列表，根据用户权限过滤"""
         from sqlalchemy import or_
-        
+
         query = self.db.query(Scenario)
-        
+
         # 状态过滤
         if status:
             query = query.filter(Scenario.status == status)
-        
-        # 权限过滤
+
+        # 权限过滤：非超级管理员需要按scope过滤
         if not is_super_admin and user_id:
             conditions = []
-            
+
             # 1. shared: 全平台可见
             conditions.append(Scenario.scope == "shared")
-            
+
             # 2. platform: 该平台内用户可见
             if user_orgs:
                 conditions.append(
                     (Scenario.scope == "platform") & (Scenario.org_id.in_(user_orgs))
                 )
-            
+
             # 3. private: 只有创建者可见
             conditions.append(
                 (Scenario.scope == "private") & (Scenario.created_by == user_id)
             )
-            
+
             query = query.filter(or_(*conditions))
-        
+
         return query.order_by(Scenario.difficulty.asc()).offset(skip).limit(limit).all()
 
     def get_scenarios_by_difficulty(
-        self, 
-        difficulty: int, 
+        self,
+        difficulty: int,
         status: Optional[str] = None,
         user_id: Optional[str] = None,
         user_orgs: Optional[List[str]] = None,
@@ -70,33 +70,33 @@ class ScenarioRepository:
     ) -> List[Scenario]:
         """根据难度获取场景，根据用户权限过滤"""
         from sqlalchemy import or_
-        
+
         query = self.db.query(Scenario).filter(Scenario.difficulty == difficulty)
-        
+
         # 状态过滤
         if status:
             query = query.filter(Scenario.status == status)
-        
-        # 权限过滤
+
+        # 权限过滤：非超级管理员需要按scope过滤
         if not is_super_admin and user_id:
             conditions = []
-            
+
             # 1. shared: 全平台可见
             conditions.append(Scenario.scope == "shared")
-            
+
             # 2. platform: 该平台内用户可见
             if user_orgs:
                 conditions.append(
                     (Scenario.scope == "platform") & (Scenario.org_id.in_(user_orgs))
                 )
-            
+
             # 3. private: 只有创建者可见
             conditions.append(
                 (Scenario.scope == "private") & (Scenario.created_by == user_id)
             )
-            
+
             query = query.filter(or_(*conditions))
-        
+
         return query.all()
 
     def create_scenario(self, scenario_data: ScenarioCreate) -> Scenario:

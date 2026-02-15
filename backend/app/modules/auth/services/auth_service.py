@@ -91,6 +91,10 @@ class AuthService:
         user.roles = roles
         user.org_ids = permission_service.get_user_orgs(user.id)
         user.permission_codes = list(permission_service.get_user_permissions(user.id))
+
+        # 获取用户所属机构的详细信息
+        user.organizations = self._get_user_organizations(user.id)
+
         return user
 
     def _get_user_roles(self, user_id: str) -> List[str]:
@@ -101,3 +105,21 @@ class AuthService:
             UserOrganization.status == "active"
         ).all()
         return [row[0] for row in rows]
+
+    def _get_user_organizations(self, user_id: str) -> List[dict]:
+        """获取用户所属机构的详细信息"""
+        from backend.app.models.organization import Organization
+        rows = self.db.query(
+            Organization.id,
+            Organization.name,
+            Organization.short_name
+        ).join(
+            UserOrganization, Organization.id == UserOrganization.org_id
+        ).filter(
+            UserOrganization.user_id == user_id,
+            UserOrganization.status == "active"
+        ).all()
+        return [
+            {"id": row[0], "name": row[1], "short_name": row[2]}
+            for row in rows
+        ]

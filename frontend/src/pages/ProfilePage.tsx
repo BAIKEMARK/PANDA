@@ -3,10 +3,17 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Avatar, Card, Typography, Row, Col, Descriptions, Tag, Alert, Button, Modal, Form, Input, message } from 'antd';
-import { UserOutlined, EditOutlined } from '@ant-design/icons';
+import { Avatar, Card, Typography, Row, Col, Descriptions, Tag, Alert, Button, Modal, Form, Input, message, Space } from 'antd';
+import { UserOutlined, EditOutlined, BankOutlined, LogoutOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/auth.store';
 import api from '@/services/api';
+
+// 机构信息类型
+interface OrganizationInfo {
+  id: string;
+  name: string;
+  short_name?: string;
+}
 
 const { Title, Text } = Typography;
 
@@ -87,6 +94,23 @@ export const ProfilePage = () => {
     }
   };
 
+  // 退出登录
+  const handleLogout = () => {
+    Modal.confirm({
+      title: '确认退出',
+      icon: <ExclamationCircleOutlined />,
+      content: '您确定要退出登录吗？',
+      okText: '确认退出',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        logout();
+        message.success('已退出登录');
+        navigate('/login', { replace: true });
+      },
+    });
+  };
+
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       {/* Header */}
@@ -153,6 +177,19 @@ export const ProfilePage = () => {
           <Descriptions.Item label="角色">
             <Tag color="blue">{roleNames[user.role] || user.role}</Tag>
           </Descriptions.Item>
+          <Descriptions.Item label="所属机构">
+            {(user as any).organizations && (user as any).organizations.length > 0 ? (
+              <Space direction="vertical" size="small">
+                {(user as any).organizations.map((org: OrganizationInfo) => (
+                  <Tag key={org.id} icon={<BankOutlined />} color="green">
+                    {org.short_name || org.name}
+                  </Tag>
+                ))}
+              </Space>
+            ) : (
+              <Tag color="default">未分配机构</Tag>
+            )}
+          </Descriptions.Item>
           <Descriptions.Item label="注册时间">
             {new Date(user.created_at).toLocaleDateString('zh-CN', {
               year: 'numeric',
@@ -161,6 +198,27 @@ export const ProfilePage = () => {
             })}
           </Descriptions.Item>
         </Descriptions>
+      </Card>
+
+      {/* 账户操作 */}
+      <Card title="账户操作" style={{ borderRadius: '12px' }}>
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
+            <Button
+              type="primary"
+              danger
+              icon={<LogoutOutlined />}
+              size="large"
+              block
+              onClick={handleLogout}
+            >
+              退出登录
+            </Button>
+          </div>
+          <Text type="secondary" style={{ fontSize: '13px', textAlign: 'center', display: 'block' }}>
+            退出登录后，您需要重新登录才能访问系统功能
+          </Text>
+        </Space>
       </Card>
 
       {/* 编辑资料弹窗 */}

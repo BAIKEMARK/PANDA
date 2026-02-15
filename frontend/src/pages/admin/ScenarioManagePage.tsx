@@ -10,7 +10,6 @@ import type { Organization } from '../../types/admin.types';
 const { TextArea } = Input;
 
 export function ScenarioManagePage() {
-  const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [filteredScenarios, setFilteredScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -27,14 +26,20 @@ export function ScenarioManagePage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      // 构建查询参数，包含分页和筛选条件
+      const params: Record<string, any> = {
+        skip: (pagination.current - 1) * pagination.pageSize,
+        limit: pagination.pageSize,
+      };
+      // 添加筛选条件（后端支持的参数：difficulty, scope, status）
+      if (filterValues.difficulty) params.difficulty = filterValues.difficulty;
+      if (filterValues.scope) params.scope = filterValues.scope;
+      if (filterValues.status) params.status = filterValues.status;
+
       const [scenariosData, orgsData] = await Promise.all([
-        scenarioAdminService.list({
-          skip: (pagination.current - 1) * pagination.pageSize,
-          limit: pagination.pageSize,
-        }),
+        scenarioAdminService.list(params),
         organizationService.list(),
       ]);
-      setScenarios(scenariosData.scenarios);
       setFilteredScenarios(scenariosData.scenarios);
       setOrganizations(orgsData);
       setPagination(prev => ({ ...prev, total: scenariosData.total }));
@@ -232,11 +237,6 @@ export function ScenarioManagePage() {
       </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Form.Item name="title" label="场景标题">
-            <Input placeholder="请输入场景标题" allowClear />
-          </Form.Item>
-        </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="difficulty" label="难度等级">
             <Select placeholder="请选择难度" allowClear>

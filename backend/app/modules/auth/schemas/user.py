@@ -1,8 +1,8 @@
 """
 用户相关的 Pydantic 模型
 """
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, field_serializer
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
@@ -53,7 +53,15 @@ class UserResponse(UserBase):
     created_at: datetime
     roles: List[str] = []
     org_ids: List[str] = []
+    organizations: List[Dict[str, Any]] = []  # 机构信息列表 [{id, name, short_name}]
     permission_codes: List[str] = []
+
+    @field_serializer('organizations')
+    def serialize_organizations(self, organizations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """确保organizations字段被正确序列化"""
+        if not organizations:
+            return []
+        return organizations
 
     class Config:
         from_attributes = True

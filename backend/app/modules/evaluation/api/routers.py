@@ -2,7 +2,7 @@
 评估 API 路由
 """
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timezone
@@ -21,7 +21,6 @@ router = APIRouter(prefix="/evaluation", tags=["评估"])
 @router.post("/sessions/{session_id}/evaluate", status_code=status.HTTP_202_ACCEPTED)
 async def evaluate_session_async(
     session_id: str,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """
@@ -56,6 +55,17 @@ async def evaluate_session_async(
             elif existing_report.status == "generating":
                 return {
                     "message": "评估报告正在生成中",
+                    "session_id": session_id,
+                    "report_id": existing_report.id,
+                    "status": "generating"
+                }
+            elif existing_report.status == "pending":
+                # pending状态：启动生成任务
+                existing_report.status = "generating"
+                db.commit()
+                generate_evaluation_async(session_id, existing_report.id)
+                return {
+                    "message": "评估报告开始生成",
                     "session_id": session_id,
                     "report_id": existing_report.id,
                     "status": "generating"

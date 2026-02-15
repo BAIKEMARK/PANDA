@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional, Set
-from sqlalchemy import and_
 
 from backend.app.models.organization import Role, Permission, RolePermission, UserOrganization
 from backend.app.models.user import User
@@ -38,6 +37,12 @@ class PermissionService:
         return permission_code in permissions
 
     def is_super_admin(self, user_id: str) -> bool:
+        # 首先检查 user.role 是否为基础管理员角色
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if user and user.role in ("admin", "instructor"):
+            return True
+
+        # 然后检查角色表中的 super_admin 角色
         user_org = self.db.query(UserOrganization).join(
             Role, UserOrganization.role_id == Role.id
         ).filter(
@@ -45,7 +50,7 @@ class PermissionService:
             UserOrganization.status == 'active',
             Role.code == 'super_admin'
         ).first()
-        
+
         return user_org is not None
 
     def user_belongs_to_org(self, user_id: str, org_id: str) -> bool:
