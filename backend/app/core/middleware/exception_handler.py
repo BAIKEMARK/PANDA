@@ -7,7 +7,9 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
-from loguru import logger
+from backend.app.core.config.logging import get_logger
+
+logger = get_logger(__name__)
 
 from backend.app.core.common.exceptions import (
     NotFoundException,
@@ -32,12 +34,9 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     
     # 记录异常日志
-    logger.opt(exception=exc).error(
-        "请求异常 | request_id={} | path={} | method={} | error={}",
-        request_id,
-        request.url.path,
-        request.method,
-        exc
+    logger.error(
+        f"请求异常 | request_id={request_id} | path={request.url.path} | method={request.method} | error={exc}",
+        exc_info=True
     )
     
     # 返回标准错误响应
@@ -57,10 +56,7 @@ async def not_found_exception_handler(request: Request, exc: NotFoundException) 
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     
     logger.warning(
-        "资源未找到 | request_id={} | path={} | message={}",
-        request_id,
-        request.url.path,
-        exc.detail
+        f"资源未找到 | request_id={request_id} | path={request.url.path} | message={exc.detail}"
     )
     
     return JSONResponse(
@@ -78,10 +74,7 @@ async def unauthorized_exception_handler(request: Request, exc: UnauthorizedExce
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     
     logger.warning(
-        "未授权访问 | request_id={} | path={} | message={}",
-        request_id,
-        request.url.path,
-        exc.detail
+        f"未授权访问 | request_id={request_id} | path={request.url.path} | message={exc.detail}"
     )
     
     return JSONResponse(
@@ -99,10 +92,7 @@ async def forbidden_exception_handler(request: Request, exc: ForbiddenException)
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     
     logger.warning(
-        "权限不足 | request_id={} | path={} | message={}",
-        request_id,
-        request.url.path,
-        exc.detail
+        f"权限不足 | request_id={request_id} | path={request.url.path} | message={exc.detail}"
     )
     
     return JSONResponse(
@@ -120,10 +110,7 @@ async def bad_request_exception_handler(request: Request, exc: BadRequestExcepti
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     
     logger.warning(
-        "请求参数错误 | request_id={} | path={} | message={}",
-        request_id,
-        request.url.path,
-        exc.detail
+        f"请求参数错误 | request_id={request_id} | path={request.url.path} | message={exc.detail}"
     )
     
     return JSONResponse(
@@ -150,10 +137,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         })
     
     logger.warning(
-        "请求验证失败 | request_id={} | path={} | errors={}",
-        request_id,
-        request.url.path,
-        errors
+        f"请求验证失败 | request_id={request_id} | path={request.url.path} | errors={errors}"
     )
     
     return JSONResponse(
@@ -171,11 +155,9 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
     """数据库异常处理"""
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     
-    logger.opt(exception=exc).error(
-        "数据库错误 | request_id={} | path={} | error={}",
-        request_id,
-        request.url.path,
-        exc
+    logger.error(
+        f"数据库错误 | request_id={request_id} | path={request.url.path} | error={exc}",
+        exc_info=True
     )
     
     return JSONResponse(

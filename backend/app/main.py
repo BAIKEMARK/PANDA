@@ -69,6 +69,8 @@ from backend.app.modules.admin.api.organization import router as org_router
 from backend.app.modules.admin.api.role import router as role_router
 from backend.app.modules.admin.api.user import router as user_admin_router
 from backend.app.modules.admin.api.training import router as training_router
+from backend.app.modules.admin.api.course import router as course_admin_router
+from backend.app.modules.admin.api.scenario import router as scenario_admin_router
 
 # 证书管理模块
 from backend.app.modules.certificate.api.certificate import router as certificate_router
@@ -136,6 +138,8 @@ app.include_router(org_router, prefix="/api")
 app.include_router(role_router, prefix="/api")
 app.include_router(user_admin_router, prefix="/api")
 app.include_router(training_router, prefix="/api")
+app.include_router(course_admin_router, prefix="/api")
+app.include_router(scenario_admin_router, prefix="/api")
 app.include_router(certificate_router, prefix="/api")
 app.include_router(certificate_template_router, prefix="/api")
 app.include_router(question_router, prefix="/api")

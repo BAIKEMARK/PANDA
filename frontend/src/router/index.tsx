@@ -22,6 +22,8 @@ import { RoleManagePage } from '../pages/admin/RoleManagePage';
 import { MenuManagePage } from '../pages/admin/MenuManagePage';
 import { QuestionBankPage } from '../pages/admin/QuestionBankPage';
 import { CertificatePage } from '../pages/admin/CertificatePage';
+import { CourseManagePage } from '../pages/admin/CourseManagePage';
+import { ScenarioManagePage } from '../pages/admin/ScenarioManagePage';
 import { LearningDashboardPage } from '../pages/LearningDashboardPage';
 import { PrivateRoute, PublicRoute } from './privateRoutes';
 
@@ -55,6 +57,10 @@ export const router = createBrowserRouter([
       {
         path: 'scenarios',
         element: <ScenarioListPage />,
+      },
+      {
+        path: 'chat',
+        element: <Navigate to="/scenarios" replace />,
       },
       {
         path: 'chat/:sessionId',
@@ -98,6 +104,14 @@ export const router = createBrowserRouter([
           {
             path: 'certificates',
             element: <CertificatePage />,
+          },
+          {
+            path: 'courses',
+            element: <CourseManagePage />,
+          },
+          {
+            path: 'scenarios',
+            element: <ScenarioManagePage />,
           },
         ],
       },

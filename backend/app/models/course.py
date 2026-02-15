@@ -20,6 +20,7 @@ class Course(Base):
     status = Column(SQLEnum("draft", "pending", "published", "archived", name="course_status"), default="draft", comment="状态")
     published_at = Column(DateTime, comment="发布时间")
     published_by = Column(CHAR(36), comment="发布人")
+    created_by = Column(CHAR(36), index=True, comment="创建人")
     title = Column(String(255), nullable=False, comment="课程标题")
     content_url = Column(Text, comment="课件PDF URL")
     video_url = Column(Text, comment="视频URL")

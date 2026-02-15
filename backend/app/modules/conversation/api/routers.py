@@ -131,12 +131,13 @@ async def end_session(
     db: Session = Depends(get_db)
 ):
     """
-    结束会话并发布事件
+    结束会话
 
     流程：
     1. 更新会话状态为已结束
-    2. 通过 EventBus 发布会话结束事件
-    3. MentorAgent 订阅该事件并自动生成评估报告
+    2. 返回会话信息
+    
+    注意：评估报告生成由前端单独调用异步接口处理，不再在此处同步生成
     """
     service = ChatService(db)
 
@@ -147,26 +148,6 @@ async def end_session(
 
     # 使用服务层更新会话状态
     service.end_session(session_id, final_score)
-
-    # 使用对话编排引擎发布会话结束事件
-    from backend.app.modules.scenario.services.scenario_service import ScenarioService
-    from backend.app.modules.conversation.agent.core.agent_orchestrator import AgentOrchestrator
-
-    scenario_service = ScenarioService(db)
-    agent_orchestrator = AgentOrchestrator(db)
-
-    engine = ConversationEngine(
-        db=db,
-        scenario_interface=scenario_service,
-        agent_orchestrator=agent_orchestrator
-    )
-
-    try:
-        # 通过事件总线发布会话结束事件
-        engine.end_session(session_id, final_score)
-    except Exception as e:
-        # 事件发布失败不影响会话结束，但记录错误
-        logger.warning(f"事件发布失败: {e}")
 
     return service.get_session(session_id)
 
@@ -210,23 +191,5 @@ async def alert_suicide_risk(
 
     # 自动结束对话
     service.end_session(session_id, final_score=0)
-
-    # 触发评估报告生成
-    from backend.app.modules.scenario.services.scenario_service import ScenarioService
-    from backend.app.modules.conversation.agent.core.agent_orchestrator import AgentOrchestrator
-
-    scenario_service = ScenarioService(db)
-    agent_orchestrator = AgentOrchestrator(db)
-
-    engine = ConversationEngine(
-        db=db,
-        scenario_interface=scenario_service,
-        agent_orchestrator=agent_orchestrator
-    )
-
-    try:
-        engine.end_session(session_id, 0)
-    except Exception as e:
-        logger.warning(f"评估生成失败: {e}")
 
     return service.get_session(session_id)

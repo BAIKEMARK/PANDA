@@ -1,20 +1,20 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Space, Col, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
-import courseAdminService from '../../services/course-admin.service';
-import type { Course } from '../../services/course-admin.service';
+import scenarioAdminService from '../../services/scenario-admin.service';
+import type { Scenario } from '../../services/scenario-admin.service';
 import organizationService from '../../services/organization.service';
 import { FilterForm } from '../../components/admin/FilterForm';
 import type { Organization } from '../../types/admin.types';
 
 const { TextArea } = Input;
 
-export function CourseManagePage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+export function ScenarioManagePage() {
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [filteredScenarios, setFilteredScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [editingScenario, setEditingScenario] = useState<Scenario | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [form] = Form.useForm();
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
@@ -27,17 +27,17 @@ export function CourseManagePage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [coursesData, orgsData] = await Promise.all([
-        courseAdminService.list({
+      const [scenariosData, orgsData] = await Promise.all([
+        scenarioAdminService.list({
           skip: (pagination.current - 1) * pagination.pageSize,
           limit: pagination.pageSize,
         }),
         organizationService.list(),
       ]);
-      setCourses(coursesData.courses);
-      setFilteredCourses(coursesData.courses);
+      setScenarios(scenariosData.scenarios);
+      setFilteredScenarios(scenariosData.scenarios);
       setOrganizations(orgsData);
-      setPagination(prev => ({ ...prev, total: coursesData.total }));
+      setPagination(prev => ({ ...prev, total: scenariosData.total }));
     } catch (error: any) {
       message.error('加载数据失败: ' + (error.response?.data?.detail || error.message));
     } finally {
@@ -57,27 +57,27 @@ export function CourseManagePage() {
   };
 
   const handleCreate = () => {
-    setEditingCourse(null);
+    setEditingScenario(null);
     form.resetFields();
     setModalVisible(true);
   };
 
-  const handleEdit = (course: Course) => {
-    setEditingCourse(course);
-    form.setFieldsValue(course);
+  const handleEdit = (scenario: Scenario) => {
+    setEditingScenario(scenario);
+    form.setFieldsValue(scenario);
     setModalVisible(true);
   };
 
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除该课程吗？',
+      content: '确定要删除该场景吗？',
       okText: '删除',
       cancelText: '取消',
       okType: 'danger',
       onOk: async () => {
         try {
-          await courseAdminService.delete(id);
+          await scenarioAdminService.delete(id);
           message.success('删除成功');
           loadData();
         } catch (error: any) {
@@ -89,7 +89,7 @@ export function CourseManagePage() {
 
   const handlePublish = async (id: string) => {
     try {
-      await courseAdminService.publish(id);
+      await scenarioAdminService.publish(id);
       message.success('发布成功');
       loadData();
     } catch (error: any) {
@@ -100,12 +100,12 @@ export function CourseManagePage() {
   const handleArchive = async (id: string) => {
     Modal.confirm({
       title: '确认下线',
-      content: '确定要下线该课程吗？',
+      content: '确定要下线该场景吗？',
       okText: '下线',
       cancelText: '取消',
       onOk: async () => {
         try {
-          await courseAdminService.archive(id);
+          await scenarioAdminService.archive(id);
           message.success('下线成功');
           loadData();
         } catch (error: any) {
@@ -118,11 +118,11 @@ export function CourseManagePage() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      if (editingCourse) {
-        await courseAdminService.update(editingCourse.id, values);
+      if (editingScenario) {
+        await scenarioAdminService.update(editingScenario.id, values);
         message.success('更新成功');
       } else {
-        await courseAdminService.create(values);
+        await scenarioAdminService.create(values);
         message.success('创建成功');
       }
       setModalVisible(false);
@@ -134,17 +134,20 @@ export function CourseManagePage() {
 
   const columns = [
     {
-      title: '课程标题',
+      title: '场景标题',
       dataIndex: 'title',
       key: 'title',
       align: 'center' as const,
     },
     {
-      title: 'THP层级',
-      dataIndex: 'level',
-      key: 'level',
+      title: '难度等级',
+      dataIndex: 'difficulty',
+      key: 'difficulty',
       align: 'center' as const,
-      render: (level: string) => <Tag color="blue">{level}</Tag>,
+      render: (difficulty: number) => {
+        const colors = ['', 'green', 'blue', 'orange', 'red', 'purple'];
+        return <Tag color={colors[difficulty] || 'default'}>{difficulty}</Tag>;
+      },
     },
     {
       title: '发布范围',
@@ -178,16 +181,16 @@ export function CourseManagePage() {
       },
     },
     {
-      title: '排序',
-      dataIndex: 'sort_order',
-      key: 'sort_order',
+      title: '时间节点',
+      dataIndex: 'time_period',
+      key: 'time_period',
       align: 'center' as const,
     },
     {
       title: '操作',
       key: 'action',
       align: 'center' as const,
-      render: (_: any, record: Course) => (
+      render: (_: any, record: Scenario) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
@@ -212,7 +215,7 @@ export function CourseManagePage() {
   return (
     <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>课程管理</h2>
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>场景管理</h2>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -224,23 +227,24 @@ export function CourseManagePage() {
             boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
           }}
         >
-          新建课程
+          新建场景
         </Button>
       </div>
 
       <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Form.Item name="title" label="课程标题">
-            <Input placeholder="请输入课程标题" allowClear />
+          <Form.Item name="title" label="场景标题">
+            <Input placeholder="请输入场景标题" allowClear />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Form.Item name="level" label="THP层级">
-            <Select placeholder="请选择层级" allowClear>
-              <Select.Option value="L1">L1</Select.Option>
-              <Select.Option value="L2">L2</Select.Option>
-              <Select.Option value="L3">L3</Select.Option>
-              <Select.Option value="L4">L4</Select.Option>
+          <Form.Item name="difficulty" label="难度等级">
+            <Select placeholder="请选择难度" allowClear>
+              <Select.Option value={1}>1</Select.Option>
+              <Select.Option value={2}>2</Select.Option>
+              <Select.Option value={3}>3</Select.Option>
+              <Select.Option value={4}>4</Select.Option>
+              <Select.Option value={5}>5</Select.Option>
             </Select>
           </Form.Item>
         </Col>
@@ -267,7 +271,7 @@ export function CourseManagePage() {
 
       <Table
         columns={columns}
-        dataSource={filteredCourses}
+        dataSource={filteredScenarios}
         rowKey="id"
         loading={loading}
         pagination={{
@@ -281,35 +285,39 @@ export function CourseManagePage() {
       />
 
       <Modal
-        title={editingCourse ? '编辑课程' : '新建课程'}
+        title={editingScenario ? '编辑场景' : '新建场景'}
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => setModalVisible(false)}
         width={800}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="title" label="课程标题" rules={[{ required: true, message: '请输入课程标题' }]}>
-            <Input placeholder="请输入课程标题" />
+          <Form.Item name="title" label="场景标题" rules={[{ required: true, message: '请输入场景标题' }]}>
+            <Input placeholder="请输入场景标题" />
           </Form.Item>
-          <Form.Item name="level" label="THP层级" rules={[{ required: true, message: '请选择THP层级' }]}>
-            <Select placeholder="请选择层级">
-              <Select.Option value="L1">L1</Select.Option>
-              <Select.Option value="L2">L2</Select.Option>
-              <Select.Option value="L3">L3</Select.Option>
-              <Select.Option value="L4">L4</Select.Option>
+          <Form.Item name="description" label="场景描述">
+            <TextArea rows={3} placeholder="请输入场景描述" />
+          </Form.Item>
+          <Form.Item name="system_prompt" label="AI系统提示词" rules={[{ required: true, message: '请输入AI系统提示词' }]}>
+            <TextArea rows={6} placeholder="请输入AI系统提示词" />
+          </Form.Item>
+          <Form.Item name="patient_background" label="患者背景信息">
+            <TextArea rows={4} placeholder="请输入患者背景信息" />
+          </Form.Item>
+          <Form.Item name="knowledge_tags" label="知识点标签">
+            <Input placeholder="请输入知识点标签，多个标签用逗号分隔" />
+          </Form.Item>
+          <Form.Item name="difficulty" label="难度等级" initialValue={1} rules={[{ required: true, message: '请选择难度等级' }]}>
+            <Select>
+              <Select.Option value={1}>1</Select.Option>
+              <Select.Option value={2}>2</Select.Option>
+              <Select.Option value={3}>3</Select.Option>
+              <Select.Option value={4}>4</Select.Option>
+              <Select.Option value={5}>5</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="description" label="课程描述">
-            <TextArea rows={4} placeholder="请输入课程描述" />
-          </Form.Item>
-          <Form.Item name="content_url" label="课件PDF URL">
-            <Input placeholder="请输入课件PDF URL" />
-          </Form.Item>
-          <Form.Item name="video_url" label="视频URL">
-            <Input placeholder="请输入视频URL" />
-          </Form.Item>
-          <Form.Item name="sort_order" label="排序顺序" initialValue={0}>
-            <Input type="number" placeholder="请输入排序顺序" />
+          <Form.Item name="time_period" label="时间节点">
+            <Input placeholder="例如：产后2周" />
           </Form.Item>
           <Form.Item name="scope" label="发布范围" initialValue="private">
             <Select>

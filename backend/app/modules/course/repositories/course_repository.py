@@ -20,13 +20,84 @@ class CourseRepository:
         """根据ID获取课程"""
         return self.db.query(Course).filter(Course.id == course_id).first()
 
-    def get_courses(self, skip: int = 0, limit: int = 100) -> List[Course]:
-        """获取课程列表"""
-        return self.db.query(Course).order_by(Course.sort_order.asc()).offset(skip).limit(limit).all()
+    def get_courses(
+        self, 
+        skip: int = 0, 
+        limit: int = 100, 
+        status: Optional[str] = None,
+        user_id: Optional[str] = None,
+        user_orgs: Optional[List[str]] = None,
+        is_super_admin: bool = False
+    ) -> List[Course]:
+        """获取课程列表，根据用户权限过滤"""
+        from sqlalchemy import or_
+        
+        query = self.db.query(Course)
+        
+        # 状态过滤
+        if status:
+            query = query.filter(Course.status == status)
+        
+        # 权限过滤
+        if not is_super_admin and user_id:
+            conditions = []
+            
+            # 1. shared: 全平台可见
+            conditions.append(Course.scope == "shared")
+            
+            # 2. platform: 该平台内用户可见
+            if user_orgs:
+                conditions.append(
+                    (Course.scope == "platform") & (Course.org_id.in_(user_orgs))
+                )
+            
+            # 3. private: 只有创建者可见
+            conditions.append(
+                (Course.scope == "private") & (Course.created_by == user_id)
+            )
+            
+            query = query.filter(or_(*conditions))
+        
+        return query.order_by(Course.sort_order.asc()).offset(skip).limit(limit).all()
 
-    def get_courses_by_level(self, level: str) -> List[Course]:
-        """根据层级获取课程"""
-        return self.db.query(Course).filter(Course.level == level).order_by(Course.sort_order.asc()).all()
+    def get_courses_by_level(
+        self, 
+        level: str, 
+        status: Optional[str] = None,
+        user_id: Optional[str] = None,
+        user_orgs: Optional[List[str]] = None,
+        is_super_admin: bool = False
+    ) -> List[Course]:
+        """根据层级获取课程，根据用户权限过滤"""
+        from sqlalchemy import or_
+        
+        query = self.db.query(Course).filter(Course.level == level)
+        
+        # 状态过滤
+        if status:
+            query = query.filter(Course.status == status)
+        
+        # 权限过滤
+        if not is_super_admin and user_id:
+            conditions = []
+            
+            # 1. shared: 全平台可见
+            conditions.append(Course.scope == "shared")
+            
+            # 2. platform: 该平台内用户可见
+            if user_orgs:
+                conditions.append(
+                    (Course.scope == "platform") & (Course.org_id.in_(user_orgs))
+                )
+            
+            # 3. private: 只有创建者可见
+            conditions.append(
+                (Course.scope == "private") & (Course.created_by == user_id)
+            )
+            
+            query = query.filter(or_(*conditions))
+        
+        return query.order_by(Course.sort_order.asc()).all()
 
     def create_course(self, course_data: CourseCreate) -> Course:
         """创建新课程"""

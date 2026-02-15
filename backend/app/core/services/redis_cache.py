@@ -37,9 +37,9 @@ class RedisCache:
                 )
                 self._client = redis.Redis(connection_pool=self._connection_pool)
                 self._initialized = True
-                print(f"✅ Redis缓存连接池已初始化: {settings.REDIS_HOST}:{settings.REDIS_PORT}")
+                print(f"[OK] Redis缓存连接池已初始化: {settings.REDIS_HOST}:{settings.REDIS_PORT}")
             except Exception as e:
-                print(f"❌ Redis缓存连接失败: {e}")
+                print(f"[ERROR] Redis缓存连接失败: {e}")
                 raise
 
     def get_json(self, key: str) -> Optional[Any]:
@@ -50,7 +50,7 @@ class RedisCache:
                 return None
             return json.loads(raw)
         except Exception as e:
-            print(f"❌ Redis缓存读取失败: {e}")
+            print(f"[ERROR] Redis缓存读取失败: {e}")
             return None
 
     def set_json(self, key: str, value: Any, ttl_seconds: Optional[int] = None) -> bool:
@@ -64,7 +64,7 @@ class RedisCache:
                 self._client.set(key, payload)
             return True
         except Exception as e:
-            print(f"❌ Redis缓存写入失败: {e}")
+            print(f"[ERROR] Redis缓存写入失败: {e}")
             return False
 
     def delete(self, key: str) -> bool:
@@ -73,7 +73,7 @@ class RedisCache:
             self._client.delete(key)
             return True
         except Exception as e:
-            print(f"❌ Redis缓存删除失败: {e}")
+            print(f"[ERROR] Redis缓存删除失败: {e}")
             return False
 
 
