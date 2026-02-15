@@ -50,9 +50,9 @@ class RedisStateManager:
                 )
                 self._client = redis.Redis(connection_pool=self._connection_pool)
                 self._initialized = True
-                print(f"✅ Redis连接池已初始化: {settings.REDIS_HOST}:{settings.REDIS_PORT}")
+                print(f"[OK] Redis连接池已初始化: {settings.REDIS_HOST}:{settings.REDIS_PORT}")
             except Exception as e:
-                print(f"❌ Redis连接失败: {e}")
+                print(f"[ERROR] Redis连接失败: {e}")
                 raise
 
     def _get_state_key(self, session_id: str) -> str:
@@ -84,7 +84,7 @@ class RedisStateManager:
                 message_count=int(data.get('message_count', 0))
             )
         except Exception as e:
-            print(f"❌ 获取患者状态失败: {e}")
+            print(f"[ERROR] 获取患者状态失败: {e}")
             return None
 
     def update_patient_state(
@@ -138,7 +138,7 @@ class RedisStateManager:
 
             return current
         except Exception as e:
-            print(f"❌ 更新患者状态失败: {e}")
+            print(f"[ERROR] 更新患者状态失败: {e}")
             return None
 
     def increment_message_count(self, session_id: str) -> int:
@@ -157,7 +157,7 @@ class RedisStateManager:
             self._client.expire(key, self.STATE_TTL_SECONDS)
             return new_count
         except Exception as e:
-            print(f"❌ 增加消息计数失败: {e}")
+            print(f"[ERROR] 增加消息计数失败: {e}")
             return 0
 
     def delete_session(self, session_id: str) -> bool:
@@ -175,7 +175,7 @@ class RedisStateManager:
             self._client.delete(state_key)
             return True
         except Exception as e:
-            print(f"❌ 删除会话数据失败: {e}")
+            print(f"[ERROR] 删除会话数据失败: {e}")
             return False
 
     def check_health(self) -> bool:
@@ -188,7 +188,7 @@ class RedisStateManager:
         try:
             return self._client.ping()
         except Exception as e:
-            print(f"❌ Redis健康检查失败: {e}")
+            print(f"[ERROR] Redis健康检查失败: {e}")
             return False
 
 

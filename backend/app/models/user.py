@@ -4,6 +4,7 @@ User ORM Model
 """
 from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, Text
 from sqlalchemy.dialects.mysql import CHAR
+from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from backend.app.db.database import Base
 
@@ -24,13 +25,24 @@ class User(Base):
     title = Column(String(100), comment="职称")
     employee_id = Column(String(100), comment="工号")
     created_at = Column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         comment="创建时间"
     )
     updated_at = Column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc), 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         comment="更新时间"
     )
+
+    # 非数据库列属性（动态填充，在__init__中初始化）
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.roles = []
+        self.org_ids = []
+        self.organizations = []
+        self.permission_codes = []
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email={self.email}, name={self.name})>"

@@ -30,7 +30,7 @@ class UserRepository:
 
     def create_user(self, user_data: UserCreate) -> User:
         """创建新用户"""
-        from backend.app.core.security import get_password_hash
+        from backend.app.core.config.security import get_password_hash
 
         hashed_password = get_password_hash(user_data.password)
         db_user = User(

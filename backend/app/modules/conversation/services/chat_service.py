@@ -10,6 +10,7 @@ from backend.app.modules.conversation.schemas.chat import (
 )
 from backend.app.modules.conversation.repositories.chat_repository import ChatRepository
 from backend.app.core.common.exceptions import NotFoundException
+from backend.app.core.services.event_bus import event_bus, Events
 
 
 class ChatService:
@@ -42,7 +43,7 @@ class ChatService:
         return self.repository.create_message(message_data)
 
     def end_session(self, session_id: str, final_score: int = None) -> Optional[ChatSession]:
-        """结束会话"""
+        """结束会话并发布会话结束事件（触发评估Agent）"""
         session = self.repository.update_session_status(
             session_id,
             SessionStatus.COMPLETED,
@@ -50,4 +51,11 @@ class ChatService:
         )
         if not session:
             raise NotFoundException("会话不存在")
+
+        # 发布会话结束事件，触发评估Agent生成报告
+        event_bus.publish(
+            Events.CHAT_SESSION_ENDED,
+            {"session_id": session_id}
+        )
+
         return session
