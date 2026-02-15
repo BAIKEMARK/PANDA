@@ -44,42 +44,10 @@ export const EvaluationReportPage = () => {
         };
 
         setReport(normalizedReport);
-      } catch (err) {
-        // 使用模拟数据
-        const mockReport: EvaluationReport = {
-          id: 'mock-report-id',
-          session_id: sessionId || '',
-          total_score: 74,
-          level_assessment: '良好',
-          radar_chart: {
-            A_risk_identification: 75,
-            B_communication: 68,
-            C_skill_application: 71,
-            D_safety_management: 82,
-            E_self_efficacy: 70,
-          },
-          state_analysis: {
-            mood_change: 5,
-            rapport_change: 10,
-            depression_change: -5,
-            overall_performance: '表现良好，展现了基本的沟通技巧和共情能力',
-          },
-          detailed_feedback: [
-            {
-              dimension: 'B1 积极倾听',
-              status: 'pass',
-              dialogue_ref_id: 2,
-              user_input: '你最近感觉怎么样？',
-              patient_state_snapshot: '患者情绪低落',
-              critique: '良好',
-              expert_suggestion: '继续保持倾听态度',
-            },
-          ],
-          technical_guidance: '建议加强EPDS量表的使用',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setReport(mockReport);
+      } catch (err: any) {
+        console.error('获取评估报告失败:', err);
+        // 设置错误信息，不再使用模拟数据
+        setError(err.message || '获取评估报告失败，请稍后重试');
       } finally {
         setIsLoading(false);
       }
@@ -128,6 +96,32 @@ export const EvaluationReportPage = () => {
           </Link>
         </Space>
       </div>
+    );
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ textAlign: 'center', padding: '60px 0' }}
+      >
+        <Alert
+          message="获取评估报告失败"
+          description={error}
+          type="error"
+          showIcon
+          style={{ maxWidth: '600px', margin: '0 auto', marginBottom: '24px' }}
+        />
+        <Space>
+          <Button onClick={() => window.location.reload()}>重新加载</Button>
+          <Button onClick={() => navigate(-1)}>返回上一页</Button>
+          <Link to="/scenarios">
+            <Button type="primary">继续练习</Button>
+          </Link>
+        </Space>
+      </motion.div>
     );
   }
 
@@ -288,8 +282,8 @@ export const EvaluationReportPage = () => {
                   }}
                 >
                   <div style={{ marginBottom: '8px' }}>
-                    <Tag color={item.status === '通过' ? 'green' : 'red'}>
-                      {item.status === '通过' ? '通过' : '失败'}
+                    <Tag color={item.status === 'pass' ? 'green' : 'red'}>
+                      {item.status === 'pass' ? '通过' : '失败'}
                     </Tag>
                     <Text strong>{item.dimension}</Text>
                   </div>
