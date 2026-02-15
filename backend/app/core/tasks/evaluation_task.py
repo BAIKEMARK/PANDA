@@ -80,7 +80,16 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
             # 生成评估报告（这是耗时操作）
             generated_report = mentor_agent.generate_evaluation(session_id)
 
-            # 3. 更新报告数据（不替换已存在的报告，而是更新其数据）
+            # 3. 更新报告数据
+            # 检查是否已有其他方式生成的报告（通过事件总线自动生成）
+            if generated_report.id != report.id:
+                # 已有其他方式生成的报告，删除当前重复的报告记录
+                logger.info(f"发现重复报告，删除当前记录 | report_id={report.id} | existing_report_id={generated_report.id}")
+                db.delete(report)
+                db.commit()
+                return generated_report
+
+            # 使用当前报告记录，更新数据
             report.status = "completed"
             report.completed_at = datetime.now(timezone.utc)
 
@@ -104,6 +113,26 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
             )
 
             return report
+
+        except ValueError as e:
+            # 处理会话不存在的错误
+            if "会话不存在" in str(e):
+                logger.warning(f"会话不存在，跳过评估 | session_id={session_id}")
+                report.status = "failed"
+                report.error_message = f"会话不存在: {session_id}"
+                db.commit()
+                return None
+            else:
+                # 其他 ValueError
+                report.status = "failed"
+                report.error_message = str(e)
+                db.commit()
+                logger.error(
+                    f"评估报告生成失败 | session_id={session_id} | "
+                    f"report_id={report.id} | error={str(e)}",
+                    exc_info=True
+                )
+                raise
 
         except Exception as e:
             # 生成失败，更新状态

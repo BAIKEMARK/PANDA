@@ -32,9 +32,38 @@ class MentorAgent:
         session_id = event_data.get("session_id")
         if session_id:
             try:
+                # 检查会话是否存在
+                session = self.db.query(ChatSession).filter(
+                    ChatSession.id == session_id
+                ).first()
+
+                if not session:
+                    logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
+                    if logger:
+                        logger.warning(f"会话不存在，跳过自动评估 | session_id={session_id}")
+                    else:
+                        print(f"[WARNING] 会话不存在，跳过自动评估 | session_id={session_id}")
+                    return
+
+                # 检查是否已有评估报告（避免重复生成）
+                existing_report = self.evaluation_service.get_report_by_session(session_id)
+                if existing_report and existing_report.status in ["generating", "completed"]:
+                    logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
+                    if logger:
+                        logger.info(f"评估报告已存在或正在生成，跳过自动评估 | session_id={session_id} | report_id={existing_report.id}")
+                    return
+
+                # 生成评估报告
                 self.generate_evaluation(session_id)
+
             except Exception as e:
-                print(f"[ERROR] 评估生成失败: {e}")
+                logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
+                error_msg = f"评估生成失败: {e}"
+                if logger:
+                    logger.error(error_msg)
+                else:
+                    print(f"[ERROR] {error_msg}")
+
                 # 发布失败事件
                 self.event_bus.publish(
                     Events.EVALUATION_FAILED,
