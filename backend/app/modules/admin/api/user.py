@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -10,18 +10,25 @@ from backend.app.modules.admin.schemas.user import UserCreate, UserUpdate, UserR
 from backend.app.modules.admin.services.user_admin_service import UserAdminService
 from backend.app.modules.admin.services.audit_service import AuditService
 from backend.app.core.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.config.logging import get_logger
 
+logger = get_logger(__name__)
 router = APIRouter(prefix="/admin/users", tags=["用户管理"])
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
+    request: Request,
     user_data: UserCreate,
     current_user: User = Depends(get_current_user_dependency),
     db: Session = Depends(get_db)
 ):
+    request_id = getattr(request.state, "request_id", "unknown")
+    logger.info(f"创建用户请求 | request_id={request_id} | current_user={current_user.id} | email={user_data.email}")
+    
     permission_service = PermissionService(db)
     if not permission_service.has_permission(current_user.id, "user:create"):
+        logger.warning(f"权限不足 | request_id={request_id} | user={current_user.id} | permission=user:create")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足: user:create")
     
     service = UserAdminService(db)
@@ -30,7 +37,10 @@ async def create_user(
     user_dict = user_data.model_dump()
 
     try:
+        logger.debug(f"开始创建用户 | request_id={request_id} | data={user_dict}")
         user = service.create_user(user_dict, current_user.id)
+        logger.info(f"用户创建成功 | request_id={request_id} | user_id={user.id} | email={user.email}")
+        
         audit_service.log(
             user_id=current_user.id,
             action="create_user",
@@ -41,7 +51,11 @@ async def create_user(
         )
         return user
     except ConflictException as e:
+        logger.error(f"用户创建失败-冲突 | request_id={request_id} | error={str(e)} | email={user_data.email}")
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"用户创建失败-异常 | request_id={request_id} | error={str(e)} | email={user_data.email}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"创建用户失败: {str(e)}")
 
 
 @router.get("/", response_model=UserListResponse)

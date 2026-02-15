@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # ==================== 日志配置 ====================
     # 日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str = "DEBUG"
     # 日志格式: json, text
     LOG_FORMAT: str = "text"
     # 日志目录路径 (默认 logs/)

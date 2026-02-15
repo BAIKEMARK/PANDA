@@ -78,7 +78,7 @@ class AgentOrchestrator:
                 except Exception as e:
                     self.db.rollback()
                     # 记录错误但不中断流程
-                    print(f"❌ 更新自杀风险标记失败: {e}")
+                    print(f"[ERROR] 更新自杀风险标记失败: {e}")
 
             # 4. 应用状态更新，计算新状态
             new_state = self._apply_state_update(current_state, state_analysis)
@@ -141,7 +141,7 @@ class AgentOrchestrator:
         except Exception as e:
             # 发生异常时回滚数据库事务
             self.db.rollback()
-            print(f"❌ 处理对话轮次失败: {e}")
+            print(f"[ERROR] 处理对话轮次失败: {e}")
             raise
 
     def _apply_state_update(

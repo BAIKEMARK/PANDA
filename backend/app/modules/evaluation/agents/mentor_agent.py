@@ -103,12 +103,7 @@ class MentorAgent:
         ).first()
 
         if not session:
-            self.db.rollback()
-            session = self.db.query(ChatSession).filter(
-                ChatSession.id == session_id
-            ).first()
-            if not session:
-                raise ValueError(f"会话不存在: {session_id}")
+            raise ValueError(f"会话不存在: {session_id}")
 
         # 获取对话历史
         messages = self.db.query(ChatMessage).filter(
@@ -167,6 +162,7 @@ class MentorAgent:
 
         report_data = {
             "session_id": session_id,
+            "status": "completed",  # 明确设置状态为已完成
             "total_score": evaluation_data.get("total_score", 0),
             "level_assessment": evaluation_data.get("level_assessment", ""),
             "radar_a_risk_identification": radar_chart.get("A_risk_identification", 0),

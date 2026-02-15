@@ -18,6 +18,7 @@ import { useChatStore } from '@/stores/chat.store';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ChatInput } from '@/components/chat/ChatInput';
 import chatService from '@/services/chat.service';
+import evaluationService from '@/services/evaluation.service';
 import type { ChatMessage } from '@/types/chat.types';
 
 const { Title } = Typography;
@@ -36,18 +37,25 @@ export const ChatPage = () => {
   });
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      // 如果没有sessionId，重定向到场景列表页面
+      navigate('/scenarios', { replace: true });
+      return;
+    }
 
     const fetchMessages = async () => {
       try {
         await loadMessages(sessionId);
       } catch (err) {
         console.error('加载消息失败:', err);
+        message.error('加载对话失败，请重试');
+        // 如果加载失败，重定向到场景列表
+        navigate('/scenarios', { replace: true });
       }
     };
 
     fetchMessages();
-  }, [sessionId, loadMessages]);
+  }, [sessionId, loadMessages, navigate]);
 
   const handleSendMessage = async (content: string) => {
     if (!sessionId || isReadOnly) return;
@@ -67,8 +75,22 @@ export const ChatPage = () => {
             content: '患者表示要结束对话并离开。您可以选择进行评估，或继续尝试挽留患者。',
             okText: '进行评估',
             cancelText: '继续对话',
-            onOk: () => {
-              navigate(`/evaluation/${sessionId}`);
+            onOk: async () => {
+              try {
+                // 先结束会话
+                await endSession(sessionId);
+                
+                // 提交异步评估报告生成任务
+                await evaluationService.generateReportAsync(sessionId);
+                
+                message.success('评估报告生成任务已提交，完成后将通知您');
+                
+                // 开始后台轮询状态
+                pollEvaluationStatus(sessionId);
+              } catch (err) {
+                console.error('提交评估任务失败:', err);
+                message.error('提交评估任务失败，请稍后重试');
+              }
             },
             onCancel: () => {
               message.info('您可以继续发送消息尝试与患者交流');
@@ -95,27 +117,71 @@ export const ChatPage = () => {
         try {
           setIsEnding(true);
 
-          const hide = message.loading({
-            content: '正在生成评估报告，请稍候（可能需要1-6分钟）...',
-            duration: 0,
-          });
-
+          // 先结束会话
           await endSession(sessionId);
 
-          hide();
-          message.success('评估报告生成成功！');
+          // 提交异步评估报告生成任务
+          await evaluationService.generateReportAsync(sessionId);
 
-          setTimeout(() => {
-            navigate(`/evaluation/${sessionId}`);
-          }, 500);
+          message.success('评估报告生成任务已提交，完成后将通知您');
+
+          // 开始后台轮询状态
+          pollEvaluationStatus(sessionId);
         } catch (err) {
           console.error('结束会话失败:', err);
-          message.error('评估报告生成失败，请稍后重试');
+          message.error('操作失败，请稍后重试');
         } finally {
           setIsEnding(false);
         }
       },
     });
+  };
+
+  // 轮询评估报告生成状态
+  const pollEvaluationStatus = (sessionId: string) => {
+    let attempts = 0;
+    const maxAttempts = 120; // 最多轮询10分钟（每5秒一次）
+    const interval = 5000; // 5秒轮询一次
+
+    const poll = async () => {
+      try {
+        const status = await evaluationService.getReportStatus(sessionId);
+
+        if (status.status === 'completed') {
+          // 生成完成，弹出通知
+          Modal.success({
+            title: '评估报告生成完成',
+            content: '评估报告已生成完成，点击查看详情',
+            okText: '查看报告',
+            onOk: () => {
+              navigate(`/evaluation/${sessionId}`);
+            },
+          });
+          return; // 停止轮询
+        } else if (status.status === 'failed') {
+          message.error(status.error_message || '评估报告生成失败，请稍后重试');
+          return; // 停止轮询
+        }
+
+        // 继续轮询
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, interval);
+        } else {
+          message.warning('评估报告生成超时，请稍后在评估页面查看');
+        }
+      } catch (err) {
+        console.error('查询评估状态失败:', err);
+        // 即使查询失败也继续尝试
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, interval);
+        }
+      }
+    };
+
+    // 开始轮询
+    setTimeout(poll, interval);
   };
 
   const handleAlert = async () => {
@@ -130,19 +196,16 @@ export const ChatPage = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          const hide = message.loading({
-            content: '正在处理报警并生成评估报告...',
-            duration: 0,
-          });
-
+          // 处理报警（这会自动结束会话）
           await chatService.alertSuicideRisk(sessionId);
 
-          hide();
-          message.success('已记录报警，正在生成评估报告...');
+          // 提交异步评估报告生成任务
+          await evaluationService.generateReportAsync(sessionId);
 
-          setTimeout(() => {
-            navigate(`/evaluation/${sessionId}`);
-          }, 500);
+          message.success('已记录报警，评估报告生成任务已提交，完成后将通知您');
+
+          // 开始后台轮询状态
+          pollEvaluationStatus(sessionId);
         } catch (err) {
           console.error('报警失败:', err);
           message.error('报警失败，请稍后重试');

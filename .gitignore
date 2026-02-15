@@ -86,6 +86,7 @@ Thumbs.db
 
 # Claude Code 相关
 .claude/
+/.mcp.json
 
 # 临时文件夹
 docs/temp/

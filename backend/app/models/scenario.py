@@ -20,6 +20,7 @@ class Scenario(Base):
     status = Column(SQLEnum("draft", "pending", "published", "archived", name="scenario_status"), default="draft", comment="状态")
     published_at = Column(DateTime, comment="发布时间")
     published_by = Column(CHAR(36), comment="发布人")
+    created_by = Column(CHAR(36), index=True, comment="创建人")
     title = Column(String(255), nullable=False, comment="场景标题")
     description = Column(Text, comment="场景描述")
     system_prompt = Column(Text, nullable=False, comment="AI系统提示词")
