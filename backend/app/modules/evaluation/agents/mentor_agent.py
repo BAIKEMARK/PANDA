@@ -53,8 +53,9 @@ class MentorAgent:
                         logger.info(f"评估报告已存在或正在生成，跳过自动评估 | session_id={session_id} | report_id={existing_report.id}")
                     return
 
-                # 生成评估报告
-                self.generate_evaluation(session_id)
+                # 异步生成评估报告，避免阻塞调用方
+                from backend.app.core.tasks.evaluation_task import generate_evaluation_async
+                generate_evaluation_async(session_id)
 
             except Exception as e:
                 logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
