@@ -282,8 +282,8 @@ export const EvaluationReportPage = () => {
                   }}
                 >
                   <div style={{ marginBottom: '8px' }}>
-                    <Tag color={item.status === 'pass' ? 'green' : 'red'}>
-                      {item.status === 'pass' ? '通过' : '失败'}
+                    <Tag color={['pass', 'Pass', '通过'].includes(item.status) ? 'green' : 'red'}>
+                      {['pass', 'Pass', '通过'].includes(item.status) ? '通过' : '失败'}
                     </Tag>
                     <Text strong>{item.dimension}</Text>
                   </div>
@@ -320,67 +320,67 @@ export const EvaluationReportPage = () => {
             bordered={false}
             style={{ marginBottom: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
           >
-          <div
-            className="markdown-content"
-            style={{
-              color: '#262626',
-              lineHeight: '1.6'
-            }}
-          >
-            <ReactMarkdown
-              components={{
-                p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
-                ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
-                ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
-                li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
-                strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
-                code: ({ inline, children, ...props }: any) =>
-                  inline ? (
-                    <code
-                      style={{
-                        background: '#f5f5f5',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        color: '#eb2f96'
-                      }}
-                      {...props}
-                    >{children}</code>
-                  ) : (
-                    <code
-                      style={{
-                        display: 'block',
-                        background: '#f5f5f5',
-                        padding: '12px',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        overflow: 'auto',
-                        margin: '8px 0'
-                      }}
-                      {...props}
-                    >{children}</code>
-                  ),
-                h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
-                h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
-                h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
-                blockquote: ({ children, ...props }: any) => (
-                  <blockquote
-                    style={{
-                      borderLeft: '3px solid #d9d9d9',
-                      paddingLeft: '12px',
-                      margin: '8px 0',
-                      color: '#595959',
-                      fontStyle: 'italic'
-                    }}
-                    {...props}
-                  >{children}</blockquote>
-                )
+            <div
+              className="markdown-content"
+              style={{
+                color: '#262626',
+                lineHeight: '1.6'
               }}
             >
-              {report.technical_guidance}
-            </ReactMarkdown>
-          </div>
-        </Card>
+              <ReactMarkdown
+                components={{
+                  p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
+                  ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
+                  ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
+                  li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
+                  strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
+                  code: ({ inline, children, ...props }: any) =>
+                    inline ? (
+                      <code
+                        style={{
+                          background: '#f5f5f5',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '14px',
+                          color: '#eb2f96'
+                        }}
+                        {...props}
+                      >{children}</code>
+                    ) : (
+                      <code
+                        style={{
+                          display: 'block',
+                          background: '#f5f5f5',
+                          padding: '12px',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          overflow: 'auto',
+                          margin: '8px 0'
+                        }}
+                        {...props}
+                      >{children}</code>
+                    ),
+                  h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
+                  h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
+                  h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
+                  blockquote: ({ children, ...props }: any) => (
+                    <blockquote
+                      style={{
+                        borderLeft: '3px solid #d9d9d9',
+                        paddingLeft: '12px',
+                        margin: '8px 0',
+                        color: '#595959',
+                        fontStyle: 'italic'
+                      }}
+                      {...props}
+                    >{children}</blockquote>
+                  )
+                }}
+              >
+                {report.technical_guidance}
+              </ReactMarkdown>
+            </div>
+          </Card>
         </motion.div>
       )}
 

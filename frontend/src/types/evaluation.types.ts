@@ -30,7 +30,7 @@ export interface StateAnalysis {
 // 详细反馈项
 export interface FeedbackItem {
   dimension: string;                           // 评估维度
-  status: 'pass' | 'fail';                    // 通过/失败
+  status: 'pass' | 'fail' | 'Pass' | 'Fail' | '通过' | '失败' | string; // 状态
   dialogue_ref_id?: number;                   // 对话轮次引用
   user_input?: string;                        // 用户输入
   patient_state_snapshot?: string | Record<string, any>;  // 患者状态快照 (可以是字符串或对象)
