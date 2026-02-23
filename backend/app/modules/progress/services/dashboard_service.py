@@ -136,6 +136,7 @@ class DashboardService:
                 scenario_name=scenario_name_map.get(session_scenario_map.get(e.session_id, ''), '未知场景'),
                 total_score=e.total_score,
                 level_assessment=e.level_assessment,
+                status=e.status,
                 created_at=e.created_at
             ) for e in evaluations
         ]

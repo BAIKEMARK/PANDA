@@ -21,6 +21,7 @@ class ScenarioHistoryItem(BaseModel):
     scenario_name: str
     total_score: Optional[int] = None
     level_assessment: Optional[str] = None
+    status: str = "completed"
     created_at: datetime
 
     class Config:

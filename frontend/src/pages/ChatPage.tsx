@@ -79,12 +79,12 @@ export const ChatPage = () => {
               try {
                 // 先结束会话
                 await endSession(sessionId);
-                
+
                 // 提交异步评估报告生成任务
                 await evaluationService.generateReportAsync(sessionId);
-                
+
                 message.success('评估报告生成任务已提交，完成后将通知您');
-                
+
                 // 开始后台轮询状态
                 pollEvaluationStatus(sessionId);
               } catch (err) {
@@ -125,6 +125,9 @@ export const ChatPage = () => {
 
           message.success('评估报告生成任务已提交，完成后将通知您');
 
+          // 将页面状态置为只读
+          setIsReadOnly(true);
+
           // 开始后台轮询状态
           pollEvaluationStatus(sessionId);
         } catch (err) {
@@ -153,6 +156,7 @@ export const ChatPage = () => {
             title: '评估报告生成完成',
             content: '评估报告已生成完成，点击查看详情',
             okText: '查看报告',
+            cancelText: '继续留在本页',
             onOk: () => {
               navigate(`/evaluation/${sessionId}`);
             },
@@ -203,6 +207,9 @@ export const ChatPage = () => {
           await evaluationService.generateReportAsync(sessionId);
 
           message.success('已记录报警，评估报告生成任务已提交，完成后将通知您');
+
+          // 将页面置于只读模式
+          setIsReadOnly(true);
 
           // 开始后台轮询状态
           pollEvaluationStatus(sessionId);
@@ -286,16 +293,25 @@ export const ChatPage = () => {
                 style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
                 <Tag color="orange" style={{ background: 'rgba(255,152,0,0.2)', border: 'none', color: '#fff' }}>
-                  只读模式
+                  已结束/只读模式
                 </Tag>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button
                     type="primary"
-                    icon={<PlayCircleOutlined />}
-                    onClick={handleContinueChat}
+                    onClick={() => navigate(`/evaluation/${sessionId}`)}
                     style={{ background: '#fff', color: '#667eea', border: 'none' }}
                   >
-                    继续对话
+                    查看评估报告
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    type="default"
+                    icon={<PlayCircleOutlined />}
+                    onClick={handleContinueChat}
+                    style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none' }}
+                  >
+                    重新对话
                   </Button>
                 </motion.div>
               </motion.div>
@@ -375,15 +391,20 @@ export const ChatPage = () => {
               exit={{ opacity: 0, y: -20 }}
             >
               <Alert
-                message="您正在查看历史对话记录"
-                description="点击右上角「继续对话」按钮可继续与患者交流"
+                message="本对话已结束或处于只读记录模式"
+                description="正在生成或已生成评估报告，您可以点击右上角按钮查看。"
                 type="info"
                 showIcon
                 style={{ margin: '16px 24px', borderRadius: '8px' }}
                 action={
-                  <Button type="primary" size="small" onClick={handleContinueChat}>
-                    继续对话
-                  </Button>
+                  <Space>
+                    <Button size="small" onClick={() => navigate(`/evaluation/${sessionId}`)}>
+                      查看报告
+                    </Button>
+                    <Button type="primary" size="small" onClick={handleContinueChat}>
+                      重启对话
+                    </Button>
+                  </Space>
                 }
               />
             </motion.div>

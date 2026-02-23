@@ -2,7 +2,7 @@
  * 学习仪表盘页面
  */
 import { useEffect, useState } from 'react';
-import { Typography, Row, Col, Card, Tag, Spin, Empty, Alert } from 'antd';
+import { Typography, Row, Col, Card, Tag, Spin, Empty, Alert, message } from 'antd';
 import {
     TrophyOutlined,
     ReadOutlined,
@@ -38,6 +38,7 @@ interface ScenarioHistoryItem {
     scenario_name: string;
     total_score: number | null;
     level_assessment: string | null;
+    status: string;
     created_at: string;
 }
 
@@ -280,9 +281,15 @@ export const LearningDashboardPage = () => {
                                                         )}
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
-                                                        {item.total_score !== null && (
+                                                        {item.status === 'completed' && item.total_score !== null && (
                                                             <Text strong style={{ color: '#1890ff' }}>
                                                                 得分：{item.total_score} 分
+                                                            </Text>
+                                                        )}
+                                                        {item.status === 'generating' && (
+                                                            <Text strong style={{ color: '#faad14' }}>
+                                                                <Spin size="small" style={{ marginRight: 8 }} />
+                                                                生成报告中...
                                                             </Text>
                                                         )}
                                                         <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -293,7 +300,11 @@ export const LearningDashboardPage = () => {
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                <Link to={`/evaluation/${item.session_id}`}>查看评估</Link>
+                                                {item.status === 'generating' ? (
+                                                    <a onClick={(e) => { e.preventDefault(); message.info('报告正在生成中，请耐心等待15秒左右...', 3); }} style={{ color: '#999' }}>查看评估</a>
+                                                ) : (
+                                                    <Link to={`/evaluation/${item.session_id}`}>查看评估</Link>
+                                                )}
                                                 <Link to={`/chat/${item.session_id}`} state={{ fromHistory: true }}>
                                                     查看对话
                                                 </Link>
