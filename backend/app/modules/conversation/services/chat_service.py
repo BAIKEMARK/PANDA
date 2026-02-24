@@ -59,3 +59,32 @@ class ChatService:
         )
 
         return session
+
+    def reopen_session(self, session_id: str) -> Optional[ChatSession]:
+        """
+        重新开启已完成的会话（继续对话）
+        
+        1. 将会话状态改回 active
+        2. 清除 end_time
+        3. 删除该会话的旧评估报告，确保下次结束时生成全新报告
+        """
+        from backend.app.models.evaluation import EvaluationReport
+
+        db_session = self.db.query(ChatSession).filter(
+            ChatSession.id == session_id
+        ).first()
+        if not db_session:
+            raise NotFoundException("会话不存在")
+
+        # 重置会话状态
+        db_session.status = SessionStatus.ACTIVE
+        db_session.end_time = None
+
+        # 删除该会话的旧评估报告
+        self.db.query(EvaluationReport).filter(
+            EvaluationReport.session_id == session_id
+        ).delete()
+
+        self.db.commit()
+        self.db.refresh(db_session)
+        return db_session

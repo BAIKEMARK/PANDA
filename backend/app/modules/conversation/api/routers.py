@@ -171,6 +171,38 @@ async def delete_session(
     return None
 
 
+@router.put("/sessions/{session_id}/reopen", response_model=ChatSessionResponse)
+async def reopen_session(
+    session_id: str,
+    user_id: str = Depends(get_current_user_with_fallback),
+    db: Session = Depends(get_db)
+):
+    """
+    重新开启已完成的会话（继续对话）
+
+    流程：
+    1. 将会话状态改回 active
+    2. 清除旧的评估报告
+    3. 清除 Dashboard 缓存
+    """
+    service = ChatService(db)
+
+    session = service.get_session(session_id)
+    if not session:
+        raise NotFoundException(f"会话不存在: {session_id}")
+
+    service.reopen_session(session_id)
+
+    # 清除 Dashboard 缓存
+    try:
+        from backend.app.modules.progress.services.dashboard_service import DashboardService
+        DashboardService.clear_dashboard_cache(user_id)
+    except Exception:
+        pass
+
+    return service.get_session(session_id)
+
+
 @router.post("/sessions/{session_id}/alert", response_model=ChatSessionResponse)
 async def alert_suicide_risk(
     session_id: str,

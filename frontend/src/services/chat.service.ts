@@ -57,6 +57,14 @@ class ChatService {
   }
 
   /**
+   * 重新开启已结束的会话（继续对话）
+   */
+  async reopenSession(sessionId: string): Promise<ChatSession> {
+    const response = await api.put<ChatSession>(`/chat/sessions/${sessionId}/reopen`);
+    return response.data;
+  }
+
+  /**
    * 自杀倾向报警
    */
   async alertSuicideRisk(sessionId: string): Promise<ChatSession> {
