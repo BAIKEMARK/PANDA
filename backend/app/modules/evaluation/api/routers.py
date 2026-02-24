@@ -64,6 +64,16 @@ async def evaluate_session_async(
                 existing_report.status = "generating"
                 db.commit()
                 generate_evaluation_async(session_id, existing_report.id)
+                
+                try:
+                    from backend.app.models.chat import ChatSession
+                    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+                    if session and session.user_id:
+                        from backend.app.modules.progress.services.dashboard_service import DashboardService
+                        DashboardService.clear_dashboard_cache(session.user_id)
+                except Exception:
+                    pass
+                
                 return {
                     "message": "评估报告开始生成",
                     "session_id": session_id,
@@ -76,6 +86,16 @@ async def evaluate_session_async(
                 existing_report.error_message = None
                 db.commit()
                 generate_evaluation_async(session_id, existing_report.id)
+
+                try:
+                    from backend.app.models.chat import ChatSession
+                    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+                    if session and session.user_id:
+                        from backend.app.modules.progress.services.dashboard_service import DashboardService
+                        DashboardService.clear_dashboard_cache(session.user_id)
+                except Exception:
+                    pass
+                
                 return {
                     "message": "评估报告重新生成中",
                     "session_id": session_id,
@@ -96,6 +116,16 @@ async def evaluate_session_async(
         
         # 提交后台任务
         generate_evaluation_async(session_id, report_id)
+        
+        # 清除 Dashboard 缓存
+        try:
+            from backend.app.models.chat import ChatSession
+            session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+            if session and session.user_id:
+                from backend.app.modules.progress.services.dashboard_service import DashboardService
+                DashboardService.clear_dashboard_cache(session.user_id)
+        except Exception:
+            pass
         
         return {
             "message": "评估报告生成任务已提交",

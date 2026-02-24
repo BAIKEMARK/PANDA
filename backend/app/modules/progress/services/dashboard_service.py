@@ -66,7 +66,8 @@ class DashboardService:
             )
 
         total_scenarios = self.db.query(EvaluationReport).filter(
-            EvaluationReport.session_id.in_(session_ids)
+            EvaluationReport.session_id.in_(session_ids),
+            EvaluationReport.status == 'completed'
         ).count()
         
         # 3. 计算雷达图各项平均分
@@ -77,7 +78,8 @@ class DashboardService:
             func.avg(EvaluationReport.radar_d_safety_management).label('safety'),
             func.avg(EvaluationReport.radar_e_self_efficacy).label('self')
         ).filter(
-            EvaluationReport.session_id.in_(session_ids)
+            EvaluationReport.session_id.in_(session_ids),
+            EvaluationReport.status == 'completed'
         ).first()
 
         # 构建雷达数据 (处理 None 的情况)
@@ -94,7 +96,8 @@ class DashboardService:
         
         # 4. 计算综合平均分
         avg_score = self.db.query(func.avg(EvaluationReport.total_score)).filter(
-            EvaluationReport.session_id.in_(session_ids)
+            EvaluationReport.session_id.in_(session_ids),
+            EvaluationReport.status == 'completed'
         ).scalar()
         
         if avg_score is None:
@@ -157,3 +160,12 @@ class DashboardService:
                 ttl_seconds=settings.CACHE_DEFAULT_TTL
             )
         return response
+
+    @classmethod
+    def clear_dashboard_cache(cls, user_id: str):
+        if settings.CACHE_ENABLED:
+            try:
+                redis_cache.delete(f"{cls.CACHE_KEY_PREFIX}{user_id}")
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to clear dashboard cache: {e}")
