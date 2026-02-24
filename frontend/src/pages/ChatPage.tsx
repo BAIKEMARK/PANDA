@@ -226,6 +226,26 @@ export const ChatPage = () => {
     message.success('已进入对话模式，您可以继续对话了');
   };
 
+  const handleViewReport = async () => {
+    if (!sessionId) return;
+    try {
+      const status = await evaluationService.getReportStatus(sessionId);
+      if (status.status === 'generating') {
+        message.info('报告正在后台生成中，请耐心等待15秒左右...', 3);
+        // Start polling if not already polling
+        pollEvaluationStatus(sessionId);
+      } else if (status.status === 'completed') {
+        navigate(`/evaluation/${sessionId}`);
+      } else {
+        message.warning('报告生成失败或未找到，请重试');
+      }
+    } catch (err) {
+      console.error('获取状态失败', err);
+      // Fallback
+      navigate(`/evaluation/${sessionId}`);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -298,7 +318,7 @@ export const ChatPage = () => {
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button
                     type="primary"
-                    onClick={() => navigate(`/evaluation/${sessionId}`)}
+                    onClick={handleViewReport}
                     style={{ background: '#fff', color: '#667eea', border: 'none' }}
                   >
                     查看评估报告
@@ -398,7 +418,7 @@ export const ChatPage = () => {
                 style={{ margin: '16px 24px', borderRadius: '8px' }}
                 action={
                   <Space>
-                    <Button size="small" onClick={() => navigate(`/evaluation/${sessionId}`)}>
+                    <Button size="small" onClick={handleViewReport}>
                       查看报告
                     </Button>
                     <Button type="primary" size="small" onClick={handleContinueChat}>

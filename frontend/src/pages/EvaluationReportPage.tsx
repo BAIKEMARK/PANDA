@@ -46,7 +46,8 @@ export const EvaluationReportPage = () => {
         setReport(normalizedReport);
 
         // 如果仍在生成中，10秒后重新获取
-        if (data.status === 'generating') {
+        const isGenerating = data.status === 'generating' || data.total_score == null;
+        if (isGenerating) {
           setTimeout(fetchReport, 10000);
         }
       } catch (err: any) {
@@ -81,7 +82,9 @@ export const EvaluationReportPage = () => {
     );
   }
 
-  if (report?.status === 'generating') {
+  const isGenerating = report?.status === 'generating' || (report && report.total_score == null);
+
+  if (isGenerating) {
     return (
       <motion.div
         initial={{ opacity: 0 }}

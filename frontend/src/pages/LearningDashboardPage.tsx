@@ -249,6 +249,9 @@ export const LearningDashboardPage = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {scenarioHistory.map((item, index) => {
                                     const isLast = index === scenarioHistory.length - 1;
+                                    const isGenerating = item.status === 'generating' || (!item.status && item.total_score == null);
+                                    const isCompleted = item.status === 'completed' || (!item.status && item.total_score != null);
+
                                     return (
                                         <div
                                             key={item.session_id}
@@ -281,12 +284,12 @@ export const LearningDashboardPage = () => {
                                                         )}
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
-                                                        {item.status === 'completed' && item.total_score !== null && (
+                                                        {isCompleted && item.total_score !== null && (
                                                             <Text strong style={{ color: '#1890ff' }}>
                                                                 得分：{item.total_score} 分
                                                             </Text>
                                                         )}
-                                                        {item.status === 'generating' && (
+                                                        {isGenerating && (
                                                             <Text strong style={{ color: '#faad14' }}>
                                                                 <Spin size="small" style={{ marginRight: 8 }} />
                                                                 生成报告中...
@@ -300,8 +303,8 @@ export const LearningDashboardPage = () => {
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                {item.status === 'generating' ? (
-                                                    <a onClick={(e) => { e.preventDefault(); message.info('报告正在生成中，请耐心等待15秒左右...', 3); }} style={{ color: '#999' }}>查看评估</a>
+                                                {isGenerating ? (
+                                                    <a onClick={(e) => { e.preventDefault(); message.info('报告正在后台生成中，请耐心等待15秒左右...', 3); }} style={{ color: '#999' }}>查看评估</a>
                                                 ) : (
                                                     <Link to={`/evaluation/${item.session_id}`}>查看评估</Link>
                                                 )}
