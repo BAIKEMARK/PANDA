@@ -225,12 +225,16 @@ export const ChatPage = () => {
     if (!sessionId) return;
 
     try {
+      // 立刻切换为可输入状态，用户无感
+      setIsReadOnly(false);
+      // 后台静默 fork 出新 session
       const newSession = await chatService.forkSession(sessionId);
-      message.success('已在原对话基础上开启新的对话练习');
-      navigate(`/chat/${newSession.id}`, { replace: true });
+      // 静默替换 URL，不触发页面刷新
+      window.history.replaceState(null, '', `/chat/${newSession.id}`);
     } catch (err) {
       console.error('继续对话失败:', err);
       message.error('继续对话失败，请稍后重试');
+      setIsReadOnly(true);
     }
   };
 
@@ -339,7 +343,7 @@ export const ChatPage = () => {
                     onClick={handleContinueChat}
                     style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none' }}
                   >
-                    重新对话
+                    继续对话
                   </Button>
                 </motion.div>
               </motion.div>
