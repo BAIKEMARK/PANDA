@@ -31,7 +31,16 @@ async def create_session(
 ):
     """创建新的对话会话"""
     service = ChatService(db)
-    return service.create_session(session_data, user_id)
+    session = service.create_session(session_data, user_id)
+    
+    # 清除 Dashboard 缓存
+    try:
+        from backend.app.modules.progress.services.dashboard_service import DashboardService
+        DashboardService.clear_dashboard_cache(user_id)
+    except Exception:
+        pass
+        
+    return session
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionResponse)
