@@ -225,12 +225,12 @@ export const ChatPage = () => {
     if (!sessionId) return;
 
     try {
-      await chatService.reopenSession(sessionId);
-      message.success('已重新开启对话，您可以继续对话了');
-      setIsReadOnly(false);
+      const newSession = await chatService.forkSession(sessionId);
+      message.success('已在原对话基础上开启新的对话练习');
+      navigate(`/chat/${newSession.id}`, { replace: true });
     } catch (err) {
-      console.error('重新开启对话失败:', err);
-      message.error('重新开启对话失败，请稍后重试');
+      console.error('继续对话失败:', err);
+      message.error('继续对话失败，请稍后重试');
     }
   };
 

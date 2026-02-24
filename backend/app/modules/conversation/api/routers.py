@@ -171,19 +171,20 @@ async def delete_session(
     return None
 
 
-@router.put("/sessions/{session_id}/reopen", response_model=ChatSessionResponse)
-async def reopen_session(
+@router.post("/sessions/{session_id}/fork", response_model=ChatSessionResponse, status_code=status.HTTP_201_CREATED)
+async def fork_session(
     session_id: str,
     user_id: str = Depends(get_current_user_with_fallback),
     db: Session = Depends(get_db)
 ):
     """
-    重新开启已完成的会话（继续对话）
+    从已完成的会话分叉出新会话（继续对话）
 
     流程：
-    1. 将会话状态改回 active
-    2. 清除旧的评估报告
-    3. 清除 Dashboard 缓存
+    1. 创建新会话（新 ID，同 scenario_id）
+    2. 复制旧会话的所有消息到新会话
+    3. 旧会话和旧评估报告完全不动
+    4. 清除 Dashboard 缓存
     """
     service = ChatService(db)
 
@@ -191,7 +192,7 @@ async def reopen_session(
     if not session:
         raise NotFoundException(f"会话不存在: {session_id}")
 
-    service.reopen_session(session_id)
+    new_session = service.fork_session(session_id, user_id)
 
     # 清除 Dashboard 缓存
     try:
@@ -200,7 +201,7 @@ async def reopen_session(
     except Exception:
         pass
 
-    return service.get_session(session_id)
+    return service.get_session(new_session.id)
 
 
 @router.post("/sessions/{session_id}/alert", response_model=ChatSessionResponse)

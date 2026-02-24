@@ -57,10 +57,10 @@ class ChatService {
   }
 
   /**
-   * 重新开启已结束的会话（继续对话）
+   * 从已完成会话分叉出新会话（继续对话，保留历史消息）
    */
-  async reopenSession(sessionId: string): Promise<ChatSession> {
-    const response = await api.put<ChatSession>(`/chat/sessions/${sessionId}/reopen`);
+  async forkSession(sessionId: string): Promise<ChatSession> {
+    const response = await api.post<ChatSession>(`/chat/sessions/${sessionId}/fork`);
     return response.data;
   }
 
