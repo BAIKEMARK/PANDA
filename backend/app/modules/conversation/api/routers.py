@@ -32,14 +32,6 @@ async def create_session(
     """创建新的对话会话"""
     service = ChatService(db)
     session = service.create_session(session_data, user_id)
-    
-    # 清除 Dashboard 缓存
-    try:
-        from backend.app.modules.progress.services.dashboard_service import DashboardService
-        DashboardService.clear_dashboard_cache(user_id)
-    except Exception:
-        pass
-        
     return session
 
 
@@ -122,6 +114,13 @@ async def send_message(
             meta_data=message_meta if any(v is not None and v != False for v in message_meta.values()) else None
         )
         assistant_message = service.create_message(assistant_message_data)
+
+        # 清除 Dashboard 缓存（第一条消息发出后，会话记录才应出现在仪表盘）
+        try:
+            from backend.app.modules.progress.services.dashboard_service import DashboardService
+            DashboardService.clear_dashboard_cache(user_id)
+        except Exception:
+            pass
 
         return assistant_message
 

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col, Space, Spin, Alert, Tag } from 'antd';
-import { TrophyOutlined, RocketOutlined, BookOutlined } from '@ant-design/icons';
+import { TrophyOutlined, RocketOutlined, BookOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import type { EvaluationReport } from '@/types/evaluation.types';
@@ -182,23 +182,34 @@ export const EvaluationReportPage = () => {
             对话练习 #{sessionId} 的详细评估结果
           </Paragraph>
         </div>
-        <Link to="/scenarios">
+        <Space>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
-              type="primary"
-              size="large"
-              icon={<RocketOutlined />}
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                border: 'none',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-              }}
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate('/progress')}
+              style={{ borderRadius: '8px' }}
             >
-              继续练习
+              返回学习进度
             </Button>
           </motion.div>
-        </Link>
+          <Link to="/scenarios">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                type="primary"
+                size="large"
+                icon={<RocketOutlined />}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                }}
+              >
+                继续练习
+              </Button>
+            </motion.div>
+          </Link>
+        </Space>
       </motion.div>
 
       {/* Total Score */}

@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from backend.app.models.progress import UserProgress
 from backend.app.models.evaluation import EvaluationReport
-from backend.app.models.chat import ChatSession
+from backend.app.models.chat import ChatSession, ChatMessage
 from backend.app.models.scenario import Scenario
 from backend.app.modules.progress.schemas.dashboard import DashboardStatsResponse, RadarChartData, ScenarioHistoryItem
 from backend.app.modules.progress.schemas.progress import UserProgressResponse
@@ -112,9 +112,13 @@ class DashboardService:
         
         recent_activities = [UserProgressResponse.model_validate(p) for p in recent_progress]
         
-        # 6. 情景模拟历史 (基于 ChatSession 获取)
+        # 6. 情景模拟历史 (基于 ChatSession 获取，只显示有消息的会话)
+        from sqlalchemy import exists
         recent_sessions = self.db.query(ChatSession).filter(
-            ChatSession.user_id == user_id
+            ChatSession.user_id == user_id,
+            self.db.query(ChatMessage).filter(
+                ChatMessage.session_id == ChatSession.id
+            ).exists()
         ).order_by(ChatSession.start_time.desc()).all()
         
         scenario_history = []

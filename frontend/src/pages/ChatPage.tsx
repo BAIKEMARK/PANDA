@@ -32,12 +32,12 @@ export const ChatPage = () => {
 
   // 实际生效的 session ID（fork 后会更新为新 ID）
   const [activeSessionId, setActiveSessionId] = useState(sessionId);
+  // 是否需要在下次发消息时 fork（延迟 fork）
+  const [pendingFork, setPendingFork] = useState(false);
 
-  // 判断是否从历史记录进入（默认只读模式）
-  const [isReadOnly, setIsReadOnly] = useState(() => {
-    const fromHistory = location.state?.fromHistory === true;
-    return fromHistory;
-  });
+  // 判断是否从历史记录进入
+  const fromHistory = location.state?.fromHistory === true;
+  const [isReadOnly, setIsReadOnly] = useState(fromHistory);
 
   useEffect(() => {
     if (!sessionId) {
@@ -65,7 +65,25 @@ export const ChatPage = () => {
 
     try {
       setTyping(true);
-      const result = await sendMessage(activeSessionId, content);
+
+      // 如果有待执行的 fork，在发消息前先完成 fork
+      let targetSessionId = activeSessionId;
+      if (pendingFork) {
+        try {
+          const newSession = await chatService.forkSession(activeSessionId);
+          targetSessionId = newSession.id;
+          setActiveSessionId(newSession.id);
+          setPendingFork(false);
+          window.history.replaceState(null, '', `/chat/${newSession.id}`);
+        } catch (err) {
+          console.error('Fork 失败:', err);
+          message.error('继续对话失败，请稍后重试');
+          setTyping(false);
+          return;
+        }
+      }
+
+      const result = await sendMessage(targetSessionId, content);
 
       // 检查是否患者想离开（通过meta_data）
       const lastMessage = result as ChatMessage;
@@ -234,23 +252,18 @@ export const ChatPage = () => {
         const reportStatus = await evaluationService.getReportStatus(activeSessionId);
         hasReport = reportStatus.status === 'completed' || reportStatus.status === 'generating';
       } catch {
-        // 没有报告记录，直接继续
+        // 没有报告记录
       }
 
       if (hasReport) {
-        // 有报告：fork 出新 session，保留旧报告
-        setIsReadOnly(false);
-        const newSession = await chatService.forkSession(activeSessionId);
-        setActiveSessionId(newSession.id);
-        window.history.replaceState(null, '', `/chat/${newSession.id}`);
-      } else {
-        // 没有报告：直接在原 session 继续（比如对话中状态）
-        setIsReadOnly(false);
+        // 有报告：标记等待 fork，真正 fork 在用户发第一条消息时执行
+        setPendingFork(true);
       }
+      // 无论如何，立刻解锁输入框
+      setIsReadOnly(false);
     } catch (err) {
       console.error('继续对话失败:', err);
       message.error('继续对话失败，请稍后重试');
-      setIsReadOnly(true);
     }
   };
 
@@ -311,7 +324,7 @@ export const ChatPage = () => {
             <Button
               type="text"
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate('/scenarios')}
+              onClick={() => navigate(fromHistory ? '/progress' : '/scenarios')}
               style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}
             >
               返回
