@@ -42,6 +42,7 @@ export interface FeedbackItem {
 export interface EvaluationReport {
   id: string;
   session_id: string;
+  status: string;
   total_score: number;               // 总分 (0-100)
   level_assessment?: string;         // 等级评定: 优秀/良好/合格/不合格
   radar_chart?: RadarChart;          // 五维雷达图数据
@@ -65,8 +66,10 @@ export interface EPDSScale {
 }
 
 // EPDS风险等级
-export enum EPDSRiskLevel {
-  LOW = 'low',           // 0-9分
-  MEDIUM = 'medium',     // 10-12分
-  HIGH = 'high',         // 13-30分
-}
+export const EPDSRiskLevel = {
+  LOW: 'low',           // 0-9分
+  MEDIUM: 'medium',     // 10-12分
+  HIGH: 'high',         // 13-30分
+} as const;
+
+export type EPDSRiskLevelAlias = typeof EPDSRiskLevel[keyof typeof EPDSRiskLevel];

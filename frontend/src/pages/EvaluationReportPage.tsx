@@ -44,6 +44,11 @@ export const EvaluationReportPage = () => {
         };
 
         setReport(normalizedReport);
+
+        // 如果仍在生成中，10秒后重新获取
+        if (data.status === 'generating') {
+          setTimeout(fetchReport, 10000);
+        }
       } catch (err: any) {
         console.error('获取评估报告失败:', err);
         // 设置错误信息，不再使用模拟数据
@@ -71,6 +76,27 @@ export const EvaluationReportPage = () => {
           style={{ marginTop: '16px' }}
         >
           <Text type="secondary">正在加载评估报告...</Text>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  if (report?.status === 'generating') {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ textAlign: 'center', padding: '100px 0' }}
+      >
+        <Spin size="large" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{ marginTop: '24px' }}
+        >
+          <Title level={4}>评估报告正在生成中...</Title>
+          <Text type="secondary">这可能需要几十秒的时间，请耐心等待。</Text>
         </motion.div>
       </motion.div>
     );
