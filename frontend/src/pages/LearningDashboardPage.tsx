@@ -8,7 +8,8 @@ import {
     ReadOutlined,
     ExperimentOutlined,
     ArrowRightOutlined,
-    ClockCircleOutlined
+    ClockCircleOutlined,
+    CommentOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
@@ -249,8 +250,9 @@ export const LearningDashboardPage = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {scenarioHistory.map((item, index) => {
                                     const isLast = index === scenarioHistory.length - 1;
-                                    const isGenerating = item.status === 'generating' || (!item.status && item.total_score == null);
+                                    const isGenerating = item.status === 'generating' || (!item.status && item.total_score == null && item.status !== 'active' && item.status !== 'abandoned');
                                     const isCompleted = item.status === 'completed' || (!item.status && item.total_score != null);
+                                    const isActive = item.status === 'active';
 
                                     return (
                                         <div
@@ -289,6 +291,12 @@ export const LearningDashboardPage = () => {
                                                                 得分：{item.total_score} 分
                                                             </Text>
                                                         )}
+                                                        {isActive && (
+                                                            <Text strong style={{ color: '#52c41a' }}>
+                                                                <CommentOutlined style={{ marginRight: 8 }} />
+                                                                对话中...
+                                                            </Text>
+                                                        )}
                                                         {isGenerating && (
                                                             <Text strong style={{ color: '#faad14' }}>
                                                                 <Spin size="small" style={{ marginRight: 8 }} />
@@ -303,13 +311,15 @@ export const LearningDashboardPage = () => {
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                {isGenerating ? (
+                                                {isActive ? (
+                                                    <Link to={`/chat/${item.session_id}`}>继续对话</Link>
+                                                ) : isGenerating ? (
                                                     <a onClick={(e) => { e.preventDefault(); message.info('报告正在后台生成中，请耐心等待15秒左右...', 3); }} style={{ color: '#999' }}>查看评估</a>
                                                 ) : (
                                                     <Link to={`/evaluation/${item.session_id}`}>查看评估</Link>
                                                 )}
                                                 <Link to={`/chat/${item.session_id}`} state={{ fromHistory: true }}>
-                                                    查看对话
+                                                    {isActive ? '查看对话' : '对话记录'}
                                                 </Link>
                                             </div>
                                         </div>
