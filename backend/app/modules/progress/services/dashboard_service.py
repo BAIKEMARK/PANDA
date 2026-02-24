@@ -115,7 +115,7 @@ class DashboardService:
         # 6. 情景模拟历史 (基于 ChatSession 获取)
         recent_sessions = self.db.query(ChatSession).filter(
             ChatSession.user_id == user_id
-        ).order_by(ChatSession.start_time.desc()).limit(10).all()
+        ).order_by(ChatSession.start_time.desc()).all()
         
         scenario_history = []
         if recent_sessions:
