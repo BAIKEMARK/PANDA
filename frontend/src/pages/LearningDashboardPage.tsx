@@ -2,19 +2,21 @@
  * 学习仪表盘页面
  */
 import { useEffect, useState } from 'react';
-import { Typography, Row, Col, Card, Tag, Spin, Empty, Alert, message } from 'antd';
+import { Typography, Row, Col, Card, Tag, Spin, Empty, Alert, message, Popconfirm } from 'antd';
 import {
     TrophyOutlined,
     ReadOutlined,
     ExperimentOutlined,
     ArrowRightOutlined,
     ClockCircleOutlined,
-    CommentOutlined
+    CommentOutlined,
+    DeleteOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { useAuthStore } from '@/stores/auth.store';
 import api from '@/services/api';
+import chatService from '@/services/chat.service';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 
 const { Title, Text } = Typography;
@@ -321,6 +323,32 @@ export const LearningDashboardPage = () => {
                                                 <Link to={`/chat/${item.session_id}`} state={{ fromHistory: true }}>
                                                     {isActive ? '查看对话' : '对话记录'}
                                                 </Link>
+                                                <Popconfirm
+                                                    title="确认删除"
+                                                    description="删除后将无法恢复该对话及其评估报告，确认删除吗？"
+                                                    onConfirm={async () => {
+                                                        try {
+                                                            await chatService.deleteSession(item.session_id);
+                                                            message.success('已删除');
+                                                            // 刷新数据
+                                                            if (stats) {
+                                                                setStats({
+                                                                    ...stats,
+                                                                    scenario_history: stats.scenario_history.filter(
+                                                                        (h: ScenarioHistoryItem) => h.session_id !== item.session_id
+                                                                    ),
+                                                                });
+                                                            }
+                                                        } catch {
+                                                            message.error('删除失败，请重试');
+                                                        }
+                                                    }}
+                                                    okText="删除"
+                                                    cancelText="取消"
+                                                    okButtonProps={{ danger: true }}
+                                                >
+                                                    <a style={{ color: '#ff4d4f' }}><DeleteOutlined /></a>
+                                                </Popconfirm>
                                             </div>
                                         </div>
                                     );

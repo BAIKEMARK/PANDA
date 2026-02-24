@@ -30,6 +30,9 @@ export const ChatPage = () => {
   const { currentSession, messages, isLoading, isTyping, loadMessages, sendMessage, endSession, setTyping } = useChatStore();
   const [isEnding, setIsEnding] = useState(false);
 
+  // 实际生效的 session ID（fork 后会更新为新 ID）
+  const [activeSessionId, setActiveSessionId] = useState(sessionId);
+
   // 判断是否从历史记录进入（默认只读模式）
   const [isReadOnly, setIsReadOnly] = useState(() => {
     const fromHistory = location.state?.fromHistory === true;
@@ -58,11 +61,11 @@ export const ChatPage = () => {
   }, [sessionId, loadMessages, navigate]);
 
   const handleSendMessage = async (content: string) => {
-    if (!sessionId || isReadOnly) return;
+    if (!activeSessionId || isReadOnly) return;
 
     try {
       setTyping(true);
-      const result = await sendMessage(sessionId, content);
+      const result = await sendMessage(activeSessionId, content);
 
       // 检查是否患者想离开（通过meta_data）
       const lastMessage = result as ChatMessage;
@@ -78,15 +81,15 @@ export const ChatPage = () => {
             onOk: async () => {
               try {
                 // 先结束会话
-                await endSession(sessionId);
+                await endSession(activeSessionId);
 
                 // 提交异步评估报告生成任务
-                await evaluationService.generateReportAsync(sessionId);
+                await evaluationService.generateReportAsync(activeSessionId);
 
                 message.success('评估报告生成任务已提交，完成后将通知您');
 
                 // 开始后台轮询状态
-                pollEvaluationStatus(sessionId);
+                pollEvaluationStatus(activeSessionId);
               } catch (err) {
                 console.error('提交评估任务失败:', err);
                 message.error('提交评估任务失败，请稍后重试');
@@ -106,7 +109,7 @@ export const ChatPage = () => {
   };
 
   const handleEndSession = async () => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
 
     Modal.confirm({
       title: '确认结束对话',
@@ -118,10 +121,10 @@ export const ChatPage = () => {
           setIsEnding(true);
 
           // 先结束会话
-          await endSession(sessionId);
+          await endSession(activeSessionId);
 
           // 提交异步评估报告生成任务
-          await evaluationService.generateReportAsync(sessionId);
+          await evaluationService.generateReportAsync(activeSessionId);
 
           message.success('评估报告生成任务已提交，完成后将通知您');
 
@@ -129,7 +132,7 @@ export const ChatPage = () => {
           setIsReadOnly(true);
 
           // 开始后台轮询状态
-          pollEvaluationStatus(sessionId);
+          pollEvaluationStatus(activeSessionId);
         } catch (err) {
           console.error('结束会话失败:', err);
           message.error('操作失败，请稍后重试');
@@ -189,7 +192,7 @@ export const ChatPage = () => {
   };
 
   const handleAlert = async () => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
 
     Modal.confirm({
       title: '确认报警',
@@ -201,10 +204,10 @@ export const ChatPage = () => {
       onOk: async () => {
         try {
           // 处理报警（这会自动结束会话）
-          await chatService.alertSuicideRisk(sessionId);
+          await chatService.alertSuicideRisk(activeSessionId);
 
           // 提交异步评估报告生成任务
-          await evaluationService.generateReportAsync(sessionId);
+          await evaluationService.generateReportAsync(activeSessionId);
 
           message.success('已记录报警，评估报告生成任务已提交，完成后将通知您');
 
@@ -212,7 +215,7 @@ export const ChatPage = () => {
           setIsReadOnly(true);
 
           // 开始后台轮询状态
-          pollEvaluationStatus(sessionId);
+          pollEvaluationStatus(activeSessionId);
         } catch (err) {
           console.error('报警失败:', err);
           message.error('报警失败，请稍后重试');
@@ -222,15 +225,28 @@ export const ChatPage = () => {
   };
 
   const handleContinueChat = async () => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
 
     try {
-      // 立刻切换为可输入状态，用户无感
-      setIsReadOnly(false);
-      // 后台静默 fork 出新 session
-      const newSession = await chatService.forkSession(sessionId);
-      // 静默替换 URL，不触发页面刷新
-      window.history.replaceState(null, '', `/chat/${newSession.id}`);
+      // 检查是否已有报告
+      let hasReport = false;
+      try {
+        const reportStatus = await evaluationService.getReportStatus(activeSessionId);
+        hasReport = reportStatus.status === 'completed' || reportStatus.status === 'generating';
+      } catch {
+        // 没有报告记录，直接继续
+      }
+
+      if (hasReport) {
+        // 有报告：fork 出新 session，保留旧报告
+        setIsReadOnly(false);
+        const newSession = await chatService.forkSession(activeSessionId);
+        setActiveSessionId(newSession.id);
+        window.history.replaceState(null, '', `/chat/${newSession.id}`);
+      } else {
+        // 没有报告：直接在原 session 继续（比如对话中状态）
+        setIsReadOnly(false);
+      }
     } catch (err) {
       console.error('继续对话失败:', err);
       message.error('继续对话失败，请稍后重试');
@@ -239,22 +255,22 @@ export const ChatPage = () => {
   };
 
   const handleViewReport = async () => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
     try {
-      const status = await evaluationService.getReportStatus(sessionId);
+      const status = await evaluationService.getReportStatus(activeSessionId);
       if (status.status === 'generating') {
         message.info('报告正在后台生成中，请耐心等待15秒左右...', 3);
         // Start polling if not already polling
-        pollEvaluationStatus(sessionId);
+        pollEvaluationStatus(activeSessionId);
       } else if (status.status === 'completed') {
-        navigate(`/evaluation/${sessionId}`);
+        navigate(`/evaluation/${activeSessionId}`);
       } else {
         message.warning('报告生成失败或未找到，请重试');
       }
     } catch (err) {
       console.error('获取状态失败', err);
       // Fallback
-      navigate(`/evaluation/${sessionId}`);
+      navigate(`/evaluation/${activeSessionId}`);
     }
   };
 

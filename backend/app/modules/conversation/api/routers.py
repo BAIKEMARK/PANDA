@@ -163,11 +163,20 @@ async def end_session(
 @router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
     session_id: str,
+    user_id: str = Depends(get_current_user_with_fallback),
     db: Session = Depends(get_db)
 ):
-    """删除会话及其所有消息"""
+    """删除会话及其所有消息和评估报告"""
     service = ChatService(db)
     service.delete_session(session_id)
+
+    # 清除 Dashboard 缓存
+    try:
+        from backend.app.modules.progress.services.dashboard_service import DashboardService
+        DashboardService.clear_dashboard_cache(user_id)
+    except Exception:
+        pass
+
     return None
 
 

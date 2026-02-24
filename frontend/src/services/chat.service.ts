@@ -65,6 +65,13 @@ class ChatService {
   }
 
   /**
+   * 删除会话及其关联数据
+   */
+  async deleteSession(sessionId: string): Promise<void> {
+    await api.delete(`/chat/sessions/${sessionId}`);
+  }
+
+  /**
    * 自杀倾向报警
    */
   async alertSuicideRisk(sessionId: string): Promise<ChatSession> {

@@ -111,3 +111,29 @@ class ChatService:
         self.db.commit()
         self.db.refresh(new_session)
         return new_session
+
+    def delete_session(self, session_id: str) -> None:
+        """
+        删除会话及其所有关联数据（消息、评估报告）
+        """
+        from backend.app.models.evaluation import EvaluationReport
+
+        db_session = self.db.query(ChatSession).filter(
+            ChatSession.id == session_id
+        ).first()
+        if not db_session:
+            raise NotFoundException("会话不存在")
+
+        # 删除关联的评估报告
+        self.db.query(EvaluationReport).filter(
+            EvaluationReport.session_id == session_id
+        ).delete()
+
+        # 删除关联的消息
+        self.db.query(ChatMessage).filter(
+            ChatMessage.session_id == session_id
+        ).delete()
+
+        # 删除会话本身
+        self.db.delete(db_session)
+        self.db.commit()
