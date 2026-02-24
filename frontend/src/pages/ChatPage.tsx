@@ -221,9 +221,24 @@ export const ChatPage = () => {
     });
   };
 
-  const handleContinueChat = () => {
-    setIsReadOnly(false);
-    message.success('已进入对话模式，您可以继续对话了');
+  const handleContinueChat = async () => {
+    if (!currentSession?.scenario_id) {
+      message.error('未找到当前记录关联的场景');
+      return;
+    }
+
+    try {
+      const newSession = await chatService.createSession({
+        scenario_id: currentSession.scenario_id
+      });
+      message.success('已开启全新的对话练习');
+      // 关闭只读模式，且跳转到新路径，这会触发页面重新加载组件获取新会话
+      setIsReadOnly(false);
+      navigate(`/chat/${newSession.id}`, { replace: true });
+    } catch (err) {
+      console.error('重新对话失败:', err);
+      message.error('启动新对话失败，请稍后重试');
+    }
   };
 
   const handleViewReport = async () => {
@@ -416,16 +431,6 @@ export const ChatPage = () => {
                 type="info"
                 showIcon
                 style={{ margin: '16px 24px', borderRadius: '8px' }}
-                action={
-                  <Space>
-                    <Button size="small" onClick={handleViewReport}>
-                      查看报告
-                    </Button>
-                    <Button type="primary" size="small" onClick={handleContinueChat}>
-                      重启对话
-                    </Button>
-                  </Space>
-                }
               />
             </motion.div>
           ) : (
