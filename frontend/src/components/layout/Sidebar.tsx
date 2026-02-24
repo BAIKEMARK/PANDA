@@ -85,7 +85,9 @@ export const Sidebar = () => {
     <Sider
       width={240}
       style={{
-        overflow: 'auto',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
         height: '100vh',
         position: 'fixed',
         left: 0,
@@ -104,6 +106,7 @@ export const Sidebar = () => {
           padding: '20px 16px',
           textAlign: 'center',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
+          flexShrink: 0,
         }}
       >
         <motion.div
@@ -126,7 +129,7 @@ export const Sidebar = () => {
 
       {/* Navigation */}
       {isLoading ? (
-        <div style={{ padding: '20px', textAlign: 'center' }}>
+        <div style={{ padding: '20px', textAlign: 'center', flex: 1 }}>
           <Spin size="small" />
         </div>
       ) : (
@@ -134,7 +137,7 @@ export const Sidebar = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.4 }}
-          style={{ paddingBottom: '90px' }}
+          style={{ paddingBottom: '20px', flex: 1, overflowY: 'auto' }}
         >
           <Menu
             theme="dark"
@@ -156,13 +159,10 @@ export const Sidebar = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
           padding: '12px 16px',
           borderTop: '1px solid rgba(255,255,255,0.08)',
           background: 'rgba(0,0,0,0.2)',
+          flexShrink: 0,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
