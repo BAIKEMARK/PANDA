@@ -31,7 +31,8 @@ async def create_session(
 ):
     """创建新的对话会话"""
     service = ChatService(db)
-    return service.create_session(session_data, user_id)
+    session = service.create_session(session_data, user_id)
+    return session
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionResponse)
@@ -114,6 +115,13 @@ async def send_message(
         )
         assistant_message = service.create_message(assistant_message_data)
 
+        # 清除 Dashboard 缓存（第一条消息发出后，会话记录才应出现在仪表盘）
+        try:
+            from backend.app.modules.progress.services.dashboard_service import DashboardService
+            DashboardService.clear_dashboard_cache(user_id)
+        except Exception:
+            pass
+
         return assistant_message
 
     except Exception as e:
@@ -154,12 +162,54 @@ async def end_session(
 @router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
     session_id: str,
+    user_id: str = Depends(get_current_user_with_fallback),
     db: Session = Depends(get_db)
 ):
-    """删除会话及其所有消息"""
+    """删除会话及其所有消息和评估报告"""
     service = ChatService(db)
     service.delete_session(session_id)
+
+    # 清除 Dashboard 缓存
+    try:
+        from backend.app.modules.progress.services.dashboard_service import DashboardService
+        DashboardService.clear_dashboard_cache(user_id)
+    except Exception:
+        pass
+
     return None
+
+
+@router.post("/sessions/{session_id}/fork", response_model=ChatSessionResponse, status_code=status.HTTP_201_CREATED)
+async def fork_session(
+    session_id: str,
+    user_id: str = Depends(get_current_user_with_fallback),
+    db: Session = Depends(get_db)
+):
+    """
+    从已完成的会话分叉出新会话（继续对话）
+
+    流程：
+    1. 创建新会话（新 ID，同 scenario_id）
+    2. 复制旧会话的所有消息到新会话
+    3. 旧会话和旧评估报告完全不动
+    4. 清除 Dashboard 缓存
+    """
+    service = ChatService(db)
+
+    session = service.get_session(session_id)
+    if not session:
+        raise NotFoundException(f"会话不存在: {session_id}")
+
+    new_session = service.fork_session(session_id, user_id)
+
+    # 清除 Dashboard 缓存
+    try:
+        from backend.app.modules.progress.services.dashboard_service import DashboardService
+        DashboardService.clear_dashboard_cache(user_id)
+    except Exception:
+        pass
+
+    return service.get_session(new_session.id)
 
 
 @router.post("/sessions/{session_id}/alert", response_model=ChatSessionResponse)

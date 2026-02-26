@@ -53,8 +53,9 @@ class MentorAgent:
                         logger.info(f"评估报告已存在或正在生成，跳过自动评估 | session_id={session_id} | report_id={existing_report.id}")
                     return
 
-                # 生成评估报告
-                self.generate_evaluation(session_id)
+                # 异步生成评估报告，避免阻塞调用方
+                from backend.app.core.tasks.evaluation_task import generate_evaluation_async
+                generate_evaluation_async(session_id)
 
             except Exception as e:
                 logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
@@ -80,9 +81,9 @@ class MentorAgent:
         Returns:
             EvaluationReport: 评估报告对象
         """
-        # 检查是否已存在评估报告
+        # 检查是否已存在已完成的评估报告
         existing_report = self.evaluation_service.get_report_by_session(session_id)
-        if existing_report:
+        if existing_report and existing_report.status == "completed":
             return existing_report
 
         # 获取会话和对话数据
@@ -205,4 +206,14 @@ class MentorAgent:
             "meta_data": evaluation_data.get("meta_data", {"ai_generated": True})
         }
 
-        return self.evaluation_service.create_report(report_data)
+        # 检查是否已有报告记录（例如通过异步接口提前创建的生成中占位记录）
+        existing_report = self.evaluation_service.get_report_by_session(session_id)
+        if existing_report:
+            # 如果存在则直接更新属性并提交
+            for key, value in report_data.items():
+                setattr(existing_report, key, value)
+            self.db.commit()
+            self.db.refresh(existing_report)
+            return existing_report
+        else:
+            return self.evaluation_service.create_report(report_data)

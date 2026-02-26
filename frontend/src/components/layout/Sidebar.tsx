@@ -66,7 +66,7 @@ export const Sidebar = () => {
 
       // 处理子菜单
       if (hasChildren) {
-        item.children = menu.children.map((child) => ({
+        item.children = menu.children?.map((child) => ({
           key: child.path || child.id,
           icon: iconMap[child.icon] || <MenuOutlined />,
           label: (
@@ -134,6 +134,7 @@ export const Sidebar = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.4 }}
+          style={{ height: 'calc(100vh - 160px)', overflowY: 'auto' }}
         >
           <Menu
             theme="dark"

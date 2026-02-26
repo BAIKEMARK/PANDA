@@ -59,3 +59,81 @@ class ChatService:
         )
 
         return session
+
+    def fork_session(self, session_id: str, user_id: str) -> ChatSession:
+        """
+        从已完成的会话分叉出一个新会话（继续对话）
+        
+        1. 创建一个全新的 session（新 ID，同 scenario_id）
+        2. 把旧 session 的所有消息复制到新 session
+        3. 旧 session 和旧评估报告完全不动
+        """
+        import uuid
+        from datetime import datetime
+
+        # 获取旧会话
+        old_session = self.db.query(ChatSession).filter(
+            ChatSession.id == session_id
+        ).first()
+        if not old_session:
+            raise NotFoundException("会话不存在")
+
+        # 1. 创建新会话
+        new_session_id = str(uuid.uuid4())
+        new_session = ChatSession(
+            id=new_session_id,
+            user_id=user_id,
+            scenario_id=old_session.scenario_id,
+            status=SessionStatus.ACTIVE,
+            start_time=datetime.utcnow(),
+            # 继承自杀倾向检测状态
+            has_suicide_risk=old_session.has_suicide_risk,
+            suicide_risk_first_detected=old_session.suicide_risk_first_detected,
+        )
+        self.db.add(new_session)
+
+        # 2. 复制旧消息到新会话
+        old_messages = self.db.query(ChatMessage).filter(
+            ChatMessage.session_id == session_id
+        ).order_by(ChatMessage.created_at.asc()).all()
+
+        for msg in old_messages:
+            new_msg = ChatMessage(
+                id=str(uuid.uuid4()),
+                session_id=new_session_id,
+                role=msg.role,
+                content=msg.content,
+                meta_data=msg.meta_data,
+                created_at=msg.created_at,  # 保留原始时间戳
+            )
+            self.db.add(new_msg)
+
+        self.db.commit()
+        self.db.refresh(new_session)
+        return new_session
+
+    def delete_session(self, session_id: str) -> None:
+        """
+        删除会话及其所有关联数据（消息、评估报告）
+        """
+        from backend.app.models.evaluation import EvaluationReport
+
+        db_session = self.db.query(ChatSession).filter(
+            ChatSession.id == session_id
+        ).first()
+        if not db_session:
+            raise NotFoundException("会话不存在")
+
+        # 删除关联的评估报告
+        self.db.query(EvaluationReport).filter(
+            EvaluationReport.session_id == session_id
+        ).delete()
+
+        # 删除关联的消息
+        self.db.query(ChatMessage).filter(
+            ChatMessage.session_id == session_id
+        ).delete()
+
+        # 删除会话本身
+        self.db.delete(db_session)
+        self.db.commit()

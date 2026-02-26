@@ -30,11 +30,14 @@ export const ChatPage = () => {
   const { currentSession, messages, isLoading, isTyping, loadMessages, sendMessage, endSession, setTyping } = useChatStore();
   const [isEnding, setIsEnding] = useState(false);
 
-  // 判断是否从历史记录进入（默认只读模式）
-  const [isReadOnly, setIsReadOnly] = useState(() => {
-    const fromHistory = location.state?.fromHistory === true;
-    return fromHistory;
-  });
+  // 实际生效的 session ID（fork 后会更新为新 ID）
+  const [activeSessionId, setActiveSessionId] = useState(sessionId);
+  // 是否需要在下次发消息时 fork（延迟 fork）
+  const [pendingFork, setPendingFork] = useState(false);
+
+  // 判断是否从历史记录进入
+  const fromHistory = location.state?.fromHistory === true;
+  const [isReadOnly, setIsReadOnly] = useState(fromHistory);
 
   useEffect(() => {
     if (!sessionId) {
@@ -58,11 +61,29 @@ export const ChatPage = () => {
   }, [sessionId, loadMessages, navigate]);
 
   const handleSendMessage = async (content: string) => {
-    if (!sessionId || isReadOnly) return;
+    if (!activeSessionId || isReadOnly) return;
 
     try {
       setTyping(true);
-      const result = await sendMessage(sessionId, content);
+
+      // 如果有待执行的 fork，在发消息前先完成 fork
+      let targetSessionId = activeSessionId;
+      if (pendingFork) {
+        try {
+          const newSession = await chatService.forkSession(activeSessionId);
+          targetSessionId = newSession.id;
+          setActiveSessionId(newSession.id);
+          setPendingFork(false);
+          window.history.replaceState(null, '', `/chat/${newSession.id}`);
+        } catch (err) {
+          console.error('Fork 失败:', err);
+          message.error('继续对话失败，请稍后重试');
+          setTyping(false);
+          return;
+        }
+      }
+
+      const result = await sendMessage(targetSessionId, content);
 
       // 检查是否患者想离开（通过meta_data）
       const lastMessage = result as ChatMessage;
@@ -78,15 +99,15 @@ export const ChatPage = () => {
             onOk: async () => {
               try {
                 // 先结束会话
-                await endSession(sessionId);
-                
+                await endSession(activeSessionId);
+
                 // 提交异步评估报告生成任务
-                await evaluationService.generateReportAsync(sessionId);
-                
+                await evaluationService.generateReportAsync(activeSessionId);
+
                 message.success('评估报告生成任务已提交，完成后将通知您');
-                
+
                 // 开始后台轮询状态
-                pollEvaluationStatus(sessionId);
+                pollEvaluationStatus(activeSessionId);
               } catch (err) {
                 console.error('提交评估任务失败:', err);
                 message.error('提交评估任务失败，请稍后重试');
@@ -106,7 +127,7 @@ export const ChatPage = () => {
   };
 
   const handleEndSession = async () => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
 
     Modal.confirm({
       title: '确认结束对话',
@@ -118,15 +139,18 @@ export const ChatPage = () => {
           setIsEnding(true);
 
           // 先结束会话
-          await endSession(sessionId);
+          await endSession(activeSessionId);
 
           // 提交异步评估报告生成任务
-          await evaluationService.generateReportAsync(sessionId);
+          await evaluationService.generateReportAsync(activeSessionId);
 
           message.success('评估报告生成任务已提交，完成后将通知您');
 
+          // 将页面状态置为只读
+          setIsReadOnly(true);
+
           // 开始后台轮询状态
-          pollEvaluationStatus(sessionId);
+          pollEvaluationStatus(activeSessionId);
         } catch (err) {
           console.error('结束会话失败:', err);
           message.error('操作失败，请稍后重试');
@@ -153,6 +177,7 @@ export const ChatPage = () => {
             title: '评估报告生成完成',
             content: '评估报告已生成完成，点击查看详情',
             okText: '查看报告',
+            cancelText: '继续留在本页',
             onOk: () => {
               navigate(`/evaluation/${sessionId}`);
             },
@@ -185,7 +210,7 @@ export const ChatPage = () => {
   };
 
   const handleAlert = async () => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
 
     Modal.confirm({
       title: '确认报警',
@@ -197,15 +222,18 @@ export const ChatPage = () => {
       onOk: async () => {
         try {
           // 处理报警（这会自动结束会话）
-          await chatService.alertSuicideRisk(sessionId);
+          await chatService.alertSuicideRisk(activeSessionId);
 
           // 提交异步评估报告生成任务
-          await evaluationService.generateReportAsync(sessionId);
+          await evaluationService.generateReportAsync(activeSessionId);
 
           message.success('已记录报警，评估报告生成任务已提交，完成后将通知您');
 
+          // 将页面置于只读模式
+          setIsReadOnly(true);
+
           // 开始后台轮询状态
-          pollEvaluationStatus(sessionId);
+          pollEvaluationStatus(activeSessionId);
         } catch (err) {
           console.error('报警失败:', err);
           message.error('报警失败，请稍后重试');
@@ -214,9 +242,49 @@ export const ChatPage = () => {
     });
   };
 
-  const handleContinueChat = () => {
-    setIsReadOnly(false);
-    message.success('已进入对话模式，您可以继续对话了');
+  const handleContinueChat = async () => {
+    if (!activeSessionId) return;
+
+    try {
+      // 检查是否已有报告
+      let hasReport = false;
+      try {
+        const reportStatus = await evaluationService.getReportStatus(activeSessionId);
+        hasReport = reportStatus.status === 'completed' || reportStatus.status === 'generating';
+      } catch {
+        // 没有报告记录
+      }
+
+      if (hasReport) {
+        // 有报告：标记等待 fork，真正 fork 在用户发第一条消息时执行
+        setPendingFork(true);
+      }
+      // 无论如何，立刻解锁输入框
+      setIsReadOnly(false);
+    } catch (err) {
+      console.error('继续对话失败:', err);
+      message.error('继续对话失败，请稍后重试');
+    }
+  };
+
+  const handleViewReport = async () => {
+    if (!activeSessionId) return;
+    try {
+      const status = await evaluationService.getReportStatus(activeSessionId);
+      if (status.status === 'generating') {
+        message.info('报告正在后台生成中，请耐心等待15秒左右...', 3);
+        // Start polling if not already polling
+        pollEvaluationStatus(activeSessionId);
+      } else if (status.status === 'completed') {
+        navigate(`/evaluation/${activeSessionId}`);
+      } else {
+        message.warning('报告生成失败或未找到，请重试');
+      }
+    } catch (err) {
+      console.error('获取状态失败', err);
+      // Fallback
+      navigate(`/evaluation/${activeSessionId}`);
+    }
   };
 
   return (
@@ -256,7 +324,7 @@ export const ChatPage = () => {
             <Button
               type="text"
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate('/scenarios')}
+              onClick={() => navigate(fromHistory ? '/progress' : '/scenarios')}
               style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}
             >
               返回
@@ -286,14 +354,23 @@ export const ChatPage = () => {
                 style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
                 <Tag color="orange" style={{ background: 'rgba(255,152,0,0.2)', border: 'none', color: '#fff' }}>
-                  只读模式
+                  已结束/只读模式
                 </Tag>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button
                     type="primary"
+                    onClick={handleViewReport}
+                    style={{ background: '#fff', color: '#667eea', border: 'none' }}
+                  >
+                    查看评估报告
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    type="default"
                     icon={<PlayCircleOutlined />}
                     onClick={handleContinueChat}
-                    style={{ background: '#fff', color: '#667eea', border: 'none' }}
+                    style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none' }}
                   >
                     继续对话
                   </Button>
@@ -375,16 +452,11 @@ export const ChatPage = () => {
               exit={{ opacity: 0, y: -20 }}
             >
               <Alert
-                message="您正在查看历史对话记录"
-                description="点击右上角「继续对话」按钮可继续与患者交流"
+                message="本对话已结束或处于只读记录模式"
+                description="正在生成或已生成评估报告，您可以点击右上角按钮查看。"
                 type="info"
                 showIcon
                 style={{ margin: '16px 24px', borderRadius: '8px' }}
-                action={
-                  <Button type="primary" size="small" onClick={handleContinueChat}>
-                    继续对话
-                  </Button>
-                }
               />
             </motion.div>
           ) : (

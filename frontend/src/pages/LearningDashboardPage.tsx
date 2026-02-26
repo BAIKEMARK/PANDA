@@ -2,18 +2,21 @@
  * 学习仪表盘页面
  */
 import { useEffect, useState } from 'react';
-import { Typography, Row, Col, Card, Tag, Spin, Empty, Alert } from 'antd';
+import { Typography, Row, Col, Card, Tag, Spin, Empty, Alert, message, Popconfirm } from 'antd';
 import {
     TrophyOutlined,
     ReadOutlined,
     ExperimentOutlined,
     ArrowRightOutlined,
-    ClockCircleOutlined
+    ClockCircleOutlined,
+    CommentOutlined,
+    DeleteOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { useAuthStore } from '@/stores/auth.store';
 import api from '@/services/api';
+import chatService from '@/services/chat.service';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 
 const { Title, Text } = Typography;
@@ -38,6 +41,7 @@ interface ScenarioHistoryItem {
     scenario_name: string;
     total_score: number | null;
     level_assessment: string | null;
+    status: string;
     created_at: string;
 }
 
@@ -248,6 +252,10 @@ export const LearningDashboardPage = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {scenarioHistory.map((item, index) => {
                                     const isLast = index === scenarioHistory.length - 1;
+                                    const isGenerating = item.status === 'generating' || (!item.status && item.total_score == null && item.status !== 'active' && item.status !== 'abandoned');
+                                    const isCompleted = item.status === 'completed' || (!item.status && item.total_score != null);
+                                    const isActive = item.status === 'active';
+
                                     return (
                                         <div
                                             key={item.session_id}
@@ -280,9 +288,21 @@ export const LearningDashboardPage = () => {
                                                         )}
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
-                                                        {item.total_score !== null && (
+                                                        {isCompleted && item.total_score !== null && (
                                                             <Text strong style={{ color: '#1890ff' }}>
                                                                 得分：{item.total_score} 分
+                                                            </Text>
+                                                        )}
+                                                        {isActive && (
+                                                            <Text strong style={{ color: '#52c41a' }}>
+                                                                <CommentOutlined style={{ marginRight: 8 }} />
+                                                                对话中...
+                                                            </Text>
+                                                        )}
+                                                        {isGenerating && (
+                                                            <Text strong style={{ color: '#faad14' }}>
+                                                                <Spin size="small" style={{ marginRight: 8 }} />
+                                                                生成报告中...
                                                             </Text>
                                                         )}
                                                         <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -293,10 +313,42 @@ export const LearningDashboardPage = () => {
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                <Link to={`/evaluation/${item.session_id}`}>查看评估</Link>
+                                                {isActive ? (
+                                                    <Link to={`/chat/${item.session_id}`}>继续对话</Link>
+                                                ) : isGenerating ? (
+                                                    <a onClick={(e) => { e.preventDefault(); message.info('报告正在后台生成中，请耐心等待15秒左右...', 3); }} style={{ color: '#999' }}>查看评估</a>
+                                                ) : (
+                                                    <Link to={`/evaluation/${item.session_id}`}>查看评估</Link>
+                                                )}
                                                 <Link to={`/chat/${item.session_id}`} state={{ fromHistory: true }}>
-                                                    查看对话
+                                                    {isActive ? '查看对话' : '对话记录'}
                                                 </Link>
+                                                <Popconfirm
+                                                    title="确认删除"
+                                                    description="删除后将无法恢复该对话及其评估报告，确认删除吗？"
+                                                    onConfirm={async () => {
+                                                        try {
+                                                            await chatService.deleteSession(item.session_id);
+                                                            message.success('已删除');
+                                                            // 刷新数据
+                                                            if (stats) {
+                                                                setStats({
+                                                                    ...stats,
+                                                                    scenario_history: stats.scenario_history.filter(
+                                                                        (h: ScenarioHistoryItem) => h.session_id !== item.session_id
+                                                                    ),
+                                                                });
+                                                            }
+                                                        } catch {
+                                                            message.error('删除失败，请重试');
+                                                        }
+                                                    }}
+                                                    okText="删除"
+                                                    cancelText="取消"
+                                                    okButtonProps={{ danger: true }}
+                                                >
+                                                    <a style={{ color: '#ff4d4f' }}><DeleteOutlined /></a>
+                                                </Popconfirm>
                                             </div>
                                         </div>
                                     );

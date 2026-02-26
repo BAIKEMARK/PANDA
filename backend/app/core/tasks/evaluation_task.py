@@ -153,6 +153,17 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
         raise
 
     finally:
+        try:
+            # 尝试清除该用户的 Dashboard 缓存
+            from backend.app.models.chat import ChatSession
+            session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+            if session and session.user_id:
+                from backend.app.core.services.redis_cache import redis_cache
+                from backend.app.core.config.settings import settings
+                if settings.CACHE_ENABLED:
+                    redis_cache.delete(f"dashboard:{session.user_id}")
+        except Exception as cache_err:
+            logger.error(f"Failed to clear cache: {cache_err}")
         db.close()
 
 

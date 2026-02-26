@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col, Space, Spin, Alert, Tag } from 'antd';
-import { TrophyOutlined, RocketOutlined, BookOutlined } from '@ant-design/icons';
+import { TrophyOutlined, RocketOutlined, BookOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import type { EvaluationReport } from '@/types/evaluation.types';
@@ -44,6 +44,12 @@ export const EvaluationReportPage = () => {
         };
 
         setReport(normalizedReport);
+
+        // 如果仍在生成中，10秒后重新获取
+        const isGenerating = data.status === 'generating' || data.total_score == null;
+        if (isGenerating) {
+          setTimeout(fetchReport, 10000);
+        }
       } catch (err: any) {
         console.error('获取评估报告失败:', err);
         // 设置错误信息，不再使用模拟数据
@@ -71,6 +77,29 @@ export const EvaluationReportPage = () => {
           style={{ marginTop: '16px' }}
         >
           <Text type="secondary">正在加载评估报告...</Text>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  const isGenerating = report?.status === 'generating' || (report && report.total_score == null);
+
+  if (isGenerating) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ textAlign: 'center', padding: '100px 0' }}
+      >
+        <Spin size="large" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{ marginTop: '24px' }}
+        >
+          <Title level={4}>评估报告正在生成中...</Title>
+          <Text type="secondary">这可能需要几十秒的时间，请耐心等待。</Text>
         </motion.div>
       </motion.div>
     );
@@ -153,23 +182,34 @@ export const EvaluationReportPage = () => {
             对话练习 #{sessionId} 的详细评估结果
           </Paragraph>
         </div>
-        <Link to="/scenarios">
+        <Space>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
-              type="primary"
-              size="large"
-              icon={<RocketOutlined />}
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                border: 'none',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-              }}
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate('/progress')}
+              style={{ borderRadius: '8px' }}
             >
-              继续练习
+              返回学习进度
             </Button>
           </motion.div>
-        </Link>
+          <Link to="/scenarios">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                type="primary"
+                size="large"
+                icon={<RocketOutlined />}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                }}
+              >
+                继续练习
+              </Button>
+            </motion.div>
+          </Link>
+        </Space>
       </motion.div>
 
       {/* Total Score */}
@@ -282,8 +322,8 @@ export const EvaluationReportPage = () => {
                   }}
                 >
                   <div style={{ marginBottom: '8px' }}>
-                    <Tag color={item.status === 'pass' ? 'green' : 'red'}>
-                      {item.status === 'pass' ? '通过' : '失败'}
+                    <Tag color={['pass', 'Pass', '通过'].includes(item.status) ? 'green' : 'red'}>
+                      {['pass', 'Pass', '通过'].includes(item.status) ? '通过' : '失败'}
                     </Tag>
                     <Text strong>{item.dimension}</Text>
                   </div>
@@ -320,67 +360,67 @@ export const EvaluationReportPage = () => {
             bordered={false}
             style={{ marginBottom: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
           >
-          <div
-            className="markdown-content"
-            style={{
-              color: '#262626',
-              lineHeight: '1.6'
-            }}
-          >
-            <ReactMarkdown
-              components={{
-                p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
-                ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
-                ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
-                li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
-                strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
-                code: ({ inline, children, ...props }: any) =>
-                  inline ? (
-                    <code
-                      style={{
-                        background: '#f5f5f5',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        color: '#eb2f96'
-                      }}
-                      {...props}
-                    >{children}</code>
-                  ) : (
-                    <code
-                      style={{
-                        display: 'block',
-                        background: '#f5f5f5',
-                        padding: '12px',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        overflow: 'auto',
-                        margin: '8px 0'
-                      }}
-                      {...props}
-                    >{children}</code>
-                  ),
-                h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
-                h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
-                h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
-                blockquote: ({ children, ...props }: any) => (
-                  <blockquote
-                    style={{
-                      borderLeft: '3px solid #d9d9d9',
-                      paddingLeft: '12px',
-                      margin: '8px 0',
-                      color: '#595959',
-                      fontStyle: 'italic'
-                    }}
-                    {...props}
-                  >{children}</blockquote>
-                )
+            <div
+              className="markdown-content"
+              style={{
+                color: '#262626',
+                lineHeight: '1.6'
               }}
             >
-              {report.technical_guidance}
-            </ReactMarkdown>
-          </div>
-        </Card>
+              <ReactMarkdown
+                components={{
+                  p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
+                  ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
+                  ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
+                  li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
+                  strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
+                  code: ({ inline, children, ...props }: any) =>
+                    inline ? (
+                      <code
+                        style={{
+                          background: '#f5f5f5',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '14px',
+                          color: '#eb2f96'
+                        }}
+                        {...props}
+                      >{children}</code>
+                    ) : (
+                      <code
+                        style={{
+                          display: 'block',
+                          background: '#f5f5f5',
+                          padding: '12px',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          overflow: 'auto',
+                          margin: '8px 0'
+                        }}
+                        {...props}
+                      >{children}</code>
+                    ),
+                  h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
+                  h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
+                  h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
+                  blockquote: ({ children, ...props }: any) => (
+                    <blockquote
+                      style={{
+                        borderLeft: '3px solid #d9d9d9',
+                        paddingLeft: '12px',
+                        margin: '8px 0',
+                        color: '#595959',
+                        fontStyle: 'italic'
+                      }}
+                      {...props}
+                    >{children}</blockquote>
+                  )
+                }}
+              >
+                {report.technical_guidance}
+              </ReactMarkdown>
+            </div>
+          </Card>
         </motion.div>
       )}
 
