@@ -8,8 +8,9 @@ from typing import List, Optional
 from backend.app.models.scenario import Scenario
 from backend.app.modules.scenario.schemas.scenario import ScenarioCreate, ScenarioUpdate
 from backend.app.modules.scenario.repositories.scenario_repository import ScenarioRepository
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
 from backend.app.interfaces.scenario_interface import ScenarioInterface, ScenarioConfig
+from backend.app.modules.admin.services.permission_service import PermissionService
 
 
 class ScenarioService(ScenarioInterface):
@@ -18,6 +19,7 @@ class ScenarioService(ScenarioInterface):
     def __init__(self, db: Session):
         self.db = db
         self.repository = ScenarioRepository(db)
+        self.permission_service = PermissionService(db)
 
     # ==================== CRUD 操作 ====================
 
@@ -29,11 +31,44 @@ class ScenarioService(ScenarioInterface):
         """获取场景"""
         return self.repository.get_scenario(scenario_id)
 
-    def get_scenarios(self, difficulty: Optional[int] = None) -> List[Scenario]:
-        """获取场景列表"""
+    def get_scenarios(
+        self, 
+        difficulty: Optional[int] = None, 
+        user_role: Optional[str] = None,
+        user_id: Optional[str] = None
+    ) -> List[Scenario]:
+        """获取场景列表
+        
+        Args:
+            difficulty: 难度筛选
+            user_role: 用户角色，如果为'student'则只返回已发布的场景
+            user_id: 用户ID，用于权限过滤
+        """
+        status = None
+        if user_role == "student":
+            status = "published"
+        
+        # 获取用户权限信息
+        is_super_admin = False
+        user_orgs = []
+        if user_id:
+            is_super_admin = self.permission_service.is_super_admin(user_id)
+            user_orgs = self.permission_service.get_user_orgs(user_id)
+        
         if difficulty is not None:
-            return self.repository.get_scenarios_by_difficulty(difficulty)
-        return self.repository.get_scenarios()
+            return self.repository.get_scenarios_by_difficulty(
+                difficulty, 
+                status=status,
+                user_id=user_id,
+                user_orgs=user_orgs,
+                is_super_admin=is_super_admin
+            )
+        return self.repository.get_scenarios(
+            status=status,
+            user_id=user_id,
+            user_orgs=user_orgs,
+            is_super_admin=is_super_admin
+        )
 
     def update_scenario(self, scenario_id: str, scenario_data: ScenarioUpdate) -> Optional[Scenario]:
         """更新场景"""

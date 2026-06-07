@@ -1,11 +1,12 @@
-/**
+﻿/**
  * 评估报告页面
  */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col, Space, Spin, Alert, Tag } from 'antd';
-import { TrophyOutlined } from '@ant-design/icons';
+import { TrophyOutlined, RocketOutlined, BookOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
+import { motion } from 'framer-motion';
 import type { EvaluationReport } from '@/types/evaluation.types';
 import evaluationService from '@/services/evaluation.service';
 import { EvaluationRadarChart } from '@/components/evaluation/RadarChart';
@@ -43,42 +44,16 @@ export const EvaluationReportPage = () => {
         };
 
         setReport(normalizedReport);
-      } catch (err) {
-        // 使用模拟数据
-        const mockReport: EvaluationReport = {
-          id: 'mock-report-id',
-          session_id: sessionId || '',
-          total_score: 74,
-          level_assessment: '良好',
-          radar_chart: {
-            A_risk_identification: 75,
-            B_communication: 68,
-            C_skill_application: 71,
-            D_safety_management: 82,
-            E_self_efficacy: 70,
-          },
-          state_analysis: {
-            mood_change: 5,
-            rapport_change: 10,
-            depression_change: -5,
-            overall_performance: '表现良好，展现了基本的沟通技巧和共情能力',
-          },
-          detailed_feedback: [
-            {
-              dimension: 'B1 积极倾听',
-              status: 'pass',
-              dialogue_ref_id: 2,
-              user_input: '你最近感觉怎么样？',
-              patient_state_snapshot: '患者情绪低落',
-              critique: '良好',
-              expert_suggestion: '继续保持倾听态度',
-            },
-          ],
-          technical_guidance: '建议加强EPDS量表的使用',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setReport(mockReport);
+
+        // 如果仍在生成中，10秒后重新获取
+        const isGenerating = data.status === 'generating' || data.total_score == null;
+        if (isGenerating) {
+          setTimeout(fetchReport, 10000);
+        }
+      } catch (err: any) {
+        console.error('获取评估报告失败:', err);
+        // 设置错误信息，不再使用模拟数据
+        setError(err.message || '获取评估报告失败，请稍后重试');
       } finally {
         setIsLoading(false);
       }
@@ -89,9 +64,44 @@ export const EvaluationReportPage = () => {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px 0' }}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ textAlign: 'center', padding: '60px 0' }}
+      >
         <Spin size="large" />
-      </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{ marginTop: '16px' }}
+        >
+          <Text type="secondary">正在加载评估报告...</Text>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  const isGenerating = report?.status === 'generating' || (report && report.total_score == null);
+
+  if (isGenerating) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ textAlign: 'center', padding: '100px 0' }}
+      >
+        <Spin size="large" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{ marginTop: '24px' }}
+        >
+          <Title level={4}>评估报告正在生成中...</Title>
+          <Text type="secondary">这可能需要几十秒的时间，请耐心等待。</Text>
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -118,56 +128,142 @@ export const EvaluationReportPage = () => {
     );
   }
 
+  // 错误状态
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ textAlign: 'center', padding: '60px 0' }}
+      >
+        <Alert
+          message="获取评估报告失败"
+          description={error}
+          type="error"
+          showIcon
+          style={{ maxWidth: '600px', margin: '0 auto', marginBottom: '24px' }}
+        />
+        <Space>
+          <Button onClick={() => window.location.reload()}>重新加载</Button>
+          <Button onClick={() => navigate(-1)}>返回上一页</Button>
+          <Link to="/scenarios">
+            <Button type="primary">继续练习</Button>
+          </Link>
+        </Space>
+      </motion.div>
+    );
+  }
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{ maxWidth: '1200px', margin: '0 auto' }}
+    >
       {/* Header */}
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+        style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
         <div>
-          <Title level={2} style={{ marginBottom: '8px' }}>评估报告</Title>
+          <Title level={2} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <motion.span
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+            >
+              <TrophyOutlined style={{ color: '#faad14' }} />
+            </motion.span>
+            评估报告
+          </Title>
           <Paragraph type="secondary">
             对话练习 #{sessionId} 的详细评估结果
           </Paragraph>
         </div>
-        <Link to="/scenarios">
-          <Button type="primary" size="large">继续练习</Button>
-        </Link>
-      </div>
+        <Space>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate('/progress')}
+              style={{ borderRadius: '8px' }}
+            >
+              返回学习进度
+            </Button>
+          </motion.div>
+          <Link to="/scenarios">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                type="primary"
+                size="large"
+                icon={<RocketOutlined />}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                }}
+              >
+                继续练习
+              </Button>
+            </motion.div>
+          </Link>
+        </Space>
+      </motion.div>
 
       {/* Total Score */}
-      <Card
-        style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          marginBottom: '24px',
-          borderRadius: '12px',
-          border: 'none'
-        }}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
       >
-        <Row gutter={24} align="middle">
-          <Col>
-            <div style={{ color: '#fff', opacity: 0.9, fontSize: '16px', marginBottom: '8px' }}>
-              <TrophyOutlined style={{ marginRight: '8px' }} />
-              综合得分
-            </div>
-            <div style={{
-              color: '#fff',
-              fontSize: '64px',
-              fontWeight: 'bold',
-              lineHeight: 1
-            }}>
-              {report.total_score}
-            </div>
-          </Col>
-          <Col flex="1" style={{ textAlign: 'right', color: '#fff' }}>
-            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '4px' }}>评估完成</div>
-            <div style={{ fontSize: '16px', opacity: 0.8 }}>
-              {new Date(report.created_at).toLocaleString('zh-CN')}
-            </div>
-          </Col>
-        </Row>
-      </Card>
+        <Card
+          style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            marginBottom: '24px',
+            borderRadius: '16px',
+            border: 'none',
+            boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)'
+          }}
+        >
+          <Row gutter={24} align="middle">
+            <Col>
+              <div style={{ color: '#fff', opacity: 0.9, fontSize: '16px', marginBottom: '8px' }}>
+                <TrophyOutlined style={{ marginRight: '8px' }} />
+                综合得分
+              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+                style={{
+                  color: '#fff',
+                  fontSize: '72px',
+                  fontWeight: 'bold',
+                  lineHeight: 1
+                }}
+              >
+                {report.total_score}
+              </motion.div>
+            </Col>
+            <Col flex="1" style={{ textAlign: 'right', color: '#fff' }}>
+              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '4px' }}>评估完成</div>
+              <div style={{ fontSize: '16px', opacity: 0.8 }}>
+                {new Date(report.created_at).toLocaleString('zh-CN')}
+              </div>
+            </Col>
+          </Row>
+        </Card>
+      </motion.div>
 
       {/* Score Cards */}
-      <div style={{ marginBottom: '24px' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+        style={{ marginBottom: '24px' }}
+      >
         {report.radar_chart ? (
           <ScoreCards scores={report.radar_chart} />
         ) : (
@@ -178,145 +274,197 @@ export const EvaluationReportPage = () => {
             showIcon
           />
         )}
-      </div>
+      </motion.div>
 
       {/* Radar Chart */}
       {report.radar_chart && (
-        <Card
-          title="能力雷达图"
-          bordered={false}
-          style={{ marginBottom: '24px', borderRadius: '12px' }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.4 }}
         >
-          <EvaluationRadarChart scores={report.radar_chart} />
-        </Card>
+          <Card
+            title="能力雷达图"
+            bordered={false}
+            style={{ marginBottom: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+          >
+            <EvaluationRadarChart scores={report.radar_chart} />
+          </Card>
+        </motion.div>
       )}
 
       {/* Detailed Feedback */}
       {report.detailed_feedback && report.detailed_feedback.length > 0 && (
-        <Card
-          title="详细反馈"
-          bordered={false}
-          style={{ marginBottom: '24px', borderRadius: '12px' }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
         >
-          {report.detailed_feedback.map((item, index) => {
-            const feedbackLength = report.detailed_feedback?.length ?? 0;
-            return (
-              <div
-                key={index}
-                style={{
-                  marginBottom: index < feedbackLength - 1 ? '16px' : 0,
-                  padding: '16px',
-                  background: '#fafafa',
-                  borderRadius: '8px',
-                }}
-              >
-                <div style={{ marginBottom: '8px' }}>
-                  <Tag color={item.status === '通过' ? 'green' : 'red'}>
-                    {item.status === '通过' ? '通过' : '失败'}
-                  </Tag>
-                  <Text strong>{item.dimension}</Text>
-                </div>
-                {item.user_input && (
+          <Card
+            title="详细反馈"
+            bordered={false}
+            style={{ marginBottom: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+          >
+            {report.detailed_feedback.map((item, index) => {
+              const feedbackLength = report.detailed_feedback?.length ?? 0;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + index * 0.05, duration: 0.3 }}
+                  style={{
+                    marginBottom: index < feedbackLength - 1 ? '16px' : 0,
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)',
+                    borderRadius: '12px',
+                    border: '1px solid #e8e8e8'
+                  }}
+                >
+                  <div style={{ marginBottom: '8px' }}>
+                    <Tag color={['pass', 'Pass', '通过'].includes(item.status) ? 'green' : 'red'}>
+                      {['pass', 'Pass', '通过'].includes(item.status) ? '通过' : '失败'}
+                    </Tag>
+                    <Text strong>{item.dimension}</Text>
+                  </div>
+                  {item.user_input && (
+                    <Paragraph style={{ marginBottom: '8px' }}>
+                      <Text type="secondary">用户输入：</Text>
+                      <Text>{item.user_input}</Text>
+                    </Paragraph>
+                  )}
                   <Paragraph style={{ marginBottom: '8px' }}>
-                    <Text type="secondary">用户输入：</Text>
-                    <Text>{item.user_input}</Text>
+                    <Text type="secondary">评价：</Text>
+                    <Text>{item.critique}</Text>
                   </Paragraph>
-                )}
-                <Paragraph style={{ marginBottom: '8px' }}>
-                  <Text type="secondary">评价：</Text>
-                  <Text>{item.critique}</Text>
-                </Paragraph>
-                <Paragraph>
-                  <Text type="secondary">建议：</Text>
-                  <Text>{item.expert_suggestion}</Text>
-                </Paragraph>
-              </div>
-            );
-          })}
-        </Card>
+                  <Paragraph>
+                    <Text type="secondary">建议：</Text>
+                    <Text>{item.expert_suggestion}</Text>
+                  </Paragraph>
+                </motion.div>
+              );
+            })}
+          </Card>
+        </motion.div>
       )}
 
       {/* Technical Guidance */}
       {report.technical_guidance && (
-        <Card
-          title="技术指导"
-          bordered={false}
-          style={{ marginBottom: '24px', borderRadius: '12px' }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
         >
-          <div
-            className="markdown-content"
-            style={{
-              color: '#262626',
-              lineHeight: '1.6'
-            }}
+          <Card
+            title="技术指导"
+            bordered={false}
+            style={{ marginBottom: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
           >
-            <ReactMarkdown
-              components={{
-                p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
-                ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
-                ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
-                li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
-                strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
-                code: ({ inline, children, ...props }: any) =>
-                  inline ? (
-                    <code
-                      style={{
-                        background: '#f5f5f5',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        color: '#eb2f96'
-                      }}
-                      {...props}
-                    >{children}</code>
-                  ) : (
-                    <code
-                      style={{
-                        display: 'block',
-                        background: '#f5f5f5',
-                        padding: '12px',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        overflow: 'auto',
-                        margin: '8px 0'
-                      }}
-                      {...props}
-                    >{children}</code>
-                  ),
-                h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
-                h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
-                h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
-                blockquote: ({ children, ...props }: any) => (
-                  <blockquote
-                    style={{
-                      borderLeft: '3px solid #d9d9d9',
-                      paddingLeft: '12px',
-                      margin: '8px 0',
-                      color: '#595959',
-                      fontStyle: 'italic'
-                    }}
-                    {...props}
-                  >{children}</blockquote>
-                )
+            <div
+              className="markdown-content"
+              style={{
+                color: '#262626',
+                lineHeight: '1.6'
               }}
             >
-              {report.technical_guidance}
-            </ReactMarkdown>
-          </div>
-        </Card>
+              <ReactMarkdown
+                components={{
+                  p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
+                  ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
+                  ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
+                  li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
+                  strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
+                  code: ({ inline, children, ...props }: any) =>
+                    inline ? (
+                      <code
+                        style={{
+                          background: '#f5f5f5',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '14px',
+                          color: '#eb2f96'
+                        }}
+                        {...props}
+                      >{children}</code>
+                    ) : (
+                      <code
+                        style={{
+                          display: 'block',
+                          background: '#f5f5f5',
+                          padding: '12px',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          overflow: 'auto',
+                          margin: '8px 0'
+                        }}
+                        {...props}
+                      >{children}</code>
+                    ),
+                  h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
+                  h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
+                  h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
+                  blockquote: ({ children, ...props }: any) => (
+                    <blockquote
+                      style={{
+                        borderLeft: '3px solid #d9d9d9',
+                        paddingLeft: '12px',
+                        margin: '8px 0',
+                        color: '#595959',
+                        fontStyle: 'italic'
+                      }}
+                      {...props}
+                    >{children}</blockquote>
+                  )
+                }}
+              >
+                {report.technical_guidance}
+              </ReactMarkdown>
+            </div>
+          </Card>
+        </motion.div>
       )}
 
       {/* Action Buttons */}
-      <div style={{ textAlign: 'center', marginTop: '32px' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7, duration: 0.4 }}
+        style={{ textAlign: 'center', marginTop: '32px' }}
+      >
         <Space size="middle">
           <Link to="/scenarios">
-            <Button type="primary" size="large">继续练习</Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                type="primary"
+                size="large"
+                icon={<RocketOutlined />}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                }}
+              >
+                继续练习
+              </Button>
+            </motion.div>
           </Link>
           <Link to="/courses">
-            <Button size="large">返回课程</Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                size="large"
+                icon={<BookOutlined />}
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid #d9d9d9'
+                }}
+              >
+                返回课程
+              </Button>
+            </motion.div>
           </Link>
         </Space>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

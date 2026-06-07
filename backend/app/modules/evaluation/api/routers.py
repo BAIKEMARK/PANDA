@@ -1,30 +1,43 @@
 """
 评估 API 路由
 """
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime, timezone
 
 from backend.app.db.database import get_db
 from backend.app.schemas.evaluation import EvaluationReportResponse
 from backend.app.modules.evaluation.services.evaluation_service import EvaluationService
 from backend.app.modules.evaluation.agents.mentor_agent import MentorAgent
-from backend.app.common.exceptions import NotFoundException
+from backend.app.core.common.exceptions import NotFoundException
+from backend.app.core.tasks.evaluation_task import generate_evaluation_async, get_report_status
+from backend.app.models.evaluation import EvaluationReport
 
 router = APIRouter(prefix="/evaluation", tags=["评估"])
 
 
-@router.post("/sessions/{session_id}/evaluate", response_model=EvaluationReportResponse, status_code=status.HTTP_201_CREATED)
-async def evaluate_session(
+@router.post("/sessions/{session_id}/evaluate", status_code=status.HTTP_202_ACCEPTED)
+async def evaluate_session_async(
     session_id: str,
     db: Session = Depends(get_db)
 ):
     """
-    生成会话评估报告
-
-    调用Mentor-Agent分析对话历史，基于THP五维评分标准生成评估报告。
+    异步生成会话评估报告
+    
+    立即返回202 Accepted，报告在后台生成。
+    客户端应该轮询 GET /evaluation/sessions/{session_id}/status 查询生成状态。
 
     - **session_id**: 会话ID
+    
+    Returns:
+        {
+            "message": "评估报告生成任务已提交",
+            "session_id": "xxx",
+            "report_id": "xxx",
+            "status": "generating"
+        }
     """
     try:
         service = EvaluationService(db)
@@ -32,13 +45,94 @@ async def evaluate_session(
         # 检查是否已有评估报告
         existing_report = service.get_report_by_session(session_id)
         if existing_report:
-            return EvaluationReportResponse.from_orm_model(existing_report)
+            if existing_report.status == "completed":
+                return {
+                    "message": "评估报告已存在",
+                    "session_id": session_id,
+                    "report_id": existing_report.id,
+                    "status": "completed"
+                }
+            elif existing_report.status == "generating":
+                return {
+                    "message": "评估报告正在生成中",
+                    "session_id": session_id,
+                    "report_id": existing_report.id,
+                    "status": "generating"
+                }
+            elif existing_report.status == "pending":
+                # pending状态：启动生成任务
+                existing_report.status = "generating"
+                db.commit()
+                generate_evaluation_async(session_id, existing_report.id)
+                
+                try:
+                    from backend.app.models.chat import ChatSession
+                    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+                    if session and session.user_id:
+                        from backend.app.modules.progress.services.dashboard_service import DashboardService
+                        DashboardService.clear_dashboard_cache(session.user_id)
+                except Exception:
+                    pass
+                
+                return {
+                    "message": "评估报告开始生成",
+                    "session_id": session_id,
+                    "report_id": existing_report.id,
+                    "status": "generating"
+                }
+            elif existing_report.status == "failed":
+                # 重新生成
+                existing_report.status = "generating"
+                existing_report.error_message = None
+                db.commit()
+                generate_evaluation_async(session_id, existing_report.id)
 
-        # 调用Mentor-Agent生成评估
-        mentor_agent = MentorAgent(db)
-        report = mentor_agent.generate_evaluation(session_id)
-
-        return EvaluationReportResponse.from_orm_model(report)
+                try:
+                    from backend.app.models.chat import ChatSession
+                    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+                    if session and session.user_id:
+                        from backend.app.modules.progress.services.dashboard_service import DashboardService
+                        DashboardService.clear_dashboard_cache(session.user_id)
+                except Exception:
+                    pass
+                
+                return {
+                    "message": "评估报告重新生成中",
+                    "session_id": session_id,
+                    "report_id": existing_report.id,
+                    "status": "generating"
+                }
+        
+        # 创建新的报告记录
+        report_id = str(uuid.uuid4())
+        new_report = EvaluationReport(
+            id=report_id,
+            session_id=session_id,
+            status="generating",
+            created_at=datetime.now(timezone.utc)
+        )
+        db.add(new_report)
+        db.commit()
+        
+        # 提交后台任务
+        generate_evaluation_async(session_id, report_id)
+        
+        # 清除 Dashboard 缓存
+        try:
+            from backend.app.models.chat import ChatSession
+            session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+            if session and session.user_id:
+                from backend.app.modules.progress.services.dashboard_service import DashboardService
+                DashboardService.clear_dashboard_cache(session.user_id)
+        except Exception:
+            pass
+        
+        return {
+            "message": "评估报告生成任务已提交",
+            "session_id": session_id,
+            "report_id": report_id,
+            "status": "generating"
+        }
 
     except ValueError as e:
         raise HTTPException(
@@ -48,8 +142,37 @@ async def evaluate_session(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"评估生成失败: {str(e)}"
+            detail=f"评估任务提交失败: {str(e)}"
         )
+
+
+@router.get("/sessions/{session_id}/status")
+async def get_evaluation_status(
+    session_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    查询评估报告生成状态
+    
+    - **session_id**: 会话ID
+    
+    Returns:
+        {
+            "report_id": "xxx",
+            "session_id": "xxx",
+            "status": "pending|generating|completed|failed",
+            "error_message": "错误信息（如果失败）",
+            "created_at": "2026-02-07T...",
+            "completed_at": "2026-02-07T...",
+            "total_score": 85
+        }
+    """
+    status_info = get_report_status(session_id)
+    
+    if not status_info:
+        raise NotFoundException("评估报告不存在")
+    
+    return status_info
 
 
 @router.get("/sessions/{session_id}/report", response_model=EvaluationReportResponse)

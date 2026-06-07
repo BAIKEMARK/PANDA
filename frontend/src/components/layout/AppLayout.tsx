@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 主布局组件
  * 包含侧边栏和头部导航
  */
@@ -33,7 +33,7 @@ export const AppLayout = () => {
           style={{
             marginTop: '64px',
             padding: '20px',
-            background: '#f5f7fa',
+            background: 'linear-gradient(180deg, #f5f7fa 0%, #e8ecf1 100%)',
             minHeight: 'calc(100vh - 64px)',
           }}
         >

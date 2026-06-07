@@ -13,6 +13,7 @@ export interface Scenario {
   knowledge_tags: string | null;
   difficulty: number;
   time_period: string | null;
+  status: string;  // draft, pending, published, archived
   created_at: string;
 }
 

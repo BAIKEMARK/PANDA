@@ -9,6 +9,11 @@ from .chat import ChatSession, ChatMessage
 from .progress import UserProgress
 from .evaluation import EvaluationReport
 from .menu import Menu, RoleMenuPermission
+from .organization import Organization, Role, Permission, RolePermission, UserOrganization
+from .training import TrainingClass, ClassStudent, ClassTask
+from .question import QuestionBank
+from .audit import AuditLog
+from .certificate import Certificate, CertificateTemplate
 
 __all__ = [
     "User",
@@ -20,4 +25,16 @@ __all__ = [
     "EvaluationReport",
     "Menu",
     "RoleMenuPermission",
+    "Organization",
+    "Role",
+    "Permission",
+    "RolePermission",
+    "UserOrganization",
+    "TrainingClass",
+    "ClassStudent",
+    "ClassTask",
+    "QuestionBank",
+    "AuditLog",
+    "Certificate",
+    "CertificateTemplate",
 ]

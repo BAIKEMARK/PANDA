@@ -1,0 +1,406 @@
+﻿import { useState, useEffect } from 'react';
+import { Table, Button, Modal, Form, Input, InputNumber, message, Space, TreeSelect, Tooltip, Select, Col } from 'antd';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  BookOutlined,
+  ExperimentOutlined,
+  MessageOutlined,
+  LineChartOutlined,
+  SettingOutlined,
+  UserOutlined,
+  TeamOutlined,
+  MenuOutlined,
+  BankOutlined,
+  TrophyOutlined,
+} from '@ant-design/icons';
+import menuService from '../../services/menu.service';
+import { FilterForm } from '../../components/admin/FilterForm';
+import type { MenuItem } from '../../types/menu.types';
+
+const applyMenuFilters = (list: MenuItem[], values: Record<string, any>) => {
+  let filtered = [...list];
+
+  if (values.title) {
+    filtered = filtered.filter((menu) =>
+      menu.title?.toLowerCase().includes(values.title.toLowerCase()),
+    );
+  }
+
+  if (values.path) {
+    filtered = filtered.filter((menu) =>
+      menu.path?.toLowerCase().includes(values.path.toLowerCase()),
+    );
+  }
+
+  if (values.is_visible !== undefined) {
+    filtered = filtered.filter((menu) => menu.is_visible === values.is_visible);
+  }
+
+  if (values.is_enabled !== undefined) {
+    filtered = filtered.filter((menu) => menu.is_enabled === values.is_enabled);
+  }
+
+  return filtered;
+};
+
+export function MenuManagePage() {
+  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [filteredMenus, setFilteredMenus] = useState<MenuItem[]>([]);
+  const [menuTree, setMenuTree] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
+  const [form] = Form.useForm();
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+
+  const iconOptions: { value: string; label: string; icon: React.ReactNode }[] = [
+    { value: 'BookOutlined', label: '课程', icon: <BookOutlined /> },
+    { value: 'SimulationOutlined', label: '仿真', icon: <ExperimentOutlined /> },
+    { value: 'ExperimentOutlined', label: '实验', icon: <ExperimentOutlined /> },
+    { value: 'MessageOutlined', label: '消息', icon: <MessageOutlined /> },
+    { value: 'LineChartOutlined', label: '统计', icon: <LineChartOutlined /> },
+    { value: 'SettingOutlined', label: '设置', icon: <SettingOutlined /> },
+    { value: 'UserOutlined', label: '用户', icon: <UserOutlined /> },
+    { value: 'TeamOutlined', label: '团队', icon: <TeamOutlined /> },
+    { value: 'MenuOutlined', label: '菜单', icon: <MenuOutlined /> },
+    { value: 'BankOutlined', label: '机构', icon: <BankOutlined /> },
+    { value: 'TrophyOutlined', label: '证书', icon: <TrophyOutlined /> },
+  ];
+
+  const iconMap: Record<string, React.ReactNode> = iconOptions.reduce(
+    (acc, cur) => ({ ...acc, [cur.value]: cur.icon }),
+    {} as Record<string, React.ReactNode>,
+  );
+
+  useEffect(() => {
+    loadMenus();
+  }, []);
+
+  const loadMenus = async () => {
+    setLoading(true);
+    try {
+      const data = await menuService.getAllMenus();
+      setMenus(data);
+      setFilteredMenus(data);
+      const treeData = await menuService.getMenuTree();
+      setMenuTree(treeData);
+    } catch (error: any) {
+      message.error('加载菜单列表失败: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (values: any) => {
+    setFilterValues(values);
+    setFilteredMenus(applyMenuFilters(menus, values));
+  };
+
+  const handleReset = () => {
+    setFilterValues({});
+    setFilteredMenus(menus);
+  };
+
+  const valuesForVisibilityOptions = { ...filterValues };
+  delete valuesForVisibilityOptions.is_visible;
+  const menusForVisibilityOptions = applyMenuFilters(menus, valuesForVisibilityOptions);
+  const availableVisibility = new Set(
+    menusForVisibilityOptions
+      .map((menu) => menu.is_visible)
+      .filter((value): value is boolean => typeof value === 'boolean'),
+  );
+  const visibilityOptions = [
+    { value: true, label: '可见' },
+    { value: false, label: '隐藏' },
+  ].filter((option) => !availableVisibility.size || availableVisibility.has(option.value));
+
+  const valuesForEnabledOptions = { ...filterValues };
+  delete valuesForEnabledOptions.is_enabled;
+  const menusForEnabledOptions = applyMenuFilters(menus, valuesForEnabledOptions);
+  const availableEnabled = new Set(
+    menusForEnabledOptions
+      .map((menu) => menu.is_enabled)
+      .filter((value): value is boolean => typeof value === 'boolean'),
+  );
+  const enabledOptions = [
+    { value: true, label: '启用' },
+    { value: false, label: '禁用' },
+  ].filter((option) => !availableEnabled.size || availableEnabled.has(option.value));
+
+  const handleCreate = () => {
+    setEditingMenu(null);
+    form.resetFields();
+    setModalVisible(true);
+  };
+
+  const handleEdit = (menu: MenuItem) => {
+    setEditingMenu(menu);
+    form.setFieldsValue(menu);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除该菜单吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await menuService.deleteMenu(id);
+          message.success('删除成功');
+          loadMenus();
+        } catch (error: any) {
+          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        }
+      },
+    });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      const submitData = editingMenu ? values : { ...values, is_visible: true, is_enabled: true };
+      if (editingMenu) {
+        await menuService.updateMenu(editingMenu.id, submitData);
+        message.success('更新成功');
+      } else {
+        const id =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `m-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
+        await menuService.createMenu({ id, ...submitData });
+        message.success('创建成功');
+      }
+      setModalVisible(false);
+      loadMenus();
+    } catch (error: any) {
+      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleToggleStatus = async (menu: MenuItem, field: 'is_visible' | 'is_enabled', value: boolean) => {
+    try {
+      await menuService.updateMenu(menu.id, { [field]: value });
+      message.success(
+        field === 'is_visible' ? (value ? '已显示' : '已隐藏') : value ? '已启用' : '已禁用',
+      );
+      loadMenus();
+    } catch (error: any) {
+      message.error('更新失败: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const baseColumns = [
+    {
+      title: '菜单标题',
+      dataIndex: 'title',
+      key: 'title',
+    },
+    {
+      title: '路径',
+      dataIndex: 'path',
+      key: 'path',
+    },
+    {
+      title: '图标',
+      dataIndex: 'icon',
+      key: 'icon',
+      render: (icon: string) => iconMap[icon] || <MenuOutlined />,
+    },
+    {
+      title: '排序',
+      dataIndex: 'sort_order',
+      key: 'sort_order',
+    },
+    {
+      title: '可见',
+      dataIndex: 'is_visible',
+      key: 'is_visible',
+      render: (visible: boolean, record: MenuItem) => (
+        <Tooltip title={visible ? '点击隐藏' : '点击显示'}>
+          <Button
+            type="text"
+            size="small"
+            icon={visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+            onClick={() => handleToggleStatus(record, 'is_visible', !visible)}
+          />
+        </Tooltip>
+      ),
+    },
+    {
+      title: '启用',
+      dataIndex: 'is_enabled',
+      key: 'is_enabled',
+      render: (enabled: boolean, record: MenuItem) => (
+        <Tooltip title={enabled ? '点击禁用' : '点击启用'}>
+          <Button
+            type="text"
+            size="small"
+            danger={!enabled}
+            icon={enabled ? <CheckOutlined /> : <CloseOutlined />}
+            onClick={() => handleToggleStatus(record, 'is_enabled', !enabled)}
+          />
+        </Tooltip>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_: any, record: MenuItem) => (
+        <Space>
+          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+            编辑
+          </Button>
+          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+            删除
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+  const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
+
+  const buildTreeData = (items: any[]): any[] => {
+    return items.map(item => ({
+      title: item.title,
+      value: item.id,
+      key: item.id,
+      children: item.children ? buildTreeData(item.children) : undefined,
+    }));
+  };
+
+  return (
+    <div
+      style={{ padding: '24px' }}
+    >
+      <div
+        style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: '#1a365d' }}>菜单管理</h2>
+        <div >
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+            }}
+          >
+            新建菜单
+          </Button>
+        </div>
+      </div>
+
+      <FilterForm onSearch={handleSearch} onReset={handleReset} loading={loading}>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="title" label="菜单标题">
+            <Input placeholder="请输入" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="path" label="路径">
+            <Input placeholder="请输入" allowClear />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="is_visible" label="是否可见">
+            <Select placeholder="请选择" allowClear>
+              {visibilityOptions.map((option) => (
+                <Select.Option key={String(option.value)} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Form.Item name="is_enabled" label="是否启用">
+            <Select placeholder="请选择" allowClear>
+              {enabledOptions.map((option) => (
+                <Select.Option key={String(option.value)} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+      </FilterForm>
+
+      <Table
+        columns={columns}
+        dataSource={filteredMenus}
+        loading={loading}
+        rowKey="id"
+        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+        style={{
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}
+      />
+
+      <Modal
+        title={editingMenu ? '编辑菜单' : '新建菜单'}
+        open={modalVisible}
+        onOk={handleSubmit}
+        okText="保存"
+        cancelText="取消"
+        onCancel={() => setModalVisible(false)}
+        width={600}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="parent_id" label="父级菜单">
+            <TreeSelect
+              treeData={buildTreeData(menuTree)}
+              placeholder="选择父菜单（留空为顶级菜单）"
+              allowClear
+            />
+          </Form.Item>
+          <Form.Item name="title" label="菜单标题" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="icon" label="图标">
+            <Select
+              allowClear
+              placeholder="请选择图标"
+              optionLabelProp="label"
+            >
+              {iconOptions.map((opt) => (
+                <Select.Option key={opt.value} value={opt.value} label={opt.label}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    {opt.icon}
+                    <span>{opt.label}</span>
+                  </span>
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="path" label="路由路径">
+            <Input />
+          </Form.Item>
+          <Form.Item name="component" label="组件路径">
+            <Input />
+          </Form.Item>
+          <Form.Item name="sort_order" label="排序" initialValue={0}>
+            <InputNumber min={0} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+}
+
+
+
+

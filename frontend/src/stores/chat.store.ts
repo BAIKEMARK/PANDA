@@ -2,13 +2,13 @@
  * 聊天状态管理
  * 使用persist中间件实现消息持久化
  */
-import { create } from 'zustand';
+import
+{ create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
   ChatSession,
   ChatMessage,
-  ChatState,
-  ChatMessageCreate
+  ChatState
 } from '../types/chat.types';
 import { MessageRole } from '../types/chat.types';
 import chatService from '../services/chat.service';
@@ -16,11 +16,13 @@ import chatService from '../services/chat.service';
 interface ChatStore extends ChatState {
   // Additional state
   currentScenarioId: string | null;
+  // 用于持久化的当前会话ID
+  lastSessionId: string | null;
 
   // Actions
   createSession: (scenarioId: number | string) => Promise<ChatSession>;
   loadMessages: (sessionId: number | string) => Promise<void>;
-  sendMessage: (sessionId: number | string, content: string) => Promise<void>;
+  sendMessage: (sessionId: number | string, content: string) => Promise<ChatMessage & { meta_data?: { force_end?: boolean; reason?: string; crisis_alert?: { suicide_risk?: boolean } } }>;
   endSession: (sessionId: number | string) => Promise<void>;
   resetChat: () => void;
   setTyping: (isTyping: boolean) => void;
@@ -36,6 +38,7 @@ export const useChatStore = create<ChatStore>()(
       isTyping: false,
       error: null,
       currentScenarioId: null,
+      lastSessionId: null,
 
       // Create new session
       createSession: async (scenarioId: number | string): Promise<ChatSession> => {
@@ -46,6 +49,7 @@ export const useChatStore = create<ChatStore>()(
             currentSession: session,
             messages: [],
             currentScenarioId: String(scenarioId),
+            lastSessionId: session.id,
             isLoading: false,
           });
           return session;
@@ -68,7 +72,7 @@ export const useChatStore = create<ChatStore>()(
             chatService.getMessages(String(sessionId)),
             chatService.getSession(String(sessionId)),
           ]);
-          set({ messages, currentSession: session, isLoading: false });
+          set({ messages, currentSession: session, lastSessionId: String(sessionId), isLoading: false });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '加载消息失败';
           set({
@@ -81,7 +85,6 @@ export const useChatStore = create<ChatStore>()(
 
       // Send message
       sendMessage: async (sessionId: number | string, content: string) => {
-        const { currentSession } = get();
         const sid = String(sessionId);
 
         set({ isLoading: true, error: null, isTyping: true });
@@ -114,6 +117,9 @@ export const useChatStore = create<ChatStore>()(
             isLoading: false,
             isTyping: false,
           }));
+
+          // Return full response data including crisis_alert and force_end
+          return response as ChatMessage & { meta_data?: { force_end?: boolean; reason?: string; crisis_alert?: { suicide_risk?: boolean } } };
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '发送消息失败';
           set({
@@ -153,6 +159,7 @@ export const useChatStore = create<ChatStore>()(
           isTyping: false,
           error: null,
           currentScenarioId: null,
+          lastSessionId: null,
         });
       },
 
@@ -163,9 +170,10 @@ export const useChatStore = create<ChatStore>()(
     }),
     {
       name: 'chat-storage',
+      // 只持久化最后访问的会话ID，用于追踪用户的聊天状态
+      // 不持久化messages和currentSession，避免旧会话数据污染新会话
       partialize: (state) => ({
-        currentSession: state.currentSession,
-        messages: state.messages,
+        lastSessionId: state.lastSessionId,
       }),
     }
   )

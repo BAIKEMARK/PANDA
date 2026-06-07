@@ -30,7 +30,7 @@ export interface StateAnalysis {
 // 详细反馈项
 export interface FeedbackItem {
   dimension: string;                           // 评估维度
-  status: 'pass' | 'fail';                    // 通过/失败
+  status: 'pass' | 'fail' | 'Pass' | 'Fail' | '通过' | '失败' | string; // 状态
   dialogue_ref_id?: number;                   // 对话轮次引用
   user_input?: string;                        // 用户输入
   patient_state_snapshot?: string | Record<string, any>;  // 患者状态快照 (可以是字符串或对象)
@@ -42,6 +42,7 @@ export interface FeedbackItem {
 export interface EvaluationReport {
   id: string;
   session_id: string;
+  status: string;
   total_score: number;               // 总分 (0-100)
   level_assessment?: string;         // 等级评定: 优秀/良好/合格/不合格
   radar_chart?: RadarChart;          // 五维雷达图数据
@@ -65,8 +66,10 @@ export interface EPDSScale {
 }
 
 // EPDS风险等级
-export enum EPDSRiskLevel {
-  LOW = 'low',           // 0-9分
-  MEDIUM = 'medium',     // 10-12分
-  HIGH = 'high',         // 13-30分
-}
+export const EPDSRiskLevel = {
+  LOW: 'low',           // 0-9分
+  MEDIUM: 'medium',     // 10-12分
+  HIGH: 'high',         // 13-30分
+} as const;
+
+export type EPDSRiskLevelAlias = typeof EPDSRiskLevel[keyof typeof EPDSRiskLevel];

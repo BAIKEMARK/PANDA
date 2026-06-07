@@ -4,7 +4,8 @@ User ORM Model
 """
 from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, Text
 from sqlalchemy.dialects.mysql import CHAR
-from datetime import datetime
+from sqlalchemy.orm import relationship
+from datetime import datetime, timezone
 from backend.app.db.database import Base
 
 
@@ -16,6 +17,32 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True, comment="邮箱")
     password_hash = Column(String(255), nullable=False, comment="密码哈希")
     name = Column(String(100), nullable=False, comment="姓名")
-    role = Column(SQLEnum("student", "instructor", "admin", name="role"), default="student", comment="角色")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    # 与 roles.code 对齐，支持动态角色
+    role = Column(String(50), default="student", comment="角色代码")
+    org_id = Column(CHAR(36), index=True, comment="默认机构ID")
+    phone = Column(String(50), comment="手机号")
+    department = Column(String(100), comment="科室")
+    title = Column(String(100), comment="职称")
+    employee_id = Column(String(100), comment="工号")
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        comment="创建时间"
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        comment="更新时间"
+    )
+
+    # 非数据库列属性（动态填充，在__init__中初始化）
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.roles = []
+        self.org_ids = []
+        self.organizations = []
+        self.permission_codes = []
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email={self.email}, name={self.name})>"

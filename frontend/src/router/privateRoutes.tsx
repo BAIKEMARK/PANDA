@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 路由守卫组件
  * PrivateRoute: 未登录用户自动跳转到登录页
  * PublicRoute: 已登录用户自动跳转到首页
@@ -43,9 +43,12 @@ export const PrivateRoute = ({ children }: RouteProps) => {
  */
 export const PublicRoute = ({ children }: RouteProps) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const token = useAuthStore((state) => state.token);
   const location = useLocation();
 
-  if (isAuthenticated) {
+  // 只有在真正有有效 token 且已认证时才重定向
+  // 避免因为 localStorage 中的过期数据导致登录页一闪而过
+  if (isAuthenticated && token) {
     // 已登录，重定向到之前的页面或首页
     const from = (location.state as { from?: string })?.from || '/courses';
     return <Navigate to={from} replace />;

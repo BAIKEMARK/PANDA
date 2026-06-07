@@ -1,9 +1,10 @@
-/**
- * 聊天窗口组件
+﻿/**
+ * 聊天窗口组件 - 优化版
  */
 import { useEffect, useRef } from 'react';
 import { Empty, Typography } from 'antd';
 import { MessageOutlined } from '@ant-design/icons';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage } from '@/types/chat.types';
 import { MessageBubble } from './MessageBubble';
 import { MessageRole } from '@/types/chat.types';
@@ -33,92 +34,149 @@ export const ChatWindow = ({ messages, isTyping = false, patientBackground }: Ch
     created_at: new Date().toISOString(),
   } : null;
 
-  // 提取患者姓名 (假设格式为 "姓名, 年龄...")
+  // 提取患者姓名
   const patientName = patientBackground ? patientBackground.split(/[,\uff0c\s]/)[0] : '患者';
 
   return (
     <div style={{
       height: '100%',
       overflowY: 'auto',
-      padding: '16px 24px',
-      background: '#fafafa'
+      padding: '20px 24px',
+      background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)',
     }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         {messages.length === 0 && !patientBackground ? (
-          <Empty
-            description={
-              <div>
-                <MessageOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
-                <div>开始对话</div>
-                <Text type="secondary" style={{ fontSize: '14px' }}>输入消息开始练习</Text>
-              </div>
-            }
-            style={{ marginTop: '60px' }}
-          />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Empty
+              description={
+                <motion.div
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                  <MessageOutlined style={{ 
+                    fontSize: '64px', 
+                    color: '#d9d9d9', 
+                    marginBottom: '20px',
+                  }} />
+                  <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px' }}>
+                    开始对话
+                  </div>
+                  <Text type="secondary" style={{ fontSize: '14px' }}>
+                    输入消息开始练习
+                  </Text>
+                </motion.div>
+              }
+              style={{ marginTop: '80px' }}
+            />
+          </motion.div>
         ) : (
-          <div>
-            {/* 患者背景作为第一条气泡 - 显示 PANDA助手 */}
+          <AnimatePresence mode="popLayout">
+            {/* 患者背景 */}
             {backgroundMessage && (
-              <MessageBubble
+              <motion.div
                 key={backgroundMessage.id}
-                message={backgroundMessage}
-                senderName="PANDA助手"
-              />
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <MessageBubble
+                  message={backgroundMessage}
+                  senderName="PANDA助手"
+                />
+              </motion.div>
             )}
-            {messages.map((message) => (
-              <MessageBubble
+            
+            {/* 消息列表 */}
+            {messages.map((message, index) => (
+              <motion.div
                 key={message.id}
-                message={message}
-                senderName={message.role === MessageRole.ASSISTANT ? patientName : undefined}
-              />
+                initial={{ opacity: 0, x: message.role === MessageRole.USER ? 20 : -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ 
+                  duration: 0.3,
+                  delay: index * 0.05,
+                }}
+              >
+                <MessageBubble
+                  message={message}
+                  senderName={message.role === MessageRole.ASSISTANT ? patientName : undefined}
+                />
+              </motion.div>
             ))}
-          </div>
+          </AnimatePresence>
         )}
 
         {/* Typing Indicator */}
-        {isTyping && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px' }}>
-            <div style={{
-              background: '#fff',
-              border: '1px solid #d9d9d9',
-              padding: '12px 16px',
-              borderRadius: '12px 12px 12px 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#1890ff',
-                  animation: 'bounce 1.4s infinite ease-in-out both',
-                  animationDelay: '0s'
-                }} />
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#1890ff',
-                  animation: 'bounce 1.4s infinite ease-in-out both',
-                  animationDelay: '0.16s'
-                }} />
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#1890ff',
-                  animation: 'bounce 1.4s infinite ease-in-out both',
-                  animationDelay: '0.32s'
-                }} />
+        <AnimatePresence>
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px' }}
+            >
+              <div style={{
+                background: '#fff',
+                border: '1px solid #e8e8e8',
+                padding: '14px 18px',
+                borderRadius: '16px 16px 16px 4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}>
+                <div className="typing-indicator">
+                  <motion.span
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      display: 'inline-block',
+                    }}
+                  />
+                  <motion.span
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      display: 'inline-block',
+                      marginLeft: '4px',
+                    }}
+                  />
+                  <motion.span
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      display: 'inline-block',
+                      marginLeft: '4px',
+                    }}
+                  />
+                </div>
+                <Text type="secondary" style={{ fontSize: '13px', fontWeight: 500 }}>
+                  {patientName}正在输入...
+                </Text>
               </div>
-              <Text type="secondary" style={{ fontSize: '13px', marginLeft: '8px' }}>
-                {patientName}正在输入...
-              </Text>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Scroll Anchor */}
         <div ref={messagesEndRef} />

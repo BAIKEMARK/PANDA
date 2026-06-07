@@ -39,6 +39,7 @@ class EvaluationReportResponse(BaseModel):
     """评估报告响应模型"""
     id: str
     session_id: str
+    status: str = "completed"
     total_score: Optional[int] = None
     level_assessment: Optional[str] = None
     radar_chart: Optional[RadarChart] = None
@@ -100,6 +101,7 @@ class EvaluationReportResponse(BaseModel):
         return cls(
             id=report.id,
             session_id=report.session_id,
+            status=report.status,
             total_score=report.total_score,
             level_assessment=report.level_assessment,
             radar_chart=radar_chart,

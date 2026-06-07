@@ -9,8 +9,8 @@ from backend.app.models.chat import ChatSession, ChatMessage
 from backend.app.models.evaluation import EvaluationReport
 from backend.app.models.scenario import Scenario
 from backend.app.modules.evaluation.services.evaluation_service import EvaluationService
-from backend.app.shared.infrastructure.ai_service import ai_service
-from backend.app.shared.infrastructure.event_bus import event_bus, Events
+from backend.app.core.services.ai_service import ai_service
+from backend.app.core.services.event_bus import event_bus, Events
 
 
 class MentorAgent:
@@ -32,9 +32,39 @@ class MentorAgent:
         session_id = event_data.get("session_id")
         if session_id:
             try:
-                self.generate_evaluation(session_id)
+                # 检查会话是否存在
+                session = self.db.query(ChatSession).filter(
+                    ChatSession.id == session_id
+                ).first()
+
+                if not session:
+                    logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
+                    if logger:
+                        logger.warning(f"会话不存在，跳过自动评估 | session_id={session_id}")
+                    else:
+                        print(f"[WARNING] 会话不存在，跳过自动评估 | session_id={session_id}")
+                    return
+
+                # 检查是否已有评估报告（避免重复生成）
+                existing_report = self.evaluation_service.get_report_by_session(session_id)
+                if existing_report and existing_report.status in ["generating", "completed"]:
+                    logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
+                    if logger:
+                        logger.info(f"评估报告已存在或正在生成，跳过自动评估 | session_id={session_id} | report_id={existing_report.id}")
+                    return
+
+                # 异步生成评估报告，避免阻塞调用方
+                from backend.app.core.tasks.evaluation_task import generate_evaluation_async
+                generate_evaluation_async(session_id)
+
             except Exception as e:
-                print(f"❌ 评估生成失败: {e}")
+                logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
+                error_msg = f"评估生成失败: {e}"
+                if logger:
+                    logger.error(error_msg)
+                else:
+                    print(f"[ERROR] {error_msg}")
+
                 # 发布失败事件
                 self.event_bus.publish(
                     Events.EVALUATION_FAILED,
@@ -51,9 +81,9 @@ class MentorAgent:
         Returns:
             EvaluationReport: 评估报告对象
         """
-        # 检查是否已存在评估报告
+        # 检查是否已存在已完成的评估报告
         existing_report = self.evaluation_service.get_report_by_session(session_id)
-        if existing_report:
+        if existing_report and existing_report.status == "completed":
             return existing_report
 
         # 获取会话和对话数据
@@ -66,14 +96,18 @@ class MentorAgent:
         from backend.app.modules.evaluation.prompts.evaluation_prompt import get_thp_rubric_text
         evaluation_criteria = get_thp_rubric_text()
 
+        # 构建危机检测摘要
+        crisis_detection_summary = self._build_crisis_detection_summary(session)
+
         # 通过 AIService 调用（统一入口）
         try:
             evaluation_data = ai_service.generate_evaluation_report(
                 conversation_text=conversation_text,
-                evaluation_criteria=evaluation_criteria
+                evaluation_criteria=evaluation_criteria,
+                crisis_detection_summary=crisis_detection_summary
             )
         except Exception as e:
-            print(f"❌ AI 评估失败: {e}")
+            print(f"[ERROR] AI 评估失败: {e}")
             self.event_bus.publish(
                 Events.EVALUATION_FAILED,
                 {"session_id": session_id, "error": str(e)}
@@ -99,12 +133,7 @@ class MentorAgent:
         ).first()
 
         if not session:
-            self.db.rollback()
-            session = self.db.query(ChatSession).filter(
-                ChatSession.id == session_id
-            ).first()
-            if not session:
-                raise ValueError(f"会话不存在: {session_id}")
+            raise ValueError(f"会话不存在: {session_id}")
 
         # 获取对话历史
         messages = self.db.query(ChatMessage).filter(
@@ -137,12 +166,33 @@ class MentorAgent:
 
         return "\n".join(conversation_parts)
 
+    def _build_crisis_detection_summary(self, session: ChatSession) -> str:
+        """
+        构建危机检测摘要
+
+        Args:
+            session: 聊天会话对象
+
+        Returns:
+            危机检测摘要文本
+        """
+        if not session.has_suicide_risk:
+            return "【危机检测】系统未检测到明显的自杀倾向。"
+
+        if session.suicide_risk_alerted:
+            return """【危机检测】系统检测到患者存在自杀倾向。
+【用户应对】用户已点击报警按钮。"""
+        else:
+            return """【危机检测】系统检测到患者存在自杀倾向。
+【用户应对】用户未采取任何行动。"""
+
     def _save_report(self, session_id: str, evaluation_data: dict) -> EvaluationReport:
         """保存评估报告到数据库"""
         radar_chart = evaluation_data.get("radar_chart", {})
 
         report_data = {
             "session_id": session_id,
+            "status": "completed",  # 明确设置状态为已完成
             "total_score": evaluation_data.get("total_score", 0),
             "level_assessment": evaluation_data.get("level_assessment", ""),
             "radar_a_risk_identification": radar_chart.get("A_risk_identification", 0),
@@ -156,4 +206,14 @@ class MentorAgent:
             "meta_data": evaluation_data.get("meta_data", {"ai_generated": True})
         }
 
-        return self.evaluation_service.create_report(report_data)
+        # 检查是否已有报告记录（例如通过异步接口提前创建的生成中占位记录）
+        existing_report = self.evaluation_service.get_report_by_session(session_id)
+        if existing_report:
+            # 如果存在则直接更新属性并提交
+            for key, value in report_data.items():
+                setattr(existing_report, key, value)
+            self.db.commit()
+            self.db.refresh(existing_report)
+            return existing_report
+        else:
+            return self.evaluation_service.create_report(report_data)

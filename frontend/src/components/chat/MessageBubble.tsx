@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 消息气泡组件
  */
 import { Avatar, Typography } from 'antd';
@@ -6,7 +6,9 @@ import { RobotOutlined } from '@ant-design/icons';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
+import { motion } from 'framer-motion';
 import type { ChatMessage } from '@/types/chat.types';
+import { MessageRole } from '@/types/chat.types';
 
 const { Text } = Typography;
 
@@ -16,8 +18,9 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble = ({ message, senderName }: MessageBubbleProps) => {
-  const isUser = message.role === 'user';
-  const isSystem = message.role === 'system';
+  // 使用枚举进行比较，而不是字符串
+  const isUser = message.role === MessageRole.USER;
+  const isSystem = message.role === MessageRole.SYSTEM;
 
   // Helper to parse date as UTC if no timezone specified
   const parseDate = (dateStr: string) => {
@@ -31,39 +34,52 @@ export const MessageBubble = ({ message, senderName }: MessageBubbleProps) => {
   // 系统消息
   if (isSystem) {
     return (
-      <div style={{ textAlign: 'center', margin: '16px 0' }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        style={{ textAlign: 'center', margin: '16px 0' }}
+      >
         <Text
           type="secondary"
           style={{
-            background: '#f5f5f5',
+            background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
             padding: '8px 16px',
             borderRadius: '16px',
-            fontSize: '13px'
+            fontSize: '13px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
           }}
         >
           {message.content}
         </Text>
-      </div>
+      </motion.div>
     );
   }
 
   // 用户消息
   if (isUser) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}
+      >
         <div style={{ maxWidth: '70%' }}>
-          <div
+          <motion.div
+            whileHover={{ scale: 1.02 }}
             style={{
-              background: '#1890ff',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: '#fff',
               padding: '12px 16px',
               borderRadius: '12px 12px 0 12px',
               wordBreak: 'break-word',
-              whiteSpace: 'pre-wrap'
+              whiteSpace: 'pre-wrap',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
             }}
           >
             {message.content}
-          </div>
+          </motion.div>
           {message.created_at && (
             <div style={{ textAlign: 'right', marginTop: '4px' }}>
               <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -75,33 +91,44 @@ export const MessageBubble = ({ message, senderName }: MessageBubbleProps) => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   // AI消息（支持Markdown渲染）
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px' }}>
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px' }}
+    >
       <div style={{ maxWidth: '70%' }}>
         {/* Avatar */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '8px' }}>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+          style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '8px' }}
+        >
           <Avatar
             size="small"
             icon={<RobotOutlined />}
             style={{ backgroundColor: '#722ed1' }}
           />
           <Text style={{ fontSize: '13px', color: '#595959' }}>{senderName || 'PANDA助手'}</Text>
-        </div>
+        </motion.div>
 
         {/* Message with Markdown */}
-        <div
+        <motion.div
+          whileHover={{ scale: 1.01 }}
           style={{
             background: '#fff',
-            border: '1px solid #d9d9d9',
+            border: '1px solid #e8e8e8',
             padding: '12px 16px',
             borderRadius: '12px 12px 12px 0',
             wordBreak: 'break-word',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
           }}
         >
           <div
@@ -155,7 +182,7 @@ export const MessageBubble = ({ message, senderName }: MessageBubbleProps) => {
               {message.content}
             </ReactMarkdown>
           </div>
-        </div>
+        </motion.div>
 
         {message.created_at && (
           <div style={{ marginTop: '4px' }}>
@@ -168,6 +195,6 @@ export const MessageBubble = ({ message, senderName }: MessageBubbleProps) => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };

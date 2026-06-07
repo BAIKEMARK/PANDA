@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 能力雷达图组件 - THP五维评分系统
  */
 import { useMemo } from 'react';

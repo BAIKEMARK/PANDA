@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 路由配置
  * 定义应用的所有路由和私有路由守卫
  */
@@ -15,6 +15,15 @@ import { ChatPage } from '../pages/ChatPage';
 import { EvaluationReportPage } from '../pages/EvaluationReportPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { OrganizationPage } from '../pages/admin/OrganizationPage';
+import { UserManagePage } from '../pages/admin/UserManagePage';
+import { TrainingClassPage } from '../pages/admin/TrainingClassPage';
+import { RoleManagePage } from '../pages/admin/RoleManagePage';
+import { MenuManagePage } from '../pages/admin/MenuManagePage';
+import { QuestionBankPage } from '../pages/admin/QuestionBankPage';
+import { CertificatePage } from '../pages/admin/CertificatePage';
+import { CourseManagePage } from '../pages/admin/CourseManagePage';
+import { ScenarioManagePage } from '../pages/admin/ScenarioManagePage';
 import { LearningDashboardPage } from '../pages/LearningDashboardPage';
 import { PrivateRoute, PublicRoute } from './privateRoutes';
 
@@ -50,6 +59,10 @@ export const router = createBrowserRouter([
         element: <ScenarioListPage />,
       },
       {
+        path: 'chat',
+        element: <Navigate to="/scenarios" replace />,
+      },
+      {
         path: 'chat/:sessionId',
         element: <ChatPage />,
       },
@@ -60,6 +73,47 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <ProfilePage />,
+      },
+      {
+        path: 'admin',
+        children: [
+          {
+            path: 'organizations',
+            element: <OrganizationPage />,
+          },
+          {
+            path: 'users',
+            element: <UserManagePage />,
+          },
+          {
+            path: 'classes',
+            element: <TrainingClassPage />,
+          },
+          {
+            path: 'roles',
+            element: <RoleManagePage />,
+          },
+          {
+            path: 'menus',
+            element: <MenuManagePage />,
+          },
+          {
+            path: 'questions',
+            element: <QuestionBankPage />,
+          },
+          {
+            path: 'certificates',
+            element: <CertificatePage />,
+          },
+          {
+            path: 'courses',
+            element: <CourseManagePage />,
+          },
+          {
+            path: 'scenarios',
+            element: <ScenarioManagePage />,
+          },
+        ],
       },
     ],
   },

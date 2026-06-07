@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 评分卡片组件 - THP五维评分系统
  */
 import { Card, Statistic, Progress, Alert } from 'antd';

@@ -3,12 +3,8 @@
  * 对应后端 backend/app/schemas/user.py 和 backend/app/models/user.py
  */
 
-// 用户角色枚举
-export enum UserRole {
-  STUDENT = 'student',
-  INSTRUCTOR = 'instructor',
-  ADMIN = 'admin',
-}
+// 用户角色类型（使用联合类型替代enum）
+export type UserRole = 'student' | 'instructor' | 'admin';
 
 // 用户基础类型
 export interface User {
@@ -16,7 +12,23 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  org_id?: string;
+  phone?: string;
+  department?: string;
+  title?: string;
+  employee_id?: string;
+  roles: string[];
+  org_ids: string[];
+  organizations: OrganizationInfo[];  // 机构信息列表
+  permission_codes: string[];
   created_at: string;
+}
+
+// 机构信息
+export interface OrganizationInfo {
+  id: string;
+  name: string;
+  short_name?: string;
 }
 
 // 用户创建DTO
@@ -25,12 +37,22 @@ export interface UserCreate {
   name: string;
   password: string;
   role?: UserRole;
+  org_id?: string;
+  phone?: string;
+  department?: string;
+  title?: string;
+  employee_id?: string;
 }
 
 // 用户更新DTO
 export interface UserUpdate {
   name?: string;
   role?: UserRole;
+  org_id?: string;
+  phone?: string;
+  department?: string;
+  title?: string;
+  employee_id?: string;
 }
 
 // 用户登录DTO (后端需要补充)

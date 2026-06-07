@@ -57,6 +57,29 @@ class ChatService {
   }
 
   /**
+   * 从已完成会话分叉出新会话（继续对话，保留历史消息）
+   */
+  async forkSession(sessionId: string): Promise<ChatSession> {
+    const response = await api.post<ChatSession>(`/chat/sessions/${sessionId}/fork`);
+    return response.data;
+  }
+
+  /**
+   * 删除会话及其关联数据
+   */
+  async deleteSession(sessionId: string): Promise<void> {
+    await api.delete(`/chat/sessions/${sessionId}`);
+  }
+
+  /**
+   * 自杀倾向报警
+   */
+  async alertSuicideRisk(sessionId: string): Promise<ChatSession> {
+    const response = await api.post<ChatSession>(`/chat/sessions/${sessionId}/alert`);
+    return response.data;
+  }
+
+  /**
    * 流式发送消息 (SSE - 需要后端支持)
    * TODO: 后端需要实现流式响应接口
    */
