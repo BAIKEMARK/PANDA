@@ -88,3 +88,6 @@ Thumbs.db
 
 # 临时文件夹
 docs/temp/
+/.agents/
+/.codex/
+/.mcp.json
