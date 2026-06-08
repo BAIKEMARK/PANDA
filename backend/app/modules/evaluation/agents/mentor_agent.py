@@ -16,41 +16,39 @@ from backend.app.core.services.event_bus import event_bus, Events
 class MentorAgent:
     """导师智能体 - 评估报告生成（事件驱动）"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, subscribe_events: bool = True):
         self.db = db
         self.evaluation_service = EvaluationService(db)
         self.event_bus = event_bus
 
-        # 订阅会话结束事件
-        self.event_bus.subscribe(
-            Events.CHAT_SESSION_ENDED,
-            self._handle_session_ended
-        )
+        if subscribe_events:
+            self.event_bus.subscribe(
+                Events.CHAT_SESSION_ENDED,
+                self._handle_session_ended
+            )
 
     def _handle_session_ended(self, event_data: Dict):
         """处理会话结束事件（自动触发评估）"""
         session_id = event_data.get("session_id")
         if session_id:
+            from backend.app.db.database import SessionLocal
+            db = SessionLocal()
             try:
+                evaluation_service = EvaluationService(db)
+
                 # 检查会话是否存在
-                session = self.db.query(ChatSession).filter(
+                session = db.query(ChatSession).filter(
                     ChatSession.id == session_id
                 ).first()
 
                 if not session:
-                    logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
-                    if logger:
-                        logger.warning(f"会话不存在，跳过自动评估 | session_id={session_id}")
-                    else:
-                        print(f"[WARNING] 会话不存在，跳过自动评估 | session_id={session_id}")
+                    print(f"[WARNING] 会话不存在，跳过自动评估 | session_id={session_id}")
                     return
 
                 # 检查是否已有评估报告（避免重复生成）
-                existing_report = self.evaluation_service.get_report_by_session(session_id)
+                existing_report = evaluation_service.get_report_by_session(session_id)
                 if existing_report and existing_report.status in ["generating", "completed"]:
-                    logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
-                    if logger:
-                        logger.info(f"评估报告已存在或正在生成，跳过自动评估 | session_id={session_id} | report_id={existing_report.id}")
+                    print(f"[INFO] 评估报告已存在或正在生成，跳过自动评估 | session_id={session_id} | report_id={existing_report.id}")
                     return
 
                 # 异步生成评估报告，避免阻塞调用方
@@ -58,18 +56,16 @@ class MentorAgent:
                 generate_evaluation_async(session_id)
 
             except Exception as e:
-                logger = self.evaluation_service.logger if hasattr(self.evaluation_service, 'logger') else None
                 error_msg = f"评估生成失败: {e}"
-                if logger:
-                    logger.error(error_msg)
-                else:
-                    print(f"[ERROR] {error_msg}")
+                print(f"[ERROR] {error_msg}")
 
                 # 发布失败事件
                 self.event_bus.publish(
                     Events.EVALUATION_FAILED,
                     {"session_id": session_id, "error": str(e)}
                 )
+            finally:
+                db.close()
 
     def generate_evaluation(self, session_id: str) -> EvaluationReport:
         """

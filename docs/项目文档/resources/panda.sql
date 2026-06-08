@@ -326,6 +326,47 @@ LOCK TABLES `evaluation_reports` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `files`
+--
+
+DROP TABLE IF EXISTS `files`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `files` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件ID',
+  `org_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '机构ID',
+  `filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '原始文件名',
+  `stored_filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '存储文件名',
+  `file_path` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件路径',
+  `file_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文件类型',
+  `file_size` int DEFAULT NULL COMMENT '文件大小(字节)',
+  `mime_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'MIME类型',
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'courseware' COMMENT '文件分类: courseware/document/image/video',
+  `resource_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '关联资源类型: course/scenario/exam',
+  `resource_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '关联资源ID',
+  `uploaded_by` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '上传人',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '文件描述',
+  `status` enum('active','deleted') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active' COMMENT '状态',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_files_org_id` (`org_id`),
+  KEY `idx_files_resource_id` (`resource_id`),
+  KEY `idx_files_status` (`status`),
+  KEY `idx_files_category` (`category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件资源表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `files`
+--
+
+LOCK TABLES `files` WRITE;
+/*!40000 ALTER TABLE `files` DISABLE KEYS */;
+/*!40000 ALTER TABLE `files` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `menus`
 --
 
@@ -422,7 +463,6 @@ CREATE TABLE `patient_states` (
 
 LOCK TABLES `patient_states` WRITE;
 /*!40000 ALTER TABLE `patient_states` DISABLE KEYS */;
-INSERT INTO `patient_states` VALUES ('45d23650-11cc-4bbf-9986-75defc729a80',43,43,50,43,1,'2026-02-14 22:26:38'),('4936bd06-1b93-4175-a05b-4714a21b99b6',35,40,60,35,2,'2026-02-14 20:44:25'),('8efabdb4-6f94-4e54-a7e1-737140e8015d',50,50,50,50,1,'2026-02-14 20:38:35'),('e0dbe5cd-1136-4cef-9f4d-f135c1a4961b',50,50,50,50,1,'2026-02-14 21:33:28');
 /*!40000 ALTER TABLE `patient_states` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -827,4 +867,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-15 14:43:54
+-- Dump completed on 2026-06-08 13:53:09

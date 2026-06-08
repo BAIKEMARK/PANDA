@@ -21,29 +21,47 @@ import {
 } from '@ant-design/icons';
 import menuService from '../../services/menu.service';
 import { FilterForm } from '../../components/admin/FilterForm';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterText } from '../../utils/filters';
 import type { MenuItem } from '../../types/menu.types';
 
-const applyMenuFilters = (list: MenuItem[], values: Record<string, any>) => {
+type TreeSelectNode = {
+  title: string;
+  value: string;
+  key: string;
+  children?: TreeSelectNode[];
+};
+
+const getFilterBoolean = (values: Record<string, unknown>, key: string): boolean | undefined => {
+  const value = values[key];
+  return typeof value === 'boolean' ? value : undefined;
+};
+
+const applyMenuFilters = (list: MenuItem[], values: Record<string, unknown>) => {
   let filtered = [...list];
+  const title = getFilterText(values, 'title');
+  const path = getFilterText(values, 'path');
+  const isVisible = getFilterBoolean(values, 'is_visible');
+  const isEnabled = getFilterBoolean(values, 'is_enabled');
 
-  if (values.title) {
+  if (title) {
     filtered = filtered.filter((menu) =>
-      menu.title?.toLowerCase().includes(values.title.toLowerCase()),
+      menu.title?.toLowerCase().includes(title),
     );
   }
 
-  if (values.path) {
+  if (path) {
     filtered = filtered.filter((menu) =>
-      menu.path?.toLowerCase().includes(values.path.toLowerCase()),
+      menu.path?.toLowerCase().includes(path),
     );
   }
 
-  if (values.is_visible !== undefined) {
-    filtered = filtered.filter((menu) => menu.is_visible === values.is_visible);
+  if (isVisible !== undefined) {
+    filtered = filtered.filter((menu) => menu.is_visible === isVisible);
   }
 
-  if (values.is_enabled !== undefined) {
-    filtered = filtered.filter((menu) => menu.is_enabled === values.is_enabled);
+  if (isEnabled !== undefined) {
+    filtered = filtered.filter((menu) => menu.is_enabled === isEnabled);
   }
 
   return filtered;
@@ -52,12 +70,12 @@ const applyMenuFilters = (list: MenuItem[], values: Record<string, any>) => {
 export function MenuManagePage() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [filteredMenus, setFilteredMenus] = useState<MenuItem[]>([]);
-  const [menuTree, setMenuTree] = useState<any[]>([]);
+  const [menuTree, setMenuTree] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [form] = Form.useForm();
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [filterValues, setFilterValues] = useState<Record<string, unknown>>({});
 
   const iconOptions: { value: string; label: string; icon: React.ReactNode }[] = [
     { value: 'BookOutlined', label: '课程', icon: <BookOutlined /> },
@@ -90,14 +108,14 @@ export function MenuManagePage() {
       setFilteredMenus(data);
       const treeData = await menuService.getMenuTree();
       setMenuTree(treeData);
-    } catch (error: any) {
-      message.error('加载菜单列表失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载菜单列表失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (values: any) => {
+  const handleSearch = (values: Record<string, unknown>) => {
     setFilterValues(values);
     setFilteredMenus(applyMenuFilters(menus, values));
   };
@@ -157,8 +175,8 @@ export function MenuManagePage() {
           await menuService.deleteMenu(id);
           message.success('删除成功');
           loadMenus();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -181,8 +199,8 @@ export function MenuManagePage() {
       }
       setModalVisible(false);
       loadMenus();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -193,8 +211,8 @@ export function MenuManagePage() {
         field === 'is_visible' ? (value ? '已显示' : '已隐藏') : value ? '已启用' : '已禁用',
       );
       loadMenus();
-    } catch (error: any) {
-      message.error('更新失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('更新失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -254,7 +272,7 @@ export function MenuManagePage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: MenuItem) => (
+      render: (_: unknown, record: MenuItem) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
@@ -268,7 +286,7 @@ export function MenuManagePage() {
   ];
   const columns = baseColumns.map((col) => ({ ...col, align: 'center' as const }));
 
-  const buildTreeData = (items: any[]): any[] => {
+  const buildTreeData = (items: MenuItem[]): TreeSelectNode[] => {
     return items.map(item => ({
       title: item.title,
       value: item.id,

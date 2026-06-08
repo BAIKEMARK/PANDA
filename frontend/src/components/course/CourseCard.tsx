@@ -6,7 +6,7 @@ import { Card, Tag, Typography, Progress } from 'antd';
 import { BookOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import type { Course } from '@/types/course.types';
 
-const { Text, Title } = Typography;
+const { Paragraph, Text, Title } = Typography;
 
 interface CourseCardProps {
   course: Course;
@@ -57,13 +57,13 @@ export const CourseCard = ({ course, progress = 0 }: CourseCardProps) => {
         </Title>
 
         {course.description && (
-          <Text
+          <Paragraph
             type="secondary"
             style={{ display: 'block', marginBottom: '16px' }}
             ellipsis={{ rows: 2 }}
           >
             {course.description}
-          </Text>
+          </Paragraph>
         )}
 
         {progress > 0 && (

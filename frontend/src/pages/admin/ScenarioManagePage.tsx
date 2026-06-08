@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Space, Col, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
 import scenarioAdminService from '../../services/scenario-admin.service';
 import type { Scenario } from '../../services/scenario-admin.service';
 import organizationService from '../../services/organization.service';
 import { FilterForm } from '../../components/admin/FilterForm';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterValue } from '../../utils/filters';
 import type { Organization } from '../../types/admin.types';
 
 const { TextArea } = Input;
@@ -16,25 +18,25 @@ export function ScenarioManagePage() {
   const [editingScenario, setEditingScenario] = useState<Scenario | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [form] = Form.useForm();
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [filterValues, setFilterValues] = useState<Record<string, unknown>>({});
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const { current, pageSize } = pagination;
 
-  useEffect(() => {
-    loadData();
-  }, [pagination.current, pagination.pageSize]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       // 构建查询参数，包含分页和筛选条件
-      const params: Record<string, any> = {
-        skip: (pagination.current - 1) * pagination.pageSize,
-        limit: pagination.pageSize,
+      const params: Record<string, string | number> = {
+        skip: (current - 1) * pageSize,
+        limit: pageSize,
       };
       // 添加筛选条件（后端支持的参数：difficulty, scope, status）
-      if (filterValues.difficulty) params.difficulty = filterValues.difficulty;
-      if (filterValues.scope) params.scope = filterValues.scope;
-      if (filterValues.status) params.status = filterValues.status;
+      const difficulty = getFilterValue(filterValues, 'difficulty');
+      const scope = getFilterValue(filterValues, 'scope');
+      const status = getFilterValue(filterValues, 'status');
+      if (difficulty) params.difficulty = difficulty;
+      if (scope) params.scope = scope;
+      if (status) params.status = status;
 
       const [scenariosData, orgsData] = await Promise.all([
         scenarioAdminService.list(params),
@@ -43,22 +45,25 @@ export function ScenarioManagePage() {
       setFilteredScenarios(scenariosData.scenarios);
       setOrganizations(orgsData);
       setPagination(prev => ({ ...prev, total: scenariosData.total }));
-    } catch (error: any) {
-      message.error('加载数据失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载数据失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  }, [current, filterValues, pageSize]);
 
-  const handleSearch = (values: any) => {
-    setFilterValues(values);
+  useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  const handleSearch = (values: Record<string, unknown>) => {
+    setFilterValues(values);
+    setPagination(prev => ({ ...prev, current: 1 }));
   };
 
   const handleReset = () => {
     setFilterValues({});
     setPagination({ current: 1, pageSize: 10, total: 0 });
-    loadData();
   };
 
   const handleCreate = () => {
@@ -85,8 +90,8 @@ export function ScenarioManagePage() {
           await scenarioAdminService.delete(id);
           message.success('删除成功');
           loadData();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -97,8 +102,8 @@ export function ScenarioManagePage() {
       await scenarioAdminService.publish(id);
       message.success('发布成功');
       loadData();
-    } catch (error: any) {
-      message.error('发布失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('发布失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -113,8 +118,8 @@ export function ScenarioManagePage() {
           await scenarioAdminService.archive(id);
           message.success('下线成功');
           loadData();
-        } catch (error: any) {
-          message.error('下线失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('下线失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -132,8 +137,8 @@ export function ScenarioManagePage() {
       }
       setModalVisible(false);
       loadData();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -195,7 +200,7 @@ export function ScenarioManagePage() {
       title: '操作',
       key: 'action',
       align: 'center' as const,
-      render: (_: any, record: Scenario) => (
+      render: (_: unknown, record: Scenario) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑

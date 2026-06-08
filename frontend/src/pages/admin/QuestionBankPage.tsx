@@ -3,27 +3,33 @@ import { Table, Button, Modal, Form, Input, Select, message, Space, Tag, Col } f
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import questionService from '../../services/question.service';
 import { FilterForm } from '../../components/admin/FilterForm';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterText, getFilterValue } from '../../utils/filters';
 import type { Question } from '../../types/admin.types';
 
-const applyQuestionFilters = (list: Question[], values: Record<string, any>) => {
+const applyQuestionFilters = (list: Question[], values: Record<string, unknown>) => {
   let filtered = [...list];
+  const questionText = getFilterText(values, 'question_text');
+  const questionType = getFilterValue(values, 'question_type');
+  const difficulty = getFilterValue(values, 'difficulty');
+  const status = getFilterValue(values, 'status');
 
-  if (values.question_text) {
+  if (questionText) {
     filtered = filtered.filter((question) =>
-      question.question_text?.toLowerCase().includes(values.question_text.toLowerCase()),
+      question.question_text?.toLowerCase().includes(questionText),
     );
   }
 
-  if (values.question_type) {
-    filtered = filtered.filter((question) => question.question_type === values.question_type);
+  if (questionType) {
+    filtered = filtered.filter((question) => question.question_type === questionType);
   }
 
-  if (values.difficulty) {
-    filtered = filtered.filter((question) => question.difficulty === values.difficulty);
+  if (difficulty) {
+    filtered = filtered.filter((question) => question.difficulty === difficulty);
   }
 
-  if (values.status) {
-    filtered = filtered.filter((question) => question.status === values.status);
+  if (status) {
+    filtered = filtered.filter((question) => question.status === status);
   }
 
   return filtered;
@@ -36,7 +42,7 @@ export function QuestionBankPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [form] = Form.useForm();
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [filterValues, setFilterValues] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     loadQuestions();
@@ -48,14 +54,14 @@ export function QuestionBankPage() {
       const data = await questionService.list();
       setQuestions(data);
       setFilteredQuestions(data);
-    } catch (error: any) {
-      message.error('加载题目列表失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载题目列表失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (values: any) => {
+  const handleSearch = (values: Record<string, unknown>) => {
     setFilterValues(values);
     setFilteredQuestions(applyQuestionFilters(questions, values));
   };
@@ -71,7 +77,7 @@ export function QuestionBankPage() {
   const availableTypes = new Set(
     questionsForTypeOptions
       .map((question) => question.question_type)
-      .filter((value): value is string => Boolean(value)),
+      .filter(Boolean),
   );
   const valuesForDifficultyOptions = { ...filterValues };
   delete valuesForDifficultyOptions.difficulty;
@@ -79,29 +85,36 @@ export function QuestionBankPage() {
   const availableDifficulties = new Set(
     questionsForDifficultyOptions
       .map((question) => question.difficulty)
-      .filter((value): value is string => Boolean(value)),
+      .filter(Boolean),
   );
   const valuesForStatusOptions = { ...filterValues };
   delete valuesForStatusOptions.status;
   const questionsForStatusOptions = applyQuestionFilters(questions, valuesForStatusOptions);
   const availableStatuses = new Set(
-    questionsForStatusOptions.map((question) => question.status).filter((value): value is string => Boolean(value)),
+    questionsForStatusOptions.map((question) => question.status).filter(Boolean),
   );
   const typeOptions = [
     { value: 'single', label: '单选' },
     { value: 'multiple', label: '多选' },
     { value: 'judge', label: '判断' },
-  ].filter((option) => !availableTypes.size || availableTypes.has(option.value));
+  ] as const;
+  const filteredTypeOptions = typeOptions.filter((option) => !availableTypes.size || availableTypes.has(option.value));
   const difficultyOptions = [
     { value: 'easy', label: '简单' },
     { value: 'medium', label: '中等' },
     { value: 'hard', label: '困难' },
-  ].filter((option) => !availableDifficulties.size || availableDifficulties.has(option.value));
+  ] as const;
+  const filteredDifficultyOptions = difficultyOptions.filter(
+    (option) => !availableDifficulties.size || availableDifficulties.has(option.value),
+  );
   const statusOptions = [
     { value: 'draft', label: '草稿' },
     { value: 'active', label: '启用' },
     { value: 'disabled', label: '禁用' },
-  ].filter((option) => !availableStatuses.size || availableStatuses.has(option.value));
+  ] as const;
+  const filteredStatusOptions = statusOptions.filter(
+    (option) => !availableStatuses.size || availableStatuses.has(option.value),
+  );
 
   const normalizeLines = (value?: string) =>
     (value || '')
@@ -144,8 +157,8 @@ export function QuestionBankPage() {
           await questionService.delete(id);
           message.success('删除成功');
           loadQuestions();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -169,8 +182,8 @@ export function QuestionBankPage() {
       }
       setModalVisible(false);
       loadQuestions();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
   const baseColumns = [
@@ -211,7 +224,7 @@ export function QuestionBankPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Question) => (
+      render: (_: unknown, record: Question) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
@@ -259,7 +272,7 @@ export function QuestionBankPage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="question_type" label="题型">
             <Select placeholder="请选择题型" allowClear>
-              {typeOptions.map((option) => (
+              {filteredTypeOptions.map((option) => (
                 <Select.Option key={option.value} value={option.value}>
                   {option.label}
                 </Select.Option>
@@ -270,7 +283,7 @@ export function QuestionBankPage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="difficulty" label="难度">
             <Select placeholder="请选择难度" allowClear>
-              {difficultyOptions.map((option) => (
+              {filteredDifficultyOptions.map((option) => (
                 <Select.Option key={option.value} value={option.value}>
                   {option.label}
                 </Select.Option>
@@ -281,7 +294,7 @@ export function QuestionBankPage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="status" label="状态">
             <Select placeholder="请选择" allowClear>
-              {statusOptions.map((option) => (
+              {filteredStatusOptions.map((option) => (
                 <Select.Option key={option.value} value={option.value}>
                   {option.label}
                 </Select.Option>

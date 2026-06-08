@@ -71,25 +71,11 @@ def get_current_user_required(
     return current_user
 
 
-def get_current_user_with_fallback(
-    current_user: Optional[User] = Depends(get_current_user),
-    fallback_user_id: str = "user-001"
+def get_current_user_id_required(
+    current_user: User = Depends(get_current_user_required)
 ) -> str:
-    """
-    获取当前用户ID，支持降级到默认用户
-
-    用于需要兼容旧代码的场景，逐步迁移到 get_current_user_required
-
-    Args:
-        current_user: 当前用户（从 get_current_user 获取）
-        fallback_user_id: 降级时使用的默认用户ID
-
-    Returns:
-        用户ID字符串
-    """
-    if current_user:
-        return current_user.id
-    return fallback_user_id
+    """获取当前登录用户ID（必须认证）"""
+    return current_user.id
 
 
 def require_role(*allowed_roles: str):

@@ -10,7 +10,7 @@ export interface Scenario {
   description: string | null;
   system_prompt: string;
   patient_background: string | null;
-  knowledge_tags: string | null;
+  knowledge_tags: string | string[] | null;
   difficulty: number;
   time_period: string | null;
   status: string;  // draft, pending, published, archived

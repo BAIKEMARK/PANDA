@@ -1,8 +1,9 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, message, Popconfirm } from 'antd';
 import { EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import fileService from '../../services/file.service';
 import { FileViewer } from './FileViewer';
+import { getApiErrorMessage } from '../../utils/error';
 import type { FileInfo } from '../../types/file.types';
 
 interface FileListProps {
@@ -25,30 +26,30 @@ export function FileList({
   const [total, setTotal] = useState(0);
   const [viewingFileId, setViewingFileId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadFiles();
-  }, [category, resourceType, resourceId, orgId]);
-
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fileService.list(orgId, category, resourceType, resourceId);
       setFiles(data.files);
       setTotal(data.total);
-    } catch (error: any) {
-      message.error('加载文件列表失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载文件列表失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, orgId, resourceId, resourceType]);
+
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
 
   const handleDelete = async (id: string) => {
     try {
       await fileService.delete(id);
       message.success('删除成功');
       loadFiles();
-    } catch (error: any) {
-      message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('删除失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -96,7 +97,7 @@ export function FileList({
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: FileInfo) => (
+      render: (_: unknown, record: FileInfo) => (
         <Space>
           <Button
             type="link"

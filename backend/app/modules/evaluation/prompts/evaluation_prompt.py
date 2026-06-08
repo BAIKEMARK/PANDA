@@ -73,6 +73,10 @@ def create_evaluation_prompt_template() -> ChatPromptTemplate:
 1. 请严格按照以下JSON格式返回评估报告：
 {format_instructions}
 
+   - 只返回一个JSON对象，不要使用 ```json 或任何 Markdown 代码块包裹。
+   - 所有数值字段必须是合法数字，禁止输出 `--`、`N/A`、空字符串或中文说明。
+   - `total_score` 必须等于 `radar_chart` 中 A+B+C+D+E 的总和，范围 0-100。
+
 2. **详细反馈要求 (Detailed Feedback Guide)**：
    - **数量要求**：必须输出 **5条** 反馈，严格依次对应以下五个维度：
      1. 风险识别 (对应 A类得分)

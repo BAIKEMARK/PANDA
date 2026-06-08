@@ -14,6 +14,7 @@ from .training import TrainingClass, ClassStudent, ClassTask
 from .question import QuestionBank
 from .audit import AuditLog
 from .certificate import Certificate, CertificateTemplate
+from .quiz import Quiz, QuizResult
 
 __all__ = [
     "User",
@@ -37,4 +38,6 @@ __all__ = [
     "AuditLog",
     "Certificate",
     "CertificateTemplate",
+    "Quiz",
+    "QuizResult",
 ]

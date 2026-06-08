@@ -9,7 +9,7 @@ from backend.app.db.database import get_db
 from backend.app.modules.course.schemas.course import CourseCreate, CourseResponse, CourseUpdate
 from backend.app.modules.course.services.course_service import CourseService
 from backend.app.core.common.exceptions import NotFoundException
-from backend.app.core.dependencies import get_current_user
+from backend.app.core.dependencies import get_current_user, require_role
 from backend.app.models.user import User
 
 router = APIRouter(prefix="/courses", tags=["课程"])
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/courses", tags=["课程"])
 @router.post("/", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
 async def create_course(
     course_data: CourseCreate,
+    current_user: User = Depends(require_role("admin", "instructor")),
     db: Session = Depends(get_db)
 ):
     """
@@ -70,6 +71,7 @@ async def get_course(
 async def update_course(
     course_id: str,
     course_data: CourseUpdate,
+    current_user: User = Depends(require_role("admin", "instructor")),
     db: Session = Depends(get_db)
 ):
     """更新课程信息"""
@@ -81,6 +83,7 @@ async def update_course(
 @router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_course(
     course_id: str,
+    current_user: User = Depends(require_role("admin", "instructor")),
     db: Session = Depends(get_db)
 ):
     """删除课程"""

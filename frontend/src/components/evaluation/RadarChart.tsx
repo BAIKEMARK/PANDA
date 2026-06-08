@@ -18,6 +18,37 @@ interface RadarChartProps {
 }
 
 export const EvaluationRadarChart = ({ scores }: RadarChartProps) => {
+  const data = useMemo(
+    () => [
+      {
+        dimension: 'A类-风险识别',
+        score: scores?.A_risk_identification ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'B类-沟通支持',
+        score: scores?.B_communication ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'C类-技能应用',
+        score: scores?.C_skill_application ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'D类-安全管理',
+        score: scores?.D_safety_management ?? 0,
+        fullMark: 100
+      },
+      {
+        dimension: 'E类-自我效能',
+        score: scores?.E_self_efficacy ?? 0,
+        fullMark: 100
+      },
+    ],
+    [scores]
+  );
+
   // 防御性检查:如果 scores 未定义或为 null,显示警告信息
   if (!scores) {
     return (
@@ -29,37 +60,6 @@ export const EvaluationRadarChart = ({ scores }: RadarChartProps) => {
       />
     );
   }
-
-  const data = useMemo(
-    () => [
-      {
-        dimension: 'A类-风险识别',
-        score: scores.A_risk_identification ?? 0,
-        fullMark: 100
-      },
-      {
-        dimension: 'B类-沟通支持',
-        score: scores.B_communication ?? 0,
-        fullMark: 100
-      },
-      {
-        dimension: 'C类-技能应用',
-        score: scores.C_skill_application ?? 0,
-        fullMark: 100
-      },
-      {
-        dimension: 'D类-安全管理',
-        score: scores.D_safety_management ?? 0,
-        fullMark: 100
-      },
-      {
-        dimension: 'E类-自我效能',
-        score: scores.E_self_efficacy ?? 0,
-        fullMark: 100
-      },
-    ],
-    [scores]
-  );
 
   return (
     <div style={{ width: '100%', height: '400px', minHeight: '400px' }}>

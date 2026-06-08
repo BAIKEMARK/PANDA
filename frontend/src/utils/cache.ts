@@ -10,7 +10,7 @@ interface CacheItem<T> {
 }
 
 class CacheManager {
-  private memoryCache: Map<string, CacheItem<any>> = new Map();
+  private memoryCache: Map<string, CacheItem<unknown>> = new Map();
   private readonly DEFAULT_EXPIRY = 5 * 60 * 1000; // 默认5分钟
 
   /**

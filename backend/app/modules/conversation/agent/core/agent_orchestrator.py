@@ -28,6 +28,7 @@ class AgentOrchestrator:
 
     def __init__(self, db: Session):
         """初始化Agent编排器"""
+        self.db = db
         self.state_update_chain = state_update_chain
         self.patient_chain = patient_agent_chain
         self.state_service = PatientStateService(db)

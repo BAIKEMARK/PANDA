@@ -3,19 +3,21 @@
  * 对应后端 backend/app/schemas/chat.py 和 backend/app/models/chat.py
  */
 
-// 会话状态枚举
-export enum SessionStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed',
-  ABANDONED = 'abandoned',
-}
+// 会话状态
+export const SessionStatus = {
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  ABANDONED: 'abandoned',
+} as const;
+export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
-// 消息角色枚举
-export enum MessageRole {
-  USER = 'user',
-  ASSISTANT = 'assistant',
-  SYSTEM = 'system',
-}
+// 消息角色
+export const MessageRole = {
+  USER: 'user',
+  ASSISTANT: 'assistant',
+  SYSTEM: 'system',
+} as const;
+export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
 
 // 会话类型
 export interface ChatSession {
@@ -28,7 +30,7 @@ export interface ChatSession {
   start_time: string;  // 开始时间
   end_time: string | null;  // 结束时间
   final_score: number | null;
-  meta_data: Record<string, any> | null;
+  meta_data: Record<string, unknown> | null;
 }
 
 // 会话创建DTO
@@ -42,7 +44,7 @@ export interface ChatMessage {
   session_id: string;
   role: MessageRole;
   content: string;
-  meta_data: Record<string, any> | null;
+  meta_data: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -51,7 +53,7 @@ export interface ChatMessageCreate {
   session_id: string;
   role: MessageRole;
   content: string;
-  meta_data?: Record<string, any>;
+  meta_data?: Record<string, unknown>;
 }
 
 // 聊天状态

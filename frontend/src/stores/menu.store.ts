@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import type { MenuItem } from '@/types';
 import menuService from '@/services/menu.service';
+import { getApiErrorMessage } from '@/utils/error';
 
 interface MenuState {
   // 状态
@@ -30,9 +31,9 @@ export const useMenuStore = create<MenuState>((set) => ({
     try {
       const menus = await menuService.getUserMenus();
       set({ menus, isLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({
-        error: error.response?.data?.detail || '获取菜单失败',
+        error: getApiErrorMessage(error, '获取菜单失败'),
         isLoading: false,
         menus: [],
       });

@@ -30,7 +30,7 @@ interface ChatStore extends ChatState {
 
 export const useChatStore = create<ChatStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       currentSession: null,
       messages: [],

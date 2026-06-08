@@ -6,13 +6,50 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col, Space, Spin, Alert, Tag } from 'antd';
 import { TrophyOutlined, RocketOutlined, BookOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import { motion } from 'framer-motion';
 import type { EvaluationReport } from '@/types/evaluation.types';
 import evaluationService from '@/services/evaluation.service';
 import { EvaluationRadarChart } from '@/components/evaluation/RadarChart';
 import { ScoreCards } from '@/components/evaluation/ScoreCard';
+import { getApiErrorMessage } from '@/utils/error';
 
 const { Title, Paragraph, Text } = Typography;
+
+const markdownComponents: Components = {
+  p: ({ children, ...props }) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
+  ul: ({ children, ...props }) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
+  ol: ({ children, ...props }) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
+  li: ({ children, ...props }) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
+  strong: ({ children, ...props }) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
+  code: ({ children, ...props }) => (
+    <code
+      style={{
+        background: '#f5f5f5',
+        padding: '2px 6px',
+        borderRadius: '4px',
+        fontSize: '14px',
+        color: '#eb2f96'
+      }}
+      {...props}
+    >{children}</code>
+  ),
+  h1: ({ children, ...props }) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
+  h2: ({ children, ...props }) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
+  h3: ({ children, ...props }) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
+  blockquote: ({ children, ...props }) => (
+    <blockquote
+      style={{
+        borderLeft: '3px solid #d9d9d9',
+        paddingLeft: '12px',
+        margin: '8px 0',
+        color: '#595959',
+        fontStyle: 'italic'
+      }}
+      {...props}
+    >{children}</blockquote>
+  )
+};
 
 export const EvaluationReportPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -50,10 +87,10 @@ export const EvaluationReportPage = () => {
         if (isGenerating) {
           setTimeout(fetchReport, 10000);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('获取评估报告失败:', err);
         // 设置错误信息，不再使用模拟数据
-        setError(err.message || '获取评估报告失败，请稍后重试');
+        setError(getApiErrorMessage(err, '获取评估报告失败，请稍后重试'));
       } finally {
         setIsLoading(false);
       }
@@ -368,54 +405,7 @@ export const EvaluationReportPage = () => {
               }}
             >
               <ReactMarkdown
-                components={{
-                  p: ({ children, ...props }: any) => <p style={{ margin: '0 0 8px 0' }} {...props}>{children}</p>,
-                  ul: ({ children, ...props }: any) => <ul style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ul>,
-                  ol: ({ children, ...props }: any) => <ol style={{ margin: '0 0 8px 0', paddingLeft: '20px' }} {...props}>{children}</ol>,
-                  li: ({ children, ...props }: any) => <li style={{ marginBottom: '4px' }} {...props}>{children}</li>,
-                  strong: ({ children, ...props }: any) => <strong style={{ fontWeight: 600, color: '#262626' }} {...props}>{children}</strong>,
-                  code: ({ inline, children, ...props }: any) =>
-                    inline ? (
-                      <code
-                        style={{
-                          background: '#f5f5f5',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontSize: '14px',
-                          color: '#eb2f96'
-                        }}
-                        {...props}
-                      >{children}</code>
-                    ) : (
-                      <code
-                        style={{
-                          display: 'block',
-                          background: '#f5f5f5',
-                          padding: '12px',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          overflow: 'auto',
-                          margin: '8px 0'
-                        }}
-                        {...props}
-                      >{children}</code>
-                    ),
-                  h1: ({ children, ...props }: any) => <h1 style={{ fontSize: '18px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h1>,
-                  h2: ({ children, ...props }: any) => <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h2>,
-                  h3: ({ children, ...props }: any) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '12px 0 8px 0' }} {...props}>{children}</h3>,
-                  blockquote: ({ children, ...props }: any) => (
-                    <blockquote
-                      style={{
-                        borderLeft: '3px solid #d9d9d9',
-                        paddingLeft: '12px',
-                        margin: '8px 0',
-                        color: '#595959',
-                        fontStyle: 'italic'
-                      }}
-                      {...props}
-                    >{children}</blockquote>
-                  )
-                }}
+                components={markdownComponents}
               >
                 {report.technical_guidance}
               </ReactMarkdown>

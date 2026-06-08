@@ -19,6 +19,16 @@ logger = get_logger(__name__)
 executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="eval_task")
 
 
+def _format_evaluation_error(error: Exception) -> str:
+    """Return a concise user-facing message while full details stay in logs."""
+    error_text = str(error)
+    if "OutputParserException" in error_text or "Invalid json output" in error_text:
+        return "评估模型输出格式异常，系统已记录详情，请重新生成评估报告。"
+    if "会话不存在" in error_text:
+        return error_text
+    return error_text[:500]
+
+
 def generate_evaluation_async(session_id: str, report_id: Optional[str] = None):
     """
     异步生成评估报告
@@ -74,7 +84,7 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
             logger.info(f"更新报告状态为生成中 | report_id={report.id}")
 
         # 2. 调用MentorAgent生成评估
-        mentor_agent = MentorAgent(db)
+        mentor_agent = MentorAgent(db, subscribe_events=False)
 
         try:
             # 生成评估报告（这是耗时操作）
@@ -125,7 +135,7 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
             else:
                 # 其他 ValueError
                 report.status = "failed"
-                report.error_message = str(e)
+                report.error_message = _format_evaluation_error(e)
                 db.commit()
                 logger.error(
                     f"评估报告生成失败 | session_id={session_id} | "
@@ -137,7 +147,7 @@ def _generate_evaluation_task(session_id: str, report_id: Optional[str] = None):
         except Exception as e:
             # 生成失败，更新状态
             report.status = "failed"
-            report.error_message = str(e)
+            report.error_message = _format_evaluation_error(e)
             db.commit()
 
             logger.error(

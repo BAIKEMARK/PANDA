@@ -1,14 +1,11 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from uuid import uuid4
-import os
-import shutil
 from pathlib import Path
-from datetime import datetime
 
 from backend.app.models.file import File
-from backend.app.config.config import settings
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.core.config.settings import settings
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 from backend.app.modules.admin.services.permission_service import PermissionService
 
 

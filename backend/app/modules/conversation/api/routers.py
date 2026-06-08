@@ -16,7 +16,7 @@ from backend.app.modules.conversation.services.chat_service import ChatService
 from backend.app.modules.conversation.services.conversation_engine import ConversationEngine
 from backend.app.core.common.exceptions import NotFoundException
 from backend.app.core.config.logging import get_logger
-from backend.app.core.dependencies import get_current_user_with_fallback
+from backend.app.core.dependencies import get_current_user_id_required
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/chat", tags=["对话"])
 @router.post("/sessions", response_model=ChatSessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_session(
     session_data: ChatSessionCreate,
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """创建新的对话会话"""
@@ -62,7 +62,7 @@ async def get_session_messages(
 @router.post("/messages", response_model=ChatMessageResponse, status_code=status.HTTP_201_CREATED)
 async def send_message(
     message_data: ChatMessageCreate,
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """
@@ -162,7 +162,7 @@ async def end_session(
 @router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
     session_id: str,
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """删除会话及其所有消息和评估报告"""
@@ -182,7 +182,7 @@ async def delete_session(
 @router.post("/sessions/{session_id}/fork", response_model=ChatSessionResponse, status_code=status.HTTP_201_CREATED)
 async def fork_session(
     session_id: str,
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """

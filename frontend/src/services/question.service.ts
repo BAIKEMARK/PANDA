@@ -3,7 +3,7 @@ import type { Question } from '../types/admin.types';
 
 class QuestionService {
   async list(orgId?: string, questionType?: string, status?: string, skip = 0, limit = 100): Promise<Question[]> {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (orgId) params.org_id = orgId;
     if (questionType) params.question_type = questionType;
     if (status) params.status = status;

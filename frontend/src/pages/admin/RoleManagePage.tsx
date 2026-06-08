@@ -3,6 +3,8 @@ import { Table, Button, Modal, Form, Input, Select, message, Space, Tag, Checkbo
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import roleService from '../../services/role.service';
 import { FilterForm } from '../../components/admin/FilterForm';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterText, getFilterValue } from '../../utils/filters';
 import type { Role, Permission } from '../../types/admin.types';
 
 export function RoleManagePage() {
@@ -28,8 +30,8 @@ export function RoleManagePage() {
       const data = await roleService.list();
       setRoles(data);
       setFilteredRoles(data);
-    } catch (error: any) {
-      message.error('加载角色列表失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载角色列表失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -39,28 +41,31 @@ export function RoleManagePage() {
     try {
       const data = await roleService.listAllPermissions();
       setPermissions(data);
-    } catch (error: any) {
+    } catch {
       message.error('加载权限列表失败');
     }
   };
 
-  const handleSearch = (values: any) => {
+  const handleSearch = (values: Record<string, unknown>) => {
     let filtered = [...roles];
+    const code = getFilterText(values, 'code');
+    const name = getFilterText(values, 'name');
+    const scope = getFilterValue(values, 'scope');
     
-    if (values.code) {
+    if (code) {
       filtered = filtered.filter(role => 
-        role.code?.toLowerCase().includes(values.code.toLowerCase())
+        role.code?.toLowerCase().includes(code)
       );
     }
     
-    if (values.name) {
+    if (name) {
       filtered = filtered.filter(role => 
-        role.name?.toLowerCase().includes(values.name.toLowerCase())
+        role.name?.toLowerCase().includes(name)
       );
     }
     
-    if (values.scope) {
-      filtered = filtered.filter(role => role.scope === values.scope);
+    if (scope) {
+      filtered = filtered.filter(role => role.scope === scope);
     }
     
     setFilteredRoles(filtered);
@@ -72,12 +77,15 @@ export function RoleManagePage() {
 
   const rolesForOptions = filteredRoles.length ? filteredRoles : roles;
   const availableScopes = new Set(
-    rolesForOptions.map((role) => role.scope).filter((scope): scope is string => Boolean(scope)),
+    rolesForOptions.map((role) => role.scope).filter(Boolean),
   );
   const scopeOptions = [
     { value: 'system', label: '系统' },
     { value: 'org', label: '机构' },
-  ].filter((option) => !availableScopes.size || availableScopes.has(option.value));
+  ] as const;
+  const filteredScopeOptions = scopeOptions.filter(
+    (option) => !availableScopes.size || availableScopes.has(option.value),
+  );
 
   const handleCreate = () => {
     setEditingRole(null);
@@ -111,8 +119,8 @@ export function RoleManagePage() {
           await roleService.delete(id);
           message.success('删除成功');
           loadRoles();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -130,8 +138,8 @@ export function RoleManagePage() {
       }
       setModalVisible(false);
       loadRoles();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -144,8 +152,8 @@ export function RoleManagePage() {
         setPermissionModalVisible(false);
         loadRoles();
       }
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -171,12 +179,12 @@ export function RoleManagePage() {
     {
       title: '权限数量',
       key: 'permission_count',
-      render: (_: any, record: Role) => record.permissions?.length || 0,
+      render: (_: unknown, record: Role) => record.permissions?.length || 0,
     },
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Role) => (
+      render: (_: unknown, record: Role) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
@@ -232,7 +240,7 @@ export function RoleManagePage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="scope" label="范围">
             <Select placeholder="请选择" allowClear>
-              {scopeOptions.map((option) => (
+              {filteredScopeOptions.map((option) => (
                 <Select.Option key={option.value} value={option.value}>
                   {option.label}
                 </Select.Option>

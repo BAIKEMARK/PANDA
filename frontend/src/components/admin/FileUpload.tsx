@@ -1,8 +1,9 @@
 ﻿import { useState } from 'react';
 import { Upload, Button, message, Progress, Space } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import type { UploadFile, UploadProps } from 'antd';
+import type { UploadProps } from 'antd';
 import fileService from '../../services/file.service';
+import { getApiErrorMessage } from '../../utils/error';
 import type { FileUploadResponse } from '../../types/file.types';
 
 interface FileUploadProps {
@@ -28,7 +29,7 @@ export function FileUpload({
   const [progress, setProgress] = useState(0);
 
   const handleUpload: UploadProps['customRequest'] = async (options) => {
-    const { file, onSuccess: onUploadSuccess, onError, onProgress } = options;
+    const { file, onSuccess: onUploadSuccess, onError } = options;
     const uploadFile = file as File;
 
     if (uploadFile.size > maxSize) {
@@ -53,9 +54,9 @@ export function FileUpload({
       message.success('上传成功');
       onUploadSuccess?.(response, {} as XMLHttpRequest);
       onSuccess?.(response);
-    } catch (error: any) {
-      message.error('上传失败: ' + (error.response?.data?.detail || error.message));
-      onError?.(error);
+    } catch (error: unknown) {
+      message.error('上传失败: ' + getApiErrorMessage(error));
+      onError?.(error instanceof Error ? error : new Error('上传失败'));
     } finally {
       setUploading(false);
       setTimeout(() => setProgress(0), 1000);

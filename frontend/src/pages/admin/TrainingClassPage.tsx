@@ -6,23 +6,28 @@ import dayjs from 'dayjs';
 import trainingService from '../../services/training.service';
 import organizationService from '../../services/organization.service';
 import { FilterForm } from '../../components/admin/FilterForm';
-import type { TrainingClass } from '../../types/admin.types';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterText, getFilterValue } from '../../utils/filters';
+import type { Organization, TrainingClass } from '../../types/admin.types';
 
-const applyClassFilters = (list: TrainingClass[], values: Record<string, any>) => {
+const applyClassFilters = (list: TrainingClass[], values: Record<string, unknown>) => {
   let filtered = [...list];
+  const name = getFilterText(values, 'name');
+  const orgId = getFilterValue(values, 'org_id');
+  const status = getFilterValue(values, 'status');
 
-  if (values.name) {
+  if (name) {
     filtered = filtered.filter((cls) =>
-      cls.name?.toLowerCase().includes(values.name.toLowerCase()),
+      cls.name?.toLowerCase().includes(name),
     );
   }
 
-  if (values.org_id) {
-    filtered = filtered.filter((cls) => cls.org_id === values.org_id);
+  if (orgId) {
+    filtered = filtered.filter((cls) => cls.org_id === orgId);
   }
 
-  if (values.status) {
-    filtered = filtered.filter((cls) => cls.status === values.status);
+  if (status) {
+    filtered = filtered.filter((cls) => cls.status === status);
   }
 
   return filtered;
@@ -31,12 +36,12 @@ const applyClassFilters = (list: TrainingClass[], values: Record<string, any>) =
 export function TrainingClassPage() {
   const [classes, setClasses] = useState<TrainingClass[]>([]);
   const [filteredClasses, setFilteredClasses] = useState<TrainingClass[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingClass, setEditingClass] = useState<TrainingClass | null>(null);
   const [form] = Form.useForm();
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [filterValues, setFilterValues] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     loadData();
@@ -52,14 +57,14 @@ export function TrainingClassPage() {
       setClasses(classesData);
       setFilteredClasses(classesData);
       setOrganizations(orgsData);
-    } catch (error: any) {
-      message.error('加载数据失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载数据失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (values: any) => {
+  const handleSearch = (values: Record<string, unknown>) => {
     setFilterValues(values);
     setFilteredClasses(applyClassFilters(classes, values));
   };
@@ -98,8 +103,8 @@ export function TrainingClassPage() {
           await trainingService.delete(id);
           message.success('删除成功');
           loadData();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -122,8 +127,8 @@ export function TrainingClassPage() {
       }
       setModalVisible(false);
       loadData();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -138,7 +143,7 @@ export function TrainingClassPage() {
   delete valuesForOrgOptions.org_id;
   const classesForOrgOptions = applyClassFilters(classes, valuesForOrgOptions);
   const availableOrgIds = new Set(
-    classesForOrgOptions.map((cls) => cls.org_id).filter((orgId): orgId is string => Boolean(orgId)),
+    classesForOrgOptions.map((cls) => cls.org_id).filter(Boolean),
   );
   const organizationOptions = availableOrgIds.size
     ? organizations.filter((org) => availableOrgIds.has(org.id))
@@ -148,9 +153,9 @@ export function TrainingClassPage() {
   delete valuesForStatusOptions.status;
   const classesForStatusOptions = applyClassFilters(classes, valuesForStatusOptions);
   const availableStatuses = new Set(
-    classesForStatusOptions.map((cls) => cls.status).filter((status): status is string => Boolean(status)),
+    classesForStatusOptions.map((cls) => cls.status).filter(Boolean),
   );
-  const statusOptions = Object.entries(statusMap)
+  const statusOptions = (Object.entries(statusMap) as [TrainingClass['status'], (typeof statusMap)[TrainingClass['status']]][])
     .filter(([value]) => !availableStatuses.size || availableStatuses.has(value))
     .map(([value, info]) => ({ value, label: info.text }));
 
@@ -184,7 +189,7 @@ export function TrainingClassPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: TrainingClass) => (
+      render: (_: unknown, record: TrainingClass) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑

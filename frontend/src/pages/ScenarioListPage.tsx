@@ -10,6 +10,7 @@ import type { Scenario } from '@/types/scenario.types';
 import scenarioService from '@/services/scenario.service';
 import { useChatStore } from '@/stores/chat.store';
 import { ScenarioCard } from '@/components/scenario/ScenarioCard';
+import { getApiErrorMessage } from '@/utils/error';
 
 const { Title, Text } = Typography;
 
@@ -27,8 +28,8 @@ export const ScenarioListPage = () => {
       try {
         const data = await scenarioService.getScenarios();
         setScenarios(data);
-      } catch (err: any) {
-        setError(err.message || '加载场景失败');
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, '加载场景失败'));
       } finally {
         setIsLoading(false);
       }
@@ -45,8 +46,8 @@ export const ScenarioListPage = () => {
         return;
       }
       navigate(`/chat/${session.id}`);
-    } catch (err: any) {
-      message.error(err.response?.data?.detail || '创建会话失败');
+    } catch (err: unknown) {
+      message.error(getApiErrorMessage(err, '创建会话失败'));
     }
   };
 

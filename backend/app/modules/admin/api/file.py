@@ -1,17 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File as FastAPIFile, Query
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse as FastAPIFileResponse
 from sqlalchemy.orm import Session
-from typing import Optional, List
+from typing import Optional
 import io
 
 from backend.app.db.database import get_db
 from backend.app.models.user import User
-from backend.app.common.middleware.permission import get_current_user_dependency
+from backend.app.core.common.middleware.permission import get_current_user_dependency
 from backend.app.modules.admin.services.permission_service import PermissionService
 from backend.app.modules.admin.services.file_service import FileService
 from backend.app.modules.admin.services.audit_service import AuditService
-from backend.app.modules.admin.schemas.file import FileResponse, FileListResponse, FileUploadResponse
-from backend.app.common.exceptions import NotFoundException, ConflictException
+from backend.app.modules.admin.schemas.file import (
+    FileResponse as FileRecordResponse,
+    FileListResponse,
+    FileUploadResponse,
+)
+from backend.app.core.common.exceptions import NotFoundException, ConflictException
 
 router = APIRouter(prefix="/admin/files", tags=["文件管理"])
 
@@ -90,7 +94,7 @@ async def list_files(
     return FileListResponse(files=files, total=total, skip=skip, limit=limit)
 
 
-@router.get("/{file_id}", response_model=FileResponse)
+@router.get("/{file_id}", response_model=FileRecordResponse)
 async def get_file(
     file_id: str,
     current_user: User = Depends(get_current_user_dependency),
@@ -147,7 +151,7 @@ async def view_file(
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="文件不存在")
         
-        return FileResponse(
+        return FastAPIFileResponse(
             path=str(file_path),
             media_type=file_record.mime_type or "application/octet-stream",
             filename=file_record.filename

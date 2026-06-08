@@ -71,6 +71,7 @@ from backend.app.modules.admin.api.user import router as user_admin_router
 from backend.app.modules.admin.api.training import router as training_router
 from backend.app.modules.admin.api.course import router as course_admin_router
 from backend.app.modules.admin.api.scenario import router as scenario_admin_router
+from backend.app.modules.admin.api.file import router as file_router
 
 # 证书管理模块
 from backend.app.modules.certificate.api.certificate import router as certificate_router
@@ -140,6 +141,7 @@ app.include_router(user_admin_router, prefix="/api")
 app.include_router(training_router, prefix="/api")
 app.include_router(course_admin_router, prefix="/api")
 app.include_router(scenario_admin_router, prefix="/api")
+app.include_router(file_router, prefix="/api")
 app.include_router(certificate_router, prefix="/api")
 app.include_router(certificate_template_router, prefix="/api")
 app.include_router(question_router, prefix="/api")
@@ -202,6 +204,8 @@ async def startup_event():
         print(f"[OK] MentorAgent 已初始化并订阅事件")
     except Exception as e:
         print(f"[WARN] MentorAgent 初始化失败: {e}")
+    finally:
+        db.close()
 
 
 @app.on_event("shutdown")

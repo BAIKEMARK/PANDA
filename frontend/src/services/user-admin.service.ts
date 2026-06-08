@@ -3,7 +3,7 @@ import type { User, UserListResponse, UserOrgAssign } from '../types/admin.types
 
 class UserAdminService {
   async list(orgId?: string, skip = 0, limit = 100): Promise<UserListResponse> {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (orgId) params.org_id = orgId;
     const response = await api.get<UserListResponse>('/admin/users', { params });
     return response.data;

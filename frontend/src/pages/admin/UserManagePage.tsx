@@ -4,38 +4,44 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import userAdminService from '../../services/user-admin.service';
 import organizationService from '../../services/organization.service';
 import { FilterForm } from '../../components/admin/FilterForm';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterText, getFilterValue } from '../../utils/filters';
 import type { User, Organization } from '../../types/admin.types';
 
 const applyUserFilters = (
   list: User[],
-  values: Record<string, any>,
+  values: Record<string, unknown>,
 ) => {
   let filtered = [...list];
+  const name = getFilterText(values, 'name');
+  const email = getFilterText(values, 'email');
+  const role = getFilterValue(values, 'role');
+  const orgId = getFilterValue(values, 'org_id');
+  const department = getFilterText(values, 'department');
 
-  if (values.name) {
+  if (name) {
     filtered = filtered.filter((user) =>
-      user.name?.toLowerCase().includes(values.name.toLowerCase()),
+      user.name?.toLowerCase().includes(name),
     );
   }
 
-  if (values.email) {
+  if (email) {
     filtered = filtered.filter((user) =>
-      user.email?.toLowerCase().includes(values.email.toLowerCase()),
+      user.email?.toLowerCase().includes(email),
     );
   }
 
-  if (values.role) {
-    const selectedRole = values.role as string;
-    filtered = filtered.filter((user) => user.role === selectedRole);
+  if (role) {
+    filtered = filtered.filter((user) => user.role === role);
   }
 
-  if (values.org_id) {
-    filtered = filtered.filter((user) => user.org_id === values.org_id);
+  if (orgId) {
+    filtered = filtered.filter((user) => user.org_id === orgId);
   }
 
-  if (values.department) {
+  if (department) {
     filtered = filtered.filter((user) =>
-      user.department?.toLowerCase().includes(values.department.toLowerCase()),
+      user.department?.toLowerCase().includes(department),
     );
   }
 
@@ -56,7 +62,7 @@ export function UserManagePage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [form] = Form.useForm();
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [filterValues, setFilterValues] = useState<Record<string, unknown>>({});
   const roleLabelByValue = useMemo(
     () => new Map(baseRoleOptions.map((role) => [role.value, role.label])),
     [],
@@ -80,14 +86,14 @@ export function UserManagePage() {
       setUsers(usersData.users);
       setFilteredUsers(usersData.users);
       setOrganizations(orgsData);
-    } catch (error: any) {
-      message.error('加载数据失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载数据失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (values: any) => {
+  const handleSearch = (values: Record<string, unknown>) => {
     setFilterValues(values);
     setFilteredUsers(applyUserFilters(users, values));
   };
@@ -160,8 +166,8 @@ export function UserManagePage() {
           await userAdminService.delete(id);
           message.success('删除成功');
           loadData();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -179,8 +185,8 @@ export function UserManagePage() {
       }
       setModalVisible(false);
       loadData();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -216,7 +222,7 @@ export function UserManagePage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: User) => (
+      render: (_: unknown, record: User) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑

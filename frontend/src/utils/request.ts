@@ -6,6 +6,27 @@ import axios, { AxiosError } from 'axios';
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { message } from 'antd';
 
+type ResponseEnvelope<T = unknown> = {
+  success?: boolean;
+  message?: string;
+  data?: T;
+};
+
+type ErrorPayload = {
+  detail?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const getDetailMessage = (data: unknown, fallback: string): string => {
+  if (!isRecord(data)) {
+    return fallback;
+  }
+  const { detail } = data as ErrorPayload;
+  return typeof detail === 'string' ? detail : fallback;
+};
+
 // 创建axios实例
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
@@ -44,11 +65,12 @@ request.interceptors.response.use(
     if (data && typeof data === 'object') {
       // 如果后端返回了success字段
       if ('success' in data) {
-        if (!data.success) {
-          message.error(data.message || '操作失败');
-          return Promise.reject(new Error(data.message || '操作失败'));
+        const envelope = data as ResponseEnvelope;
+        if (!envelope.success) {
+          message.error(envelope.message || '操作失败');
+          return Promise.reject(new Error(envelope.message || '操作失败'));
         }
-        return data.data !== undefined ? data.data : data;
+        return envelope.data !== undefined ? envelope.data : data;
       }
     }
     
@@ -61,7 +83,7 @@ request.interceptors.response.use(
       
       switch (status) {
         case 400:
-          message.error((data as any)?.detail || '请求参数错误');
+          message.error(getDetailMessage(data, '请求参数错误'));
           break;
         case 401:
           message.error('未授权，请重新登录');
@@ -83,7 +105,7 @@ request.interceptors.response.use(
           message.error('服务暂时不可用，请稍后重试');
           break;
         default:
-          message.error((data as any)?.detail || '请求失败');
+          message.error(getDetailMessage(data, '请求失败'));
       }
     } else if (error.request) {
       message.error('网络错误，请检查网络连接');

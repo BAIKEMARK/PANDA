@@ -2,7 +2,7 @@
  * 评估报告生成通知Hook
  * 用于在报告生成完成后显示通知
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { message, notification } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import evaluationService from '../services/evaluation.service';
@@ -17,6 +17,13 @@ interface UseEvaluationNotificationOptions {
   maxAttempts?: number;
 }
 
+const getFailureMessage = (errorMessage?: string) => {
+  if (!errorMessage) {
+    return '未知错误';
+  }
+  return errorMessage.length > 160 ? `${errorMessage.slice(0, 160)}...` : errorMessage;
+};
+
 export const useEvaluationNotification = ({
   sessionId,
   onCompleted,
@@ -30,18 +37,19 @@ export const useEvaluationNotification = ({
   const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptsRef = useRef(0);
   const notificationKeyRef = useRef<string>('');
+  const pollStatusRef = useRef<(() => Promise<void>) | null>(null);
 
   // 清理轮询
-  const stopPolling = () => {
+  const stopPolling = useCallback(() => {
     if (pollingTimerRef.current) {
       clearTimeout(pollingTimerRef.current);
       pollingTimerRef.current = null;
     }
     setIsPolling(false);
-  };
+  }, []);
 
   // 轮询状态
-  const pollStatus = async () => {
+  const pollStatus = useCallback(async () => {
     if (attemptsRef.current >= maxAttempts) {
       stopPolling();
       notification.error({
@@ -104,29 +112,41 @@ export const useEvaluationNotification = ({
           notification.destroy(notificationKeyRef.current);
         }
 
+        const failureMessage = getFailureMessage(reportStatus.error_message);
         notification.error({
           message: '评估报告生成失败',
-          description: reportStatus.error_message || '未知错误',
+          description: failureMessage,
           duration: 0,
           icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />,
         });
 
         if (onFailed) {
-          onFailed(reportStatus.error_message || '生成失败');
+          onFailed(failureMessage || '生成失败');
         }
       } else {
         // 继续轮询
-        pollingTimerRef.current = setTimeout(pollStatus, pollingInterval);
+        pollingTimerRef.current = setTimeout(() => {
+          pollStatusRef.current?.();
+        }, pollingInterval);
       }
     } catch (error) {
       console.error('查询报告状态失败:', error);
       // 继续轮询，不中断
-      pollingTimerRef.current = setTimeout(pollStatus, pollingInterval);
+      pollingTimerRef.current = setTimeout(() => {
+        pollStatusRef.current?.();
+      }, pollingInterval);
     }
-  };
+  }, [maxAttempts, onCompleted, onFailed, pollingInterval, sessionId, stopPolling]);
+
+  useEffect(() => {
+    pollStatusRef.current = pollStatus;
+    return () => {
+      pollStatusRef.current = null;
+    };
+  }, [pollStatus]);
 
   // 开始生成报告
-  const startGeneration = async () => {
+  const startGeneration = useCallback(async () => {
     try {
       // 提交生成任务
       const result = await evaluationService.generateReportAsync(sessionId);
@@ -156,28 +176,35 @@ export const useEvaluationNotification = ({
       setIsPolling(true);
       attemptsRef.current = 0;
       pollStatus();
-    } catch (error: any) {
-      message.error(error.message || '提交评估任务失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '提交评估任务失败';
+      message.error(errorMessage);
       if (onFailed) {
-        onFailed(error.message);
+        onFailed(errorMessage);
       }
     }
-  };
+  }, [onCompleted, onFailed, pollStatus, sessionId]);
 
   // 自动开始
   useEffect(() => {
+    let startTimer: ReturnType<typeof setTimeout> | null = null;
     if (autoStart && sessionId) {
-      startGeneration();
+      startTimer = setTimeout(() => {
+        startGeneration();
+      }, 0);
     }
 
     // 清理
     return () => {
+      if (startTimer) {
+        clearTimeout(startTimer);
+      }
       stopPolling();
       if (notificationKeyRef.current) {
         notification.destroy(notificationKeyRef.current);
       }
     };
-  }, [sessionId, autoStart]);
+  }, [sessionId, autoStart, startGeneration, stopPolling]);
 
   return {
     status,

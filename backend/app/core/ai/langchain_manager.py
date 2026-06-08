@@ -56,6 +56,7 @@ class LangChainManager:
                 api_key=settings.AI_TEXT_KEY,
                 model=settings.AI_TEXT_MODEL,
                 temperature=settings.LLM_TEMPERATURE,
+                max_tokens=settings.LLM_MAX_TOKENS,
                 timeout=settings.LLM_TIMEOUT,
                 max_retries=settings.LLM_MAX_RETRIES,
                 http_client=http_client,

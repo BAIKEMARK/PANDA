@@ -3,13 +3,14 @@
  * 对应后端 backend/app/schemas/course.py 和 backend/app/models/course.py
  */
 
-// 课程层级枚举
-export enum CourseLevel {
-  L1 = 'L1',
-  L2 = 'L2',
-  L3 = 'L3',
-  L4 = 'L4',
-}
+// 课程层级
+export const CourseLevel = {
+  L1: 'L1',
+  L2: 'L2',
+  L3: 'L3',
+  L4: 'L4',
+} as const;
+export type CourseLevel = (typeof CourseLevel)[keyof typeof CourseLevel];
 
 // 课程类型
 export interface Course {

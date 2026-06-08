@@ -3,7 +3,7 @@
  */
 import { Card, Typography, Empty } from 'antd';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 
 interface FeedbackSectionProps {
   feedback?: string;

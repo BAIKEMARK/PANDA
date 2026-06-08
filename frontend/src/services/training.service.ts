@@ -3,7 +3,7 @@ import type { TrainingClass, ClassStudent, ClassTask } from '../types/admin.type
 
 class TrainingService {
   async list(orgId?: string, status?: string, skip = 0, limit = 100): Promise<TrainingClass[]> {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (orgId) params.org_id = orgId;
     if (status) params.status = status;
     const response = await api.get<TrainingClass[]>('/admin/classes', { params });

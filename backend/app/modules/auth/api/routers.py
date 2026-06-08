@@ -23,6 +23,10 @@ auth_router = APIRouter(prefix="/auth", tags=["认证"])
 users_router = APIRouter(prefix="/users", tags=["用户"])
 
 
+def _is_user_admin(user) -> bool:
+    return bool(user and user.role in ("admin", "instructor"))
+
+
 # ==================== 认证路由 ====================
 
 @auth_router.post("/login", response_model=TokenResponse)
@@ -136,9 +140,12 @@ async def create_user(
 async def get_users(
     skip: int = 0,
     limit: int = 100,
+    current_user = Depends(get_current_user_required),
     db: Session = Depends(get_db)
 ):
     """获取用户列表"""
+    if not _is_user_admin(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     service = UserService(db)
     users = service.get_users(skip=skip, limit=limit)
     return users
@@ -147,9 +154,12 @@ async def get_users(
 @users_router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: str,
+    current_user = Depends(get_current_user_required),
     db: Session = Depends(get_db)
 ):
     """获取单个用户"""
+    if current_user.id != user_id and not _is_user_admin(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     service = UserService(db)
     user = service.get_user(user_id)
     if not user:
@@ -161,9 +171,12 @@ async def get_user(
 async def update_user(
     user_id: str,
     user_data: UserUpdate,
+    current_user = Depends(get_current_user_required),
     db: Session = Depends(get_db)
 ):
     """更新用户信息"""
+    if current_user.id != user_id and not _is_user_admin(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     service = UserService(db)
     user = service.update_user(user_id, user_data)
     if not user:
@@ -175,9 +188,12 @@ async def update_user(
 async def change_password(
     user_id: str,
     password_data: PasswordChange,
+    current_user = Depends(get_current_user_required),
     db: Session = Depends(get_db)
 ):
     """修改用户密码"""
+    if current_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只能修改本人密码")
     from backend.app.core.config.security import verify_password, get_password_hash
 
     service = UserService(db)
@@ -199,9 +215,12 @@ async def change_password(
 @users_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: str,
+    current_user = Depends(get_current_user_required),
     db: Session = Depends(get_db)
 ):
     """删除用户"""
+    if not _is_user_admin(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     service = UserService(db)
     success = service.delete_user(user_id)
     if not success:

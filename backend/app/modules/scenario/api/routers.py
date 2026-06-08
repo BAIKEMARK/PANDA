@@ -9,7 +9,7 @@ from backend.app.db.database import get_db
 from backend.app.modules.scenario.schemas.scenario import ScenarioCreate, ScenarioResponse, ScenarioUpdate
 from backend.app.modules.scenario.services.scenario_service import ScenarioService
 from backend.app.core.common.exceptions import NotFoundException
-from backend.app.core.dependencies import get_current_user
+from backend.app.core.dependencies import get_current_user, require_role
 from backend.app.models.user import User
 
 router = APIRouter(prefix="/scenarios", tags=["场景"])
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/scenarios", tags=["场景"])
 @router.post("/", response_model=ScenarioResponse, status_code=status.HTTP_201_CREATED)
 async def create_scenario(
     scenario_data: ScenarioCreate,
+    current_user: User = Depends(require_role("admin", "instructor")),
     db: Session = Depends(get_db)
 ):
     """
@@ -71,6 +72,7 @@ async def get_scenario(
 async def update_scenario(
     scenario_id: str,
     scenario_data: ScenarioUpdate,
+    current_user: User = Depends(require_role("admin", "instructor")),
     db: Session = Depends(get_db)
 ):
     """更新场景信息"""
@@ -82,6 +84,7 @@ async def update_scenario(
 @router.delete("/{scenario_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_scenario(
     scenario_id: str,
+    current_user: User = Depends(require_role("admin", "instructor")),
     db: Session = Depends(get_db)
 ):
     """删除场景"""

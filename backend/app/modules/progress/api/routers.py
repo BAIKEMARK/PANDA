@@ -13,14 +13,14 @@ from backend.app.modules.progress.schemas.dashboard import DashboardStatsRespons
 from backend.app.modules.progress.services.progress_service import ProgressService
 from backend.app.modules.progress.services.dashboard_service import DashboardService
 from backend.app.core.common.exceptions import NotFoundException
-from backend.app.core.dependencies import get_current_user_with_fallback
+from backend.app.core.dependencies import get_current_user_id_required
 
 router = APIRouter(prefix="/progress", tags=["学习进度"])
 
 
 @router.get("/dashboard", response_model=DashboardStatsResponse)
 async def get_dashboard_stats(
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """获取学习仪表盘统计数据"""
@@ -31,7 +31,7 @@ async def get_dashboard_stats(
 @router.post("/courses/{course_id}/start", response_model=UserProgressResponse, status_code=status.HTTP_201_CREATED)
 async def start_course(
     course_id: str,
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """
@@ -47,7 +47,7 @@ async def start_course(
 @router.get("/courses/{course_id}", response_model=UserProgressResponse)
 async def get_course_progress(
     course_id: str,
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """获取特定课程的学习进度"""
@@ -60,7 +60,7 @@ async def get_course_progress(
 
 @router.get("/", response_model=List[UserProgressResponse])
 async def get_all_progress(
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """获取用户所有课程的学习进度"""
@@ -72,7 +72,7 @@ async def get_all_progress(
 async def update_progress(
     course_id: str,
     progress_data: UserProgressUpdate,
-    user_id: str = Depends(get_current_user_with_fallback),
+    user_id: str = Depends(get_current_user_id_required),
     db: Session = Depends(get_db)
 ):
     """更新学习进度"""

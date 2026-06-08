@@ -3,7 +3,7 @@ import type { Organization } from '../types/admin.types';
 
 class OrganizationService {
   async list(status?: string, skip = 0, limit = 100): Promise<Organization[]> {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (status) params.status = status;
     const response = await api.get<Organization[]>('/admin/organizations', { params });
     return response.data;

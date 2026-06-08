@@ -7,13 +7,7 @@ import { Avatar, Card, Typography, Row, Col, Descriptions, Tag, Alert, Button, M
 import { UserOutlined, EditOutlined, BankOutlined, LogoutOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/auth.store';
 import api from '@/services/api';
-
-// 机构信息类型
-interface OrganizationInfo {
-  id: string;
-  name: string;
-  short_name?: string;
-}
+import { getApiErrorMessage } from '@/utils/error';
 
 const { Title, Text } = Typography;
 
@@ -58,8 +52,8 @@ export const ProfilePage = () => {
       updateUser({ ...user, name: response.data.name });
       message.success('个人信息更新成功');
       setIsEditModalOpen(false);
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || '更新失败，请稍后重试');
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '更新失败，请稍后重试'));
     } finally {
       setLoading(false);
     }
@@ -87,8 +81,8 @@ export const ProfilePage = () => {
       // 登出并跳转到登录页
       logout();
       navigate('/login', { replace: true });
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || '密码修改失败');
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '密码修改失败'));
     } finally {
       setLoading(false);
     }
@@ -178,9 +172,9 @@ export const ProfilePage = () => {
             <Tag color="blue">{roleNames[user.role] || user.role}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="所属机构">
-            {(user as any).organizations && (user as any).organizations.length > 0 ? (
+            {user.organizations && user.organizations.length > 0 ? (
               <Space direction="vertical" size="small">
-                {(user as any).organizations.map((org: OrganizationInfo) => (
+                {user.organizations.map((org) => (
                   <Tag key={org.id} icon={<BankOutlined />} color="green">
                     {org.short_name || org.name}
                   </Tag>

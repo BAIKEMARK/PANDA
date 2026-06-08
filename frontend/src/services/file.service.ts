@@ -13,7 +13,7 @@ class FileService {
     const formData = new FormData();
     formData.append('file', file);
     
-    const params: any = { category };
+    const params: Record<string, string> = { category };
     if (orgId) params.org_id = orgId;
     if (resourceType) params.resource_type = resourceType;
     if (resourceId) params.resource_id = resourceId;
@@ -36,7 +36,7 @@ class FileService {
     skip = 0,
     limit = 100
   ): Promise<FileListResponse> {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (orgId) params.org_id = orgId;
     if (category) params.category = category;
     if (resourceType) params.resource_type = resourceType;

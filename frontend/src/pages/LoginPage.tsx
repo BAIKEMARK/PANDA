@@ -1,13 +1,14 @@
 ﻿/**
  * 登录页面 - 带动画效果
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Form, Input, Button, Card, Checkbox, Typography } from 'antd';
 import { UserOutlined, LockOutlined, RocketOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth.store';
 import type { FormProps } from 'antd';
+import type { CheckboxChangeEvent } from 'antd/es/checkbox';
 
 const { Title, Text } = Typography;
 
@@ -16,6 +17,14 @@ const REMEMBER_KEY = 'login_remember';
 const AUTO_LOGIN_KEY = 'login_auto';
 const SAVED_EMAIL_KEY = 'login_email';
 const SAVED_PASSWORD_KEY = 'login_password';
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === 'object') {
+    const maybeError = error as { response?: { data?: { detail?: string } }; message?: string };
+    return maybeError.response?.data?.detail || maybeError.message || fallback;
+  }
+  return fallback;
+};
 
 interface LoginFormValues {
   email: string;
@@ -26,13 +35,20 @@ interface LoginFormValues {
 
 // 背景粒子组件
 const BackgroundParticles = () => {
-  const particles = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 10 + 5,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    delay: Math.random() * 2,
-  }));
+  const particles = useMemo(
+    () => Array.from({ length: 20 }, (_, i) => {
+      const seed = (i + 1) * 17;
+      return {
+        id: i,
+        size: ((seed * 13) % 10) + 5,
+        x: (seed * 29) % 100,
+        y: (seed * 43) % 100,
+        delay: ((seed * 7) % 20) / 10,
+        duration: 3 + ((seed * 11) % 20) / 10,
+      };
+    }),
+    [],
+  );
 
   return (
     <div style={{
@@ -53,7 +69,7 @@ const BackgroundParticles = () => {
             x: [0, 20, 0],
           }}
           transition={{
-            duration: 3 + Math.random() * 2,
+            duration: p.duration,
             repeat: Infinity,
             delay: p.delay,
             ease: 'easeInOut',
@@ -82,6 +98,15 @@ export const LoginPage = () => {
   const from = (location.state as { from?: string })?.from || '/courses';
   const registeredEmail = (location.state as { registeredEmail?: string })?.registeredEmail;
   const registeredPassword = (location.state as { registeredPassword?: string })?.registeredPassword;
+
+  const handleAutoLogin = useCallback(async (email: string, password: string) => {
+    try {
+      await login(email, password);
+      navigate(from, { replace: true });
+    } catch {
+      localStorage.setItem(AUTO_LOGIN_KEY, 'false');
+    }
+  }, [from, login, navigate]);
 
   useEffect(() => {
     // 延迟执行，确保登录页面先渲染出来
@@ -120,16 +145,7 @@ export const LoginPage = () => {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, []);
-
-  const handleAutoLogin = async (email: string, password: string) => {
-    try {
-      await login(email, password);
-      navigate(from, { replace: true });
-    } catch {
-      localStorage.setItem(AUTO_LOGIN_KEY, 'false');
-    }
-  };
+  }, [form, handleAutoLogin, registeredEmail, registeredPassword]);
 
   const onFinish: FormProps<LoginFormValues>['onFinish'] = async (values) => {
     try {
@@ -148,17 +164,17 @@ export const LoginPage = () => {
       }
 
       navigate(from, { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       form.setFields([
         {
           name: 'password',
-          errors: [error.response?.data?.detail || '登录失败，请检查邮箱和密码'],
+          errors: [getErrorMessage(error, '登录失败，请检查邮箱和密码')],
         },
       ]);
     }
   };
 
-  const onRememberChange = (e: any) => {
+  const onRememberChange = (e: CheckboxChangeEvent) => {
     if (!e.target.checked) {
       form.setFieldValue('autoLogin', false);
     }

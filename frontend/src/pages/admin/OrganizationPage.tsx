@@ -3,6 +3,8 @@ import { Table, Button, Modal, Form, Input, message, Space, Tooltip, Select, Col
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import organizationService from '../../services/organization.service';
 import { FilterForm } from '../../components/admin/FilterForm';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterText, getFilterValue } from '../../utils/filters';
 import type { Organization } from '../../types/admin.types';
 
 export function OrganizationPage() {
@@ -23,35 +25,39 @@ export function OrganizationPage() {
       const data = await organizationService.list();
       setOrganizations(data);
       setFilteredOrganizations(data);
-    } catch (error: any) {
-      message.error('加载机构列表失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载机构列表失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (values: any) => {
+  const handleSearch = (values: Record<string, unknown>) => {
     let filtered = [...organizations];
+    const name = getFilterText(values, 'name');
+    const shortName = getFilterText(values, 'short_name');
+    const status = getFilterValue(values, 'status');
+    const contactName = getFilterText(values, 'contact_name');
     
-    if (values.name) {
+    if (name) {
       filtered = filtered.filter(org => 
-        org.name?.toLowerCase().includes(values.name.toLowerCase())
+        org.name?.toLowerCase().includes(name)
       );
     }
     
-    if (values.short_name) {
+    if (shortName) {
       filtered = filtered.filter(org => 
-        org.short_name?.toLowerCase().includes(values.short_name.toLowerCase())
+        org.short_name?.toLowerCase().includes(shortName)
       );
     }
     
-    if (values.status) {
-      filtered = filtered.filter(org => org.status === values.status);
+    if (status) {
+      filtered = filtered.filter(org => org.status === status);
     }
     
-    if (values.contact_name) {
+    if (contactName) {
       filtered = filtered.filter(org => 
-        org.contact_name?.toLowerCase().includes(values.contact_name.toLowerCase())
+        org.contact_name?.toLowerCase().includes(contactName)
       );
     }
     
@@ -64,12 +70,15 @@ export function OrganizationPage() {
 
   const organizationsForOptions = filteredOrganizations.length ? filteredOrganizations : organizations;
   const availableStatuses = new Set(
-    organizationsForOptions.map((org) => org.status).filter((status): status is string => Boolean(status)),
+    organizationsForOptions.map((org) => org.status).filter(Boolean),
   );
   const statusOptions = [
     { value: 'active', label: '启用' },
     { value: 'inactive', label: '禁用' },
-  ].filter((option) => !availableStatuses.size || availableStatuses.has(option.value));
+  ] as const;
+  const filteredStatusOptions = statusOptions.filter(
+    (option) => !availableStatuses.size || availableStatuses.has(option.value),
+  );
 
   const handleCreate = () => {
     setEditingOrg(null);
@@ -95,8 +104,8 @@ export function OrganizationPage() {
           await organizationService.delete(id);
           message.success('删除成功');
           loadOrganizations();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -107,8 +116,8 @@ export function OrganizationPage() {
       await organizationService.update(org.id, { status: value ? 'active' : 'inactive' });
       message.success(value ? '已启用' : '已禁用');
       loadOrganizations();
-    } catch (error: any) {
-      message.error('更新失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('更新失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -124,8 +133,8 @@ export function OrganizationPage() {
       }
       setModalVisible(false);
       loadOrganizations();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -169,7 +178,7 @@ export function OrganizationPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Organization) => (
+      render: (_: unknown, record: Organization) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
@@ -227,7 +236,7 @@ export function OrganizationPage() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Form.Item name="status" label="状态">
             <Select placeholder="请选择" allowClear>
-              {statusOptions.map((option) => (
+              {filteredStatusOptions.map((option) => (
                 <Select.Option key={option.value} value={option.value}>
                   {option.label}
                 </Select.Option>

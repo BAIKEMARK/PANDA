@@ -1,7 +1,8 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useCallback, useEffect, useState } from 'react';
 import { Modal, Spin, message, Button, Space } from 'antd';
-import { EyeOutlined, DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined } from '@ant-design/icons';
 import fileService from '../../services/file.service';
+import { getApiErrorMessage } from '../../utils/error';
 import type { FileInfo } from '../../types/file.types';
 
 interface FileViewerProps {
@@ -14,23 +15,23 @@ export function FileViewer({ fileId, visible, onClose }: FileViewerProps) {
   const [file, setFile] = useState<FileInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (visible && fileId) {
-      loadFile();
-    }
-  }, [visible, fileId]);
-
-  const loadFile = async () => {
+  const loadFile = useCallback(async () => {
     setLoading(true);
     try {
       const fileData = await fileService.get(fileId);
       setFile(fileData);
-    } catch (error: any) {
-      message.error('加载文件失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载文件失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  }, [fileId]);
+
+  useEffect(() => {
+    if (visible && fileId) {
+      loadFile();
+    }
+  }, [visible, fileId, loadFile]);
 
   const canPreview = (mimeType?: string) => {
     if (!mimeType) return false;

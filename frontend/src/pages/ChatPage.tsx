@@ -20,6 +20,7 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import chatService from '@/services/chat.service';
 import evaluationService from '@/services/evaluation.service';
 import type { ChatMessage } from '@/types/chat.types';
+import type { ReportStatus } from '@/services/evaluation.service';
 
 const { Title } = Typography;
 
@@ -38,6 +39,7 @@ export const ChatPage = () => {
   // 判断是否从历史记录进入
   const fromHistory = location.state?.fromHistory === true;
   const [isReadOnly, setIsReadOnly] = useState(fromHistory);
+  const [reportStatus, setReportStatus] = useState<ReportStatus['status'] | null>(null);
 
   useEffect(() => {
     if (!sessionId) {
@@ -59,6 +61,32 @@ export const ChatPage = () => {
 
     fetchMessages();
   }, [sessionId, loadMessages, navigate]);
+
+  useEffect(() => {
+    if (!activeSessionId || !isReadOnly) {
+      return;
+    }
+
+    let cancelled = false;
+    const loadReportStatus = async () => {
+      try {
+        const status = await evaluationService.getReportStatus(activeSessionId);
+        if (!cancelled) {
+          setReportStatus(status.status);
+        }
+      } catch {
+        if (!cancelled) {
+          setReportStatus(null);
+        }
+      }
+    };
+
+    loadReportStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSessionId, isReadOnly]);
 
   const handleSendMessage = async (content: string) => {
     if (!activeSessionId || isReadOnly) return;
@@ -102,7 +130,8 @@ export const ChatPage = () => {
                 await endSession(activeSessionId);
 
                 // 提交异步评估报告生成任务
-                await evaluationService.generateReportAsync(activeSessionId);
+                const result = await evaluationService.generateReportAsync(activeSessionId);
+                setReportStatus(result.status === 'completed' ? 'completed' : 'generating');
 
                 message.success('评估报告生成任务已提交，完成后将通知您');
 
@@ -142,7 +171,8 @@ export const ChatPage = () => {
           await endSession(activeSessionId);
 
           // 提交异步评估报告生成任务
-          await evaluationService.generateReportAsync(activeSessionId);
+          const result = await evaluationService.generateReportAsync(activeSessionId);
+          setReportStatus(result.status === 'completed' ? 'completed' : 'generating');
 
           message.success('评估报告生成任务已提交，完成后将通知您');
 
@@ -170,6 +200,7 @@ export const ChatPage = () => {
     const poll = async () => {
       try {
         const status = await evaluationService.getReportStatus(sessionId);
+        setReportStatus(status.status);
 
         if (status.status === 'completed') {
           // 生成完成，弹出通知
@@ -225,7 +256,8 @@ export const ChatPage = () => {
           await chatService.alertSuicideRisk(activeSessionId);
 
           // 提交异步评估报告生成任务
-          await evaluationService.generateReportAsync(activeSessionId);
+          const result = await evaluationService.generateReportAsync(activeSessionId);
+          setReportStatus(result.status === 'completed' ? 'completed' : 'generating');
 
           message.success('已记录报警，评估报告生成任务已提交，完成后将通知您');
 
@@ -250,6 +282,7 @@ export const ChatPage = () => {
       let hasReport = false;
       try {
         const reportStatus = await evaluationService.getReportStatus(activeSessionId);
+        setReportStatus(reportStatus.status);
         hasReport = reportStatus.status === 'completed' || reportStatus.status === 'generating';
       } catch {
         // 没有报告记录
@@ -271,6 +304,7 @@ export const ChatPage = () => {
     if (!activeSessionId) return;
     try {
       const status = await evaluationService.getReportStatus(activeSessionId);
+      setReportStatus(status.status);
       if (status.status === 'generating') {
         message.info('报告正在后台生成中，请耐心等待15秒左右...', 3);
         // Start polling if not already polling
@@ -282,10 +316,12 @@ export const ChatPage = () => {
       }
     } catch (err) {
       console.error('获取状态失败', err);
-      // Fallback
-      navigate(`/evaluation/${activeSessionId}`);
+      message.warning('评估报告尚未生成完成，请稍后再试');
     }
   };
+
+  const canViewReport = reportStatus === 'completed';
+  const reportButtonText = canViewReport ? '查看评估报告' : '报告生成中';
 
   return (
     <motion.div
@@ -356,13 +392,14 @@ export const ChatPage = () => {
                 <Tag color="orange" style={{ background: 'rgba(255,152,0,0.2)', border: 'none', color: '#fff' }}>
                   已结束/只读模式
                 </Tag>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div whileHover={canViewReport ? { scale: 1.05 } : undefined} whileTap={canViewReport ? { scale: 0.95 } : undefined}>
                   <Button
                     type="primary"
                     onClick={handleViewReport}
+                    disabled={!canViewReport}
                     style={{ background: '#fff', color: '#667eea', border: 'none' }}
                   >
-                    查看评估报告
+                    {reportButtonText}
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -453,7 +490,7 @@ export const ChatPage = () => {
             >
               <Alert
                 message="本对话已结束或处于只读记录模式"
-                description="正在生成或已生成评估报告，您可以点击右上角按钮查看。"
+                description={canViewReport ? '评估报告已生成，您可以点击右上角按钮查看。' : '正在生成评估报告，生成完成后才可以查看。'}
                 type="info"
                 showIcon
                 style={{ margin: '16px 24px', borderRadius: '8px' }}

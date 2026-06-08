@@ -2,7 +2,7 @@
  * 仪表盘统计卡片
  */
 import { Card, Statistic } from 'antd';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface StatsCardProps {
     title: string;

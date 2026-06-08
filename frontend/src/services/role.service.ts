@@ -3,7 +3,7 @@ import type { Role, Permission } from '../types/admin.types';
 
 class RoleService {
   async list(scope?: string): Promise<Role[]> {
-    const params: any = {};
+    const params: Record<string, string> = {};
     if (scope) params.scope = scope;
     const response = await api.get<Role[]>('/admin/roles', { params });
     return response.data;

@@ -1,14 +1,14 @@
 ﻿/**
  * Common filter form component.
  */
-import { Form, Row, Col, Button, Space, Typography } from 'antd';
+import { Form, Row, Button, Space, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useDebounce } from '../../hooks/useDebounce';
 
 interface FilterFormProps {
-  onSearch: (values: any) => void;
+  onSearch: (values: Record<string, unknown>) => void;
   onReset: () => void;
   children: ReactNode;
   loading?: boolean;
@@ -16,11 +16,11 @@ interface FilterFormProps {
 
 export function FilterForm({ onSearch, onReset, children }: FilterFormProps) {
   const [form] = Form.useForm();
-  const [pendingValues, setPendingValues] = useState<Record<string, any>>({});
+  const [pendingValues, setPendingValues] = useState<Record<string, unknown>>({});
   const [hasInteracted, setHasInteracted] = useState(false);
   const debouncedValues = useDebounce(pendingValues, 400);
 
-  const buildSearchValues = (values: Record<string, any>) => {
+  const buildSearchValues = useCallback((values: Record<string, unknown>) => {
     // Drop empty values.
     return Object.entries(values).reduce((acc, [key, value]) => {
       if (value === undefined || value === null || value === '') {
@@ -31,13 +31,13 @@ export function FilterForm({ onSearch, onReset, children }: FilterFormProps) {
       }
       acc[key] = value;
       return acc;
-    }, {} as Record<string, any>);
-  };
+    }, {} as Record<string, unknown>);
+  }, []);
 
-  const triggerSearch = (values?: Record<string, any>) => {
-    const rawValues = values ?? form.getFieldsValue();
+  const triggerSearch = useCallback((values?: Record<string, unknown>) => {
+    const rawValues = values ?? (form.getFieldsValue() as Record<string, unknown>);
     onSearch(buildSearchValues(rawValues));
-  };
+  }, [buildSearchValues, form, onSearch]);
 
   const handleReset = () => {
     form.resetFields();
@@ -50,7 +50,7 @@ export function FilterForm({ onSearch, onReset, children }: FilterFormProps) {
       return;
     }
     triggerSearch(debouncedValues);
-  }, [debouncedValues, hasInteracted]);
+  }, [debouncedValues, hasInteracted, triggerSearch]);
 
   return (
     <div

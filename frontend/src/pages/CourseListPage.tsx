@@ -20,7 +20,7 @@ export const CourseListPage = () => {
     const fetchCourses = async () => {
       try {
         await loadCourses(selectedLevel === 'all' ? undefined : selectedLevel);
-      } catch (err) {
+      } catch {
         // Error handled by store
       }
     };

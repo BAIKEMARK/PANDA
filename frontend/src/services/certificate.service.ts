@@ -3,7 +3,7 @@ import type { Certificate, CertificateTemplate } from '../types/admin.types';
 
 class CertificateService {
   async list(userId?: string, orgId?: string, skip = 0, limit = 100): Promise<Certificate[]> {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (userId) params.user_id = userId;
     if (orgId) params.org_id = orgId;
     const response = await api.get<Certificate[]>('/admin/certificates', { params });
@@ -32,7 +32,7 @@ class CertificateService {
 
 class CertificateTemplateService {
   async list(orgId?: string, status?: string, skip = 0, limit = 100): Promise<CertificateTemplate[]> {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (orgId) params.org_id = orgId;
     if (status) params.status = status;
     const response = await api.get<CertificateTemplate[]>('/admin/certificate-templates', { params });

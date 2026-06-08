@@ -1,14 +1,27 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Spin, Switch, Table, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { MenuItem, Organization, Role, Permission, ContentItem, ExportJob, AuditLog, TrainingClass, User } from '../types';
+import type {
+  MenuItem,
+  Organization,
+  Role,
+  RoleScope,
+  Permission,
+  ContentItem,
+  ContentScope,
+  ContentType,
+  ExportJob,
+  AuditLog,
+  TrainingClass,
+  User,
+} from '../types';
 import { adminService } from '../services/admin.service';
 import menuService from '../services/menu.service';
 import api from '../services/api';
 
 type LoaderResult<T> = { data: T[] } | T[];
 
-function useList<T>(loader: () => Promise<LoaderResult<T>>, deps: unknown[] = []) {
+function useList<T>(loader: () => Promise<LoaderResult<T>>, reloadKey?: number) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<T[]>([]);
   useEffect(() => {
@@ -24,7 +37,7 @@ function useList<T>(loader: () => Promise<LoaderResult<T>>, deps: unknown[] = []
       }
     };
     load();
-  }, [loader, ...deps]);
+  }, [loader, reloadKey]);
   return { loading, data };
 }
 
@@ -82,7 +95,7 @@ const generateId = () => {
 export function AdminOrgsPage() {
   const loadOrgs = useCallback(() => adminService.getOrganizations(), []);
   const [reloadKey, setReloadKey] = useState(0);
-  const { loading, data } = useList<Organization>(loadOrgs, [reloadKey]);
+  const { loading, data } = useList<Organization>(loadOrgs, reloadKey);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Organization | null>(null);
   const [form] = Form.useForm();
@@ -172,7 +185,7 @@ export function AdminOrgsPage() {
 export function AdminUsersPage() {
   const loadUsers = useCallback(() => api.get('/users/'), []);
   const [reloadKey, setReloadKey] = useState(0);
-  const { loading, data } = useList<User>(loadUsers, [reloadKey]);
+  const { loading, data } = useList<User>(loadUsers, reloadKey);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [form] = Form.useForm();
@@ -309,7 +322,7 @@ export function AdminUsersPage() {
 export function AdminRolesPage() {
   const loadRoles = useCallback(() => adminService.getRoles(), []);
   const [reloadKey, setReloadKey] = useState(0);
-  const { loading, data } = useList<Role>(loadRoles, [reloadKey]);
+  const { loading, data } = useList<Role>(loadRoles, reloadKey);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
   const [form] = Form.useForm();
@@ -334,7 +347,7 @@ export function AdminRolesPage() {
       await adminService.createRole({
         code: values.code as string,
         name: values.name as string,
-        scope: values.scope as any,
+        scope: values.scope as RoleScope,
         is_enabled: values.is_enabled ?? true,
       });
     }
@@ -430,7 +443,7 @@ export function AdminPermissionsPage() {
 export function AdminMenusPage() {
   const loadMenus = useCallback(() => menuService.getMenuTree(), []);
   const [reloadKey, setReloadKey] = useState(0);
-  const { loading, data } = useList<MenuItem>(loadMenus, [reloadKey]);
+  const { loading, data } = useList<MenuItem>(loadMenus, reloadKey);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<MenuItem | null>(null);
   const [form] = Form.useForm();
@@ -484,14 +497,14 @@ export function AdminMenusPage() {
     setReloadKey((k) => k + 1);
   };
 
-  const columns: ColumnsType<any> = [
+  const columns: ColumnsType<MenuItem> = [
     { title: '标题', dataIndex: 'title' },
     { title: '路径', dataIndex: 'path' },
     { title: '图标', dataIndex: 'icon' },
     { title: '排序', dataIndex: 'sort_order' },
     {
       title: '操作',
-      render: (_: any, record: MenuItem) => (
+      render: (_: unknown, record: MenuItem) => (
         <Space>
           <Button size="small" onClick={() => openEdit(record)}>
             编辑
@@ -513,7 +526,7 @@ export function AdminMenusPage() {
         </Button>
       </Space>
       <Spin spinning={loading}>
-        <Table rowKey="id" dataSource={data as any[]} columns={columns} pagination={false} />
+        <Table rowKey="id" dataSource={data} columns={columns} pagination={false} />
       </Spin>
       <Modal
         title={editing ? '编辑菜单' : '新增菜单'}
@@ -556,7 +569,7 @@ export function AdminMenusPage() {
 export function AdminContentsPage() {
   const loadContents = useCallback(() => adminService.getContents({}), []);
   const [reloadKey, setReloadKey] = useState(0);
-  const { loading, data } = useList<ContentItem>(loadContents, [reloadKey]);
+  const { loading, data } = useList<ContentItem>(loadContents, reloadKey);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ContentItem | null>(null);
   const [form] = Form.useForm();
@@ -579,9 +592,9 @@ export function AdminContentsPage() {
       await adminService.updateContent(editing.id, values);
     } else {
       await adminService.createContent({
-        type: values.type as any,
+        type: values.type as ContentType,
         title: values.title as string,
-        scope: values.scope as any,
+        scope: values.scope as ContentScope,
         owner_org_id: values.owner_org_id,
       });
     }
@@ -664,7 +677,7 @@ export function AdminContentsPage() {
 export function AdminClassesPage() {
   const loadClasses = useCallback(() => adminService.getClasses(), []);
   const [reloadKey, setReloadKey] = useState(0);
-  const { loading, data } = useList<TrainingClass>(loadClasses, [reloadKey]);
+  const { loading, data } = useList<TrainingClass>(loadClasses, reloadKey);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TrainingClass | null>(null);
   const [form] = Form.useForm();

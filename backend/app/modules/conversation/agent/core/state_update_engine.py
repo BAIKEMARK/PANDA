@@ -23,8 +23,7 @@ class StateUpdateEngine:
     def __init__(self, config_path: str = None):
         """初始化规则引擎，加载配置文件"""
         if config_path is None:
-            # 从当前文件向上4级：core -> agent -> modules -> app，然后进入 config
-            config_path = Path(__file__).parent / "config" / "skill_config.json"
+            config_path = Path(__file__).resolve().parents[1] / "config" / "skill_config.json"
         self.config_path = Path(config_path)
         self.rules = self._load_rules()
 

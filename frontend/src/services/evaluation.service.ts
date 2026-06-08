@@ -21,7 +21,7 @@ class EvaluationService {
    * 获取会话的评估报告
    */
   async getReport(sessionId: string): Promise<EvaluationReport> {
-    const response = await api.get<any>(
+    const response = await api.get<EvaluationReport>(
       `/evaluation/sessions/${sessionId}/report`
     );
 

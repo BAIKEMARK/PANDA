@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Form, Input, Button, Card, Typography, Space, message } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/auth.store';
+import { getApiErrorMessage } from '@/utils/error';
 import type { FormProps } from 'antd';
 
 const { Title, Text } = Typography;
@@ -27,11 +28,11 @@ export const RegisterPage = () => {
           } 
         });
       }, 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       form.setFields([
         {
           name: 'email',
-          errors: [error.response?.data?.detail || '注册失败，请稍后重试'],
+          errors: [getApiErrorMessage(error, '注册失败，请稍后重试')],
         },
       ]);
     }

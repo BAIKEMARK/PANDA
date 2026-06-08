@@ -33,7 +33,7 @@ export interface FeedbackItem {
   status: 'pass' | 'fail' | 'Pass' | 'Fail' | '通过' | '失败' | string; // 状态
   dialogue_ref_id?: number;                   // 对话轮次引用
   user_input?: string;                        // 用户输入
-  patient_state_snapshot?: string | Record<string, any>;  // 患者状态快照 (可以是字符串或对象)
+  patient_state_snapshot?: string | Record<string, unknown>;  // 患者状态快照 (可以是字符串或对象)
   critique: string;                           // 批评意见
   expert_suggestion: string;                  // 专家建议
 }
@@ -50,7 +50,7 @@ export interface EvaluationReport {
   state_analysis?: StateAnalysis;    // 状态变化分析
   detailed_feedback?: FeedbackItem[]; // 详细反馈列表
   technical_guidance?: string;       // 技术指导建议
-  meta_data?: Record<string, any>;   // 其他元数据
+  meta_data?: Record<string, unknown>;   // 其他元数据
   created_at: string;
   updated_at?: string;
 }

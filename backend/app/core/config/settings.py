@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     LLM_TIMEOUT: int = 120
     LLM_TEMPERATURE: float = 0.7
     LLM_STREAMING: bool = False
+    LLM_MAX_TOKENS: int = 4096
 
     # ==================== Redis配置 ====================
     REDIS_HOST: str = "localhost"
@@ -80,6 +81,25 @@ class Settings(BaseSettings):
     # ==================== 缓存配置 ====================
     CACHE_ENABLED: bool = True
     CACHE_DEFAULT_TTL: int = 300
+
+    # ==================== 文件上传配置 ====================
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
+    ALLOWED_EXTENSIONS: List[str] = [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".ppt",
+        ".pptx",
+        ".xls",
+        ".xlsx",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".mp4",
+        ".webm",
+    ]
 
     @property
     def REDIS_URL(self) -> str:

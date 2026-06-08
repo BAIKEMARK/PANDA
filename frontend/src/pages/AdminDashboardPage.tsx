@@ -13,7 +13,7 @@ export function AdminDashboardPage() {
       try {
         const res = await adminService.getOrganizations();
         setOrgs(res.data);
-      } catch (err) {
+      } catch {
         message.error('加载机构列表失败');
       } finally {
         setLoading(false);

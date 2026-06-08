@@ -3,6 +3,8 @@ import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space,
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { certificateService, certificateTemplateService } from '../../services/certificate.service';
 import { FilterForm } from '../../components/admin/FilterForm';
+import { getApiErrorMessage } from '../../utils/error';
+import { getFilterText, getFilterValue } from '../../utils/filters';
 import type { Certificate, CertificateTemplate } from '../../types/admin.types';
 
 export function CertificatePage() {
@@ -30,8 +32,8 @@ export function CertificatePage() {
       const data = await certificateService.list();
       setCertificates(data);
       setFilteredCertificates(data);
-    } catch (error: any) {
-      message.error('加载证书列表失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载证书列表失败: ' + getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -43,28 +45,31 @@ export function CertificatePage() {
       const data = await certificateTemplateService.list();
       setTemplates(data);
       setFilteredTemplates(data);
-    } catch (error: any) {
-      message.error('加载模板列表失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('加载模板列表失败: ' + getApiErrorMessage(error));
     } finally {
       setTemplateLoading(false);
     }
   };
 
-  const handleCertSearch = (values: any) => {
+  const handleCertSearch = (values: Record<string, unknown>) => {
     let filtered = [...certificates];
+    const certificateNumber = getFilterText(values, 'certificate_number');
+    const userId = getFilterValue(values, 'user_id');
+    const status = getFilterValue(values, 'status');
     
-    if (values.certificate_number) {
+    if (certificateNumber) {
       filtered = filtered.filter(cert => 
-        cert.certificate_number?.toLowerCase().includes(values.certificate_number.toLowerCase())
+        cert.certificate_number?.toLowerCase().includes(certificateNumber)
       );
     }
     
-    if (values.user_id) {
-      filtered = filtered.filter(cert => cert.user_id === values.user_id);
+    if (userId) {
+      filtered = filtered.filter(cert => cert.user_id === userId);
     }
     
-    if (values.status) {
-      filtered = filtered.filter(cert => cert.status === values.status);
+    if (status) {
+      filtered = filtered.filter(cert => cert.status === status);
     }
     
     setFilteredCertificates(filtered);
@@ -74,21 +79,24 @@ export function CertificatePage() {
     setFilteredCertificates(certificates);
   };
 
-  const handleTemplateSearch = (values: any) => {
+  const handleTemplateSearch = (values: Record<string, unknown>) => {
     let filtered = [...templates];
+    const name = getFilterText(values, 'name');
+    const orgId = getFilterValue(values, 'org_id');
+    const status = getFilterValue(values, 'status');
     
-    if (values.name) {
+    if (name) {
       filtered = filtered.filter(tpl => 
-        tpl.name?.toLowerCase().includes(values.name.toLowerCase())
+        tpl.name?.toLowerCase().includes(name)
       );
     }
     
-    if (values.org_id) {
-      filtered = filtered.filter(tpl => tpl.org_id === values.org_id);
+    if (orgId) {
+      filtered = filtered.filter(tpl => tpl.org_id === orgId);
     }
     
-    if (values.status) {
-      filtered = filtered.filter(tpl => tpl.status === values.status);
+    if (status) {
+      filtered = filtered.filter(tpl => tpl.status === status);
     }
     
     setFilteredTemplates(filtered);
@@ -100,21 +108,27 @@ export function CertificatePage() {
 
   const certificatesForOptions = filteredCertificates.length ? filteredCertificates : certificates;
   const availableCertStatuses = new Set(
-    certificatesForOptions.map((cert) => cert.status).filter((status): status is string => Boolean(status)),
+    certificatesForOptions.map((cert) => cert.status).filter(Boolean),
   );
   const certStatusOptions = [
     { value: 'valid', label: '有效' },
     { value: 'revoked', label: '宸叉挙閿€' },
-  ].filter((option) => !availableCertStatuses.size || availableCertStatuses.has(option.value));
+  ] as const;
+  const filteredCertStatusOptions = certStatusOptions.filter(
+    (option) => !availableCertStatuses.size || availableCertStatuses.has(option.value),
+  );
 
   const templatesForOptions = filteredTemplates.length ? filteredTemplates : templates;
   const availableTemplateStatuses = new Set(
-    templatesForOptions.map((template) => template.status).filter((status): status is string => Boolean(status)),
+    templatesForOptions.map((template) => template.status).filter(Boolean),
   );
   const templateStatusOptions = [
     { value: 'active', label: '启用' },
     { value: 'inactive', label: '禁用' },
-  ].filter((option) => !availableTemplateStatuses.size || availableTemplateStatuses.has(option.value));
+  ] as const;
+  const filteredTemplateStatusOptions = templateStatusOptions.filter(
+    (option) => !availableTemplateStatuses.size || availableTemplateStatuses.has(option.value),
+  );
 
   const handleCreateCert = () => {
     setEditingCert(null);
@@ -140,8 +154,8 @@ export function CertificatePage() {
           await certificateService.delete(id);
           message.success('删除成功');
           loadCertificates();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -159,8 +173,8 @@ export function CertificatePage() {
       }
       setCertModalVisible(false);
       loadCertificates();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -188,8 +202,8 @@ export function CertificatePage() {
           await certificateTemplateService.delete(id);
           message.success('删除成功');
           loadTemplates();
-        } catch (error: any) {
-          message.error('删除失败: ' + (error.response?.data?.detail || error.message));
+        } catch (error: unknown) {
+          message.error('删除失败: ' + getApiErrorMessage(error));
         }
       },
     });
@@ -200,8 +214,8 @@ export function CertificatePage() {
       await certificateTemplateService.update(template.id, { status: value ? 'active' : 'inactive' });
       message.success(value ? '已启用' : '已禁用');
       loadTemplates();
-    } catch (error: any) {
-      message.error('更新失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('更新失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -217,8 +231,8 @@ export function CertificatePage() {
       }
       setTemplateModalVisible(false);
       loadTemplates();
-    } catch (error: any) {
-      message.error('操作失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      message.error('操作失败: ' + getApiErrorMessage(error));
     }
   };
 
@@ -254,7 +268,7 @@ export function CertificatePage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Certificate) => (
+      render: (_: unknown, record: Certificate) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEditCert(record)}>
             编辑
@@ -298,7 +312,7 @@ export function CertificatePage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: CertificateTemplate) => (
+      render: (_: unknown, record: CertificateTemplate) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEditTemplate(record)}>
             编辑
@@ -358,7 +372,7 @@ export function CertificatePage() {
                   <Col xs={24} sm={12} md={8} lg={6}>
                     <Form.Item name="status" label="状态">
                       <Select placeholder="请选择" allowClear>
-                        {certStatusOptions.map((option) => (
+                        {filteredCertStatusOptions.map((option) => (
                           <Select.Option key={option.value} value={option.value}>
                             {option.label}
                           </Select.Option>
@@ -418,7 +432,7 @@ export function CertificatePage() {
                   <Col xs={24} sm={12} md={8} lg={6}>
                     <Form.Item name="status" label="状态">
                       <Select placeholder="请选择" allowClear>
-                        {templateStatusOptions.map((option) => (
+                        {filteredTemplateStatusOptions.map((option) => (
                           <Select.Option key={option.value} value={option.value}>
                             {option.label}
                           </Select.Option>

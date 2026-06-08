@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Input, Button } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
+import type { TextAreaRef } from 'antd/es/input/TextArea';
 
 const { TextArea } = Input;
 
@@ -16,7 +17,7 @@ interface ChatInputProps {
 
 export const ChatInput = ({ onSend, disabled = false, isLoading = false }: ChatInputProps) => {
   const [content, setContent] = useState('');
-  const textAreaRef = useRef<any>(null);
+  const textAreaRef = useRef<TextAreaRef | null>(null);
 
   useEffect(() => {
     if (textAreaRef.current && textAreaRef.current.resizableTextArea) {
